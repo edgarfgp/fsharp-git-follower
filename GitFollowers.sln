@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "GitFollowers", "GitFollowers\GitFollowers.fsproj", "{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|iPhoneSimulator = Debug|iPhoneSimulator
+		Release|iPhone = Release|iPhone
+		Release|iPhoneSimulator = Release|iPhoneSimulator
+		Debug|iPhone = Debug|iPhone
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhoneSimulator
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Debug|iPhoneSimulator.Build.0 = Debug|iPhoneSimulator
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Release|iPhone.ActiveCfg = Release|iPhone
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Release|iPhone.Build.0 = Release|iPhone
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Debug|iPhone.ActiveCfg = Debug|iPhone
+		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Debug|iPhone.Build.0 = Debug|iPhone
+	EndGlobalSection
+EndGlobal
