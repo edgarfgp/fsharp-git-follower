@@ -122,7 +122,8 @@
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
     <None Include="Info.plist" />
     <None Include="Entitlements.plist" />
-    <Compile Include="Controls\Controls.fs" />
+    <Compile Include="Controls.fs" />
+    <Compile Include="ViewControllers\FollowerListViewController.fs" />
     <Compile Include="ViewControllers\SearchViewController.fs" />
     <Compile Include="ViewControllers\FavouriteListViewController.fs" />
     <Compile Include="AppDelegate.fs" />
