@@ -21,7 +21,7 @@ type SearchViewController() =
 
     member self.ConfigureViewController() =
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-
+        
     member self.ConfigureLogoImageView() =
         self.View.AddSubview(logoImageView)
         NSLayoutConstraint.ActivateConstraints
@@ -39,14 +39,17 @@ type SearchViewController() =
                 userNameTextField.TrailingAnchor.ConstraintEqualTo(base.View.TrailingAnchor, constant = nfloat -50.0)
                 userNameTextField.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
 
-    member self.DidActionButtonTapped() =
-        if userNameTextField.Text = "" then
-            DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+    member self.PresentFGAlertOnMainThread() =
+        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                 let alertVC = new FGAlertVC("Empty Username", "Please enter a username . We need to know who to look for 😀", "Ok")
                 alertVC.ModalPresentationStyle <-  UIModalPresentationStyle.OverFullScreen
                 alertVC.ModalTransitionStyle <-  UIModalTransitionStyle.CrossDissolve
                 self.PresentViewController(alertVC, true, null))
-        else
+
+    member self.NavigateToFollowerListVC() =
+        match userNameTextField.Text <> "" with
+        | false -> self.PresentFGAlertOnMainThread()
+        | _ ->
             let foloowerListVC = new FollowerListViewController()
             foloowerListVC.Title <- userNameTextField.Text
             self.NavigationController.PushViewController(foloowerListVC, animated=  true)
@@ -54,7 +57,7 @@ type SearchViewController() =
 
     member self.ConfigureActionButton() =
         base.View.AddSubview(actionButton)
-        actionButton.TouchUpInside.Add(fun _ -> self.DidActionButtonTapped())
+        actionButton.TouchUpInside.Add(fun _ -> self.NavigateToFollowerListVC())
 
         NSLayoutConstraint.ActivateConstraints
             ([| actionButton.LeadingAnchor.ConstraintEqualTo(base.View.LeadingAnchor, constant = nfloat 50.)

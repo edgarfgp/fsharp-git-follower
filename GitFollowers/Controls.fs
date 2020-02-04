@@ -102,10 +102,8 @@ module ViewControllers =
 
     type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
         inherit UIViewController()
-
         let containerView = new UIView()
-        let titleLabel = new FGTitleLabel(title, UITextAlignment.Center, nfloat 28.)
-
+        let titleLabel = new FGTitleLabel(title, UITextAlignment.Center, nfloat 20.)
         let messageLabel = new FGBodyLabel(message, UITextAlignment.Center, nint 1)
         let actionButton = new FGButton(UIColor.SystemPinkColor, "Ok")
 

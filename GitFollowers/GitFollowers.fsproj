@@ -73,11 +73,16 @@
     <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FSharp.Data, Version=3.3.3.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\packages\FSharp.Data.3.3.3\lib\netstandard2.0\FSharp.Data.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="mscorlib" />
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="Xamarin.iOS" />
     <Reference Include="FSharp.Core">
       <HintPath>..\packages\FSharp.Core.4.5.4\lib\netstandard1.6\FSharp.Core.dll</HintPath>
