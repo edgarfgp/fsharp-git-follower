@@ -7,6 +7,7 @@
     <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
     <UseStandardResourceNames>true</UseStandardResourceNames>
     <OutputType>Exe</OutputType>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <RootNamespace>GitFollowers</RootNamespace>
     <AssemblyName>GitFollowers</AssemblyName>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
@@ -68,7 +69,7 @@
     <MtouchFloat32>true</MtouchFloat32>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
     <IOSDebuggerPort>22772</IOSDebuggerPort>
-    <MtouchLink>SdkOnly</MtouchLink>
+    <MtouchLink>None</MtouchLink>
     <MtouchArch>ARM64</MtouchArch>
     <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
   </PropertyGroup>
@@ -127,10 +128,10 @@
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
     <None Include="Info.plist" />
     <None Include="Entitlements.plist" />
-    <Compile Include="Controls.fs" />
-    <Compile Include="ViewControllers\FollowerListViewController.fs" />
-    <Compile Include="ViewControllers\SearchViewController.fs" />
-    <Compile Include="ViewControllers\FavouriteListViewController.fs" />
+    <Compile Include="Shared.fs" />
+    <Compile Include="Controllers\FollowerListViewController.fs" />
+    <Compile Include="Controllers\SearchViewController.fs" />
+    <Compile Include="Controllers\FavouriteListViewController.fs" />
     <Compile Include="AppDelegate.fs" />
     <Compile Include="Main.fs" />
     <None Include="packages.config" />

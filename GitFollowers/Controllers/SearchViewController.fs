@@ -21,7 +21,7 @@ type SearchViewController() =
 
     member self.ConfigureViewController() =
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-        
+
     member self.ConfigureLogoImageView() =
         self.View.AddSubview(logoImageView)
         NSLayoutConstraint.ActivateConstraints
