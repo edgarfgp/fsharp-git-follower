@@ -1,7 +1,5 @@
 namespace GitFollowers.Views
 
-open Foundation
-open GitFollowers
 open GitFollowers.Models
 open System
 open UIKit
@@ -204,10 +202,4 @@ module Cells =
             with get () = folllower
             and set value =
                 folllower <- value
-
-                avatarImageView.Image <-
-                    match GitHubService.loadImage folllower.AvatarUrl with
-                    | Ok value -> value
-                    | Error _ -> UIImage.FromBundle("avatar-placeholder")
-
                 userNameLabel.Text <- folllower.Login

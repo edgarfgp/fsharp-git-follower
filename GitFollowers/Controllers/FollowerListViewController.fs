@@ -6,7 +6,6 @@ open GitFollowers
 open GitFollowers.Views.Cells
 open UIKit
 
-
 type FollowerListViewController(userName: string) =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
