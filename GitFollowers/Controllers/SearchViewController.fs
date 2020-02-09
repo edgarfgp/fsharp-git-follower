@@ -50,7 +50,7 @@ type SearchViewController() =
         match userNameTextField.Text <> "" with
         | false -> self.PresentFGAlertOnMainThread()
         | _ ->
-            let foloowerListVC = new FollowerListViewController()
+            let foloowerListVC = new FollowerListViewController(userNameTextField.Text)
             foloowerListVC.Title <- userNameTextField.Text
             self.NavigationController.PushViewController(foloowerListVC, animated=  true)
             userNameTextField.ResignFirstResponder() |> ignore

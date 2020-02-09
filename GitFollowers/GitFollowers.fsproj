@@ -1,142 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
-        <ProjectGuid>{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}</ProjectGuid>
-        <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
-        <UseStandardResourceNames>true</UseStandardResourceNames>
-        <OutputType>Exe</OutputType>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <RootNamespace>GitFollowers</RootNamespace>
-        <AssemblyName>GitFollowers</AssemblyName>
-        <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
-        <DebugSymbols>true</DebugSymbols>
-        <Optimize>false</Optimize>
-        <OutputPath>bin\iPhoneSimulator\Debug</OutputPath>
-        <DefineConstants>DEBUG;ENABLE_TEST_CLOUD</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <CodesignKey>iPhone Developer</CodesignKey>
-        <MtouchDebug>true</MtouchDebug>
-        <MtouchNoSymbolStrip>true</MtouchNoSymbolStrip>
-        <MtouchFastDev>true</MtouchFastDev>
-        <IOSDebuggerPort>51816</IOSDebuggerPort>
-        <MtouchLink>None</MtouchLink>
-        <MtouchArch>x86_64</MtouchArch>
-        <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
-        <Optimize>true</Optimize>
-        <OutputPath>bin\iPhone\Release</OutputPath>
-        <DefineConstants>
-        </DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <CodesignKey>iPhone Developer</CodesignKey>
-        <MtouchUseLlvm>true</MtouchUseLlvm>
-        <MtouchFloat32>true</MtouchFloat32>
-        <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-        <MtouchLink>SdkOnly</MtouchLink>
-        <MtouchArch>ARM64</MtouchArch>
-        <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
-        <GenerateTailCalls>true</GenerateTailCalls>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
-        <Optimize>true</Optimize>
-        <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
-        <DefineConstants>
-        </DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <CodesignKey>iPhone Developer</CodesignKey>
-        <MtouchNoSymbolStrip>true</MtouchNoSymbolStrip>
-        <MtouchLink>None</MtouchLink>
-        <MtouchArch>x86_64</MtouchArch>
-        <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
-        <GenerateTailCalls>true</GenerateTailCalls>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
-        <DebugSymbols>true</DebugSymbols>
-        <Optimize>false</Optimize>
-        <OutputPath>bin\iPhone\Debug</OutputPath>
-        <DefineConstants>DEBUG;ENABLE_TEST_CLOUD</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <CodesignKey>iPhone Developer</CodesignKey>
-        <DeviceSpecificBuild>true</DeviceSpecificBuild>
-        <MtouchDebug>true</MtouchDebug>
-        <MtouchNoSymbolStrip>true</MtouchNoSymbolStrip>
-        <MtouchFastDev>true</MtouchFastDev>
-        <MtouchFloat32>true</MtouchFloat32>
-        <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-        <IOSDebuggerPort>22772</IOSDebuggerPort>
-        <MtouchLink>None</MtouchLink>
-        <MtouchArch>ARM64</MtouchArch>
-        <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
-    </PropertyGroup>
-    <ItemGroup>
-        <Reference Include="FSharp.Data, Version=3.3.3.0, Culture=neutral, PublicKeyToken=null">
-            <HintPath>..\packages\FSharp.Data.3.3.3\lib\netstandard2.0\FSharp.Data.dll</HintPath>
-            <Private>True</Private>
-        </Reference>
-        <Reference Include="System"/>
-        <Reference Include="System.Xml"/>
-        <Reference Include="System.Core"/>
-        <Reference Include="System.Numerics"/>
-        <Reference Include="mscorlib"/>
-        <Reference Include="System.Xml.Linq"/>
-        <Reference Include="Xamarin.iOS"/>
-        <Reference Include="FSharp.Core">
-            <HintPath>..\packages\FSharp.Core.4.5.4\lib\netstandard1.6\FSharp.Core.dll</HintPath>
-        </Reference>
-    </ItemGroup>
-    <ItemGroup>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Contents.json"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt%402x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt%403x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt%402x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt%403x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt%402x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt%403x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_60pt%402x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_60pt%403x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt%402x-1.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt%402x-1.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt%402x-1.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_76pt.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_76pt%402x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_83.5%402x.png"/>
-        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Icon.png"/>
-        <ImageAsset Include="Assets.xcassets\Contents.json"/>
-        <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder@3x.png"/>
-        <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder@2x.png"/>
-        <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder-dark@2x.png"/>
-        <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\Contents.json"/>
-        <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder-dark@3x.png"/>
-        <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo@3x.png"/>
-        <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\Contents.json"/>
-        <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo-dark@2x.png"/>
-        <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo-dark@3x.png"/>
-        <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo@2x.png"/>
-        <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo@2x.png"/>
-        <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo@3x.png"/>
-        <ImageAsset Include="Assets.xcassets\gh-logo.imageset\Contents.json"/>
-        <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo-dark@2x.png"/>
-        <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo-dark@3x.png"/>
-        <InterfaceDefinition Include="LaunchScreen.storyboard"/>
-        <None Include="Info.plist"/>
-        <None Include="Entitlements.plist"/>
-        <Compile Include="Models.fs"/>
-        <Compile Include="Views.fs"/>
-        <Compile Include="Controllers\FollowerListViewController.fs"/>
-        <Compile Include="Controllers\SearchViewController.fs"/>
-        <Compile Include="Controllers\FavouriteListViewController.fs"/>
-        <Compile Include="AppDelegate.fs"/>
-        <Compile Include="Main.fs"/>
-        <None Include="packages.config"/>
-
-    </ItemGroup>
-    <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.FSharp.targets"/>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
+    <ProjectGuid>{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}</ProjectGuid>
+    <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
+    <UseStandardResourceNames>true</UseStandardResourceNames>
+    <OutputType>Exe</OutputType>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <RootNamespace>GitFollowers</RootNamespace>
+    <AssemblyName>GitFollowers</AssemblyName>
+    <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Debug</OutputPath>
+    <DefineConstants>DEBUG;ENABLE_TEST_CLOUD</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <MtouchDebug>true</MtouchDebug>
+    <MtouchNoSymbolStrip>true</MtouchNoSymbolStrip>
+    <MtouchFastDev>true</MtouchFastDev>
+    <IOSDebuggerPort>51816</IOSDebuggerPort>
+    <MtouchLink>None</MtouchLink>
+    <MtouchArch>x86_64</MtouchArch>
+    <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhone\Release</OutputPath>
+    <DefineConstants>
+    </DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <MtouchUseLlvm>true</MtouchUseLlvm>
+    <MtouchFloat32>true</MtouchFloat32>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchLink>SdkOnly</MtouchLink>
+    <MtouchArch>ARM64</MtouchArch>
+    <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
+    <GenerateTailCalls>true</GenerateTailCalls>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
+    <DefineConstants>
+    </DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <MtouchNoSymbolStrip>true</MtouchNoSymbolStrip>
+    <MtouchLink>None</MtouchLink>
+    <MtouchArch>x86_64</MtouchArch>
+    <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
+    <GenerateTailCalls>true</GenerateTailCalls>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhone\Debug</OutputPath>
+    <DefineConstants>DEBUG;ENABLE_TEST_CLOUD</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <DeviceSpecificBuild>true</DeviceSpecificBuild>
+    <MtouchDebug>true</MtouchDebug>
+    <MtouchNoSymbolStrip>true</MtouchNoSymbolStrip>
+    <MtouchFastDev>true</MtouchFastDev>
+    <MtouchFloat32>true</MtouchFloat32>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <IOSDebuggerPort>22772</IOSDebuggerPort>
+    <MtouchLink>None</MtouchLink>
+    <MtouchArch>ARM64</MtouchArch>
+    <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="FSharp.Data, Version=3.3.3.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\packages\FSharp.Data.3.3.3\lib\netstandard2.0\FSharp.Data.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="mscorlib" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="Xamarin.iOS" />
+    <Reference Include="FSharp.Core">
+      <HintPath>..\packages\FSharp.Core.4.5.4\lib\netstandard1.6\FSharp.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Contents.json" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt%402x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt%403x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt%402x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt%403x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt%402x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt%403x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_60pt%402x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_60pt%403x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_20pt%402x-1.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_29pt%402x-1.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_40pt%402x-1.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_76pt.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_76pt%402x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\icon_83.5%402x.png" />
+    <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Icon.png" />
+    <ImageAsset Include="Assets.xcassets\Contents.json" />
+    <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder@3x.png" />
+    <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder@2x.png" />
+    <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder-dark@2x.png" />
+    <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\Contents.json" />
+    <ImageAsset Include="Assets.xcassets\avatar-placeholder.imageset\avatar-placeholder-dark@3x.png" />
+    <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo@3x.png" />
+    <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\Contents.json" />
+    <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo-dark@2x.png" />
+    <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo-dark@3x.png" />
+    <ImageAsset Include="Assets.xcassets\empty-state-logo.imageset\empty-state-logo@2x.png" />
+    <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo@2x.png" />
+    <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo@3x.png" />
+    <ImageAsset Include="Assets.xcassets\gh-logo.imageset\Contents.json" />
+    <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo-dark@2x.png" />
+    <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo-dark@3x.png" />
+    <InterfaceDefinition Include="LaunchScreen.storyboard" />
+    <None Include="Info.plist" />
+    <None Include="Entitlements.plist" />
+    <Compile Include="Models.fs" />
+    <Compile Include="GitHubService.fs" />
+    <Compile Include="Views.fs" />
+    <Compile Include="Controllers\FollowerListViewController.fs" />
+    <Compile Include="Controllers\SearchViewController.fs" />
+    <Compile Include="Controllers\FavouriteListViewController.fs" />
+    <Compile Include="AppDelegate.fs" />
+    <Compile Include="Main.fs" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.FSharp.targets" />
 </Project>
