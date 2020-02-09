@@ -1,31 +1,14 @@
-namespace GitFollowers.Controls
+namespace GitFollowers.Views
 
-open CoreGraphics
 open Foundation
+open GitFollowers.Models
 open System
 open UIKit
 
-module Models =
-
-    type Section() = inherit NSObject()
-
-    type FollowerData(logo: string, avatar: string) =
-        inherit NSObject()
-        member this.LoginData = logo
-        member this.AvatarData = avatar
-    type Follower =
-        { Login : string
-          AvatarUrl : string }
-        static member CreateFollower(?login, ?avatarUrl) =
-            let initMember x = Option.fold (fun state param -> param) <| x
-            { Login = initMember "Edgar" login
-              AvatarUrl = initMember "avatar-placeholder" avatarUrl }
-
 module Labels =
-    type FGTitleLabel(text: string, textAligment: UITextAlignment, fontSize: nfloat) as self =
+    type FGTitleLabel(textAligment: UITextAlignment, fontSize: nfloat) as self =
         inherit UILabel()
         do
-            self.Text <- text
             self.TextAlignment <- textAligment
             self.Font <- UIFont.SystemFontOfSize(fontSize, UIFontWeight.Bold)
             self.TextColor <- UIColor.LabelColor
@@ -91,7 +74,7 @@ module Views =
 
     type FGEmptyView(message: string) as self =
         inherit UIView()
-        let messagelabel = new FGTitleLabel(message, UITextAlignment.Center, nfloat 28.)
+        let messagelabel = new FGTitleLabel(UITextAlignment.Center, nfloat 28.)
         let logoImageView = new UIImageView(new UIImage("empty-state-logo"))
 
         do
@@ -121,7 +104,7 @@ module ViewControllers =
     type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
         inherit UIViewController()
         let containerView = new UIView()
-        let titleLabel = new FGTitleLabel(title, UITextAlignment.Center, nfloat 20.)
+        let titleLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 20.)
         let messageLabel = new FGBodyLabel(message, UITextAlignment.Center, nint 1)
         let actionButton = new FGButton(UIColor.SystemPinkColor, "Ok")
 
@@ -189,30 +172,37 @@ module Cells =
     open ImageViews
     open Labels
 
-    type FollowerCell() as self =
-        inherit UICollectionViewCell()
+    type FollowerCell(handle:IntPtr) as self =
+        inherit UICollectionViewCell(handle)
+
+        let mutable folllower = Follower.CreateFollower()
 
         let padding = nfloat 8.
         let avatarImageView = new FGAvatarImageView()
-        let userNameLabel = new FGTitleLabel("Edgar Gonzalez", UITextAlignment.Center, nfloat 16.)
+        let userNameLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 16.)
 
         do
             self.AddSubview avatarImageView
             self.AddSubview userNameLabel
 
-            NSLayoutConstraint.ActivateConstraints[|
-                avatarImageView.TopAnchor.ConstraintEqualTo(self.ContentView.TopAnchor, padding);
-                avatarImageView.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding);
-                avatarImageView.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding);
-                avatarImageView.HeightAnchor.ConstraintEqualTo(avatarImageView.WidthAnchor);
-            |]
+            NSLayoutConstraint.ActivateConstraints
+                [| avatarImageView.TopAnchor.ConstraintEqualTo(self.ContentView.TopAnchor, padding)
+                   avatarImageView.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
+                   avatarImageView.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
+                   avatarImageView.HeightAnchor.ConstraintEqualTo(avatarImageView.WidthAnchor) |]
 
-            NSLayoutConstraint.ActivateConstraints[|
-                userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor, nfloat 12.);
-                userNameLabel.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding);
-                userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding);
-                userNameLabel.HeightAnchor.ConstraintEqualTo( nfloat 20.)
-            |]
+            NSLayoutConstraint.ActivateConstraints
+                [| userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor, nfloat 12.)
+                   userNameLabel.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
+                   userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
+                   userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 20.) |]
 
         static member val CellId = "FollowerCell" with get
 
+        member this.Follower
+            with get () = folllower
+            and set value =
+                folllower <- value
+
+                //avatarImageView.Image <- new UIImage(folllower.AvatarUrl)
+                userNameLabel.Text <- folllower.Login

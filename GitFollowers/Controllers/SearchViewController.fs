@@ -1,9 +1,9 @@
 namespace GitFollowers.ViewControllers
 
 open CoreFoundation
-open GitFollowers.Controls.Buttons
-open GitFollowers.Controls.TextFields
-open GitFollowers.Controls.ViewControllers
+open GitFollowers.Views.Buttons
+open GitFollowers.Views.TextFields
+open GitFollowers.Views.ViewControllers
 open System
 open UIKit
 
