@@ -132,9 +132,9 @@
     <Compile Include="Models.fs" />
     <Compile Include="GitHubService.fs" />
     <Compile Include="Views.fs" />
-    <Compile Include="Controllers\FollowerListViewController.fs" />
-    <Compile Include="Controllers\SearchViewController.fs" />
-    <Compile Include="Controllers\FavouriteListViewController.fs" />
+    <Compile Include="Controllers\FollowerListController.fs" />
+    <Compile Include="Controllers\SearchController.fs" />
+    <Compile Include="Controllers\FavoriteListController.fs" />
     <Compile Include="AppDelegate.fs" />
     <Compile Include="Main.fs" />
     <None Include="packages.config" />

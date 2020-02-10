@@ -1,7 +1,7 @@
 namespace GitFollowers.ViewControllers
 
 open UIKit
-type FavouriteListViewController() =
+type FavoriteListViewController() =
     inherit UIViewController()
 
      override x.ViewDidLoad() =
