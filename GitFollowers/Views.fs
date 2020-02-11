@@ -113,6 +113,7 @@ module ViewControllers =
             self.View.BackgroundColor <-
                 new UIColor(red = nfloat 0., green = nfloat 0., blue = nfloat 0., alpha = nfloat 0.75)
 
+            titleLabel.Text <- title
             self.View.AddSubview containerView
             containerView.AddSubview titleLabel
             containerView.AddSubview actionButton
