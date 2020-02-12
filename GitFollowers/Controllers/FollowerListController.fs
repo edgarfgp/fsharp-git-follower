@@ -9,14 +9,14 @@ open UIKit
 type FollowerListViewController(userName: string) =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
-    let baseURL = sprintf "https://api.github.com/users/%s/followers?per_page=100&page=1" userName
-
-    let followers =
-        match GitHubService.getFollowers baseURL with
+    let followers  =
+        match GitHubService.getFollowers userName with
         | Ok value -> value
         | Error _ -> []
 
-    let CreateThreeColumnFlowLayout(view: UIView) : UICollectionViewFlowLayout =
+    let numberOfFollowers = nint followers.Length
+
+    let createThreeColumnFlowLayout(view: UIView) : UICollectionViewFlowLayout =
         let width = view.Bounds.Width
         let padding  = nfloat 12.
         let minimumItemSpacing = nfloat 10.
@@ -30,7 +30,7 @@ type FollowerListViewController(userName: string) =
     override self.ViewDidLoad() =
         base.ViewDidLoad()
 
-        self.CollectionView <- new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.View))
+        self.CollectionView <- new UICollectionView(self.View.Bounds, createThreeColumnFlowLayout(self.View))
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
         self.NavigationItem.SearchController <-
             { new UISearchController() with
@@ -39,7 +39,7 @@ type FollowerListViewController(userName: string) =
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
 
     override self.GetItemsCount(_, _) =
-        nint followers.Length
+        numberOfFollowers
 
     override self.GetCell(collectionView, indexPath) =
         let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell

@@ -18,18 +18,18 @@ type SearchViewController() =
 
     let userNameTextField = new FGTextField("Enter username")
 
-    member self.NavigateToFollowerListVC() =
+    member self.navigateToFollowerListController() =
         match userNameTextField.Text <> "" with
-        | false -> self.PresentFGAlertOnMainThread()
+        | false -> self.presentFGAlertOnMainThread()
         | _ ->
             let foloowerListVC = new FollowerListViewController(userNameTextField.Text)
             foloowerListVC.Title <- userNameTextField.Text
             self.NavigationController.PushViewController(foloowerListVC, animated = true)
             userNameTextField.ResignFirstResponder() |> ignore
 
-    member self.ConfigureViewController() = self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+    member self.configureController() = self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 
-    member self.ConfigureLogoImageView() =
+    member self.configureLogoImageView() =
         self.View.AddSubview(logoImageView)
         NSLayoutConstraint.ActivateConstraints
             ([| logoImageView.TopAnchor.ConstraintEqualTo
@@ -44,7 +44,7 @@ type SearchViewController() =
         userNameTextField.Delegate <-
             { new UITextFieldDelegate() with
                 member x.ShouldReturn(textField) =
-                    self.NavigateToFollowerListVC()
+                    self.navigateToFollowerListController()
                     true }
 
         NSLayoutConstraint.ActivateConstraints
@@ -53,7 +53,7 @@ type SearchViewController() =
                 userNameTextField.TrailingAnchor.ConstraintEqualTo(base.View.TrailingAnchor, constant = nfloat -50.0)
                 userNameTextField.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
 
-    member self.PresentFGAlertOnMainThread() =
+    member self.presentFGAlertOnMainThread() =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
             let alertVC =
                 new FGAlertVC("Empty Username", "Please enter a username . We need to know who to look for 😀", "Ok")
@@ -61,9 +61,9 @@ type SearchViewController() =
             alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
             self.PresentViewController(alertVC, true, null))
 
-    member self.ConfigureActionButton() =
+    member self.configureActionButton() =
         base.View.AddSubview(actionButton)
-        actionButton.TouchUpInside.Add(fun _ -> self.NavigateToFollowerListVC())
+        actionButton.TouchUpInside.Add(fun _ -> self.navigateToFollowerListController())
 
         NSLayoutConstraint.ActivateConstraints
             ([| actionButton.LeadingAnchor.ConstraintEqualTo(base.View.LeadingAnchor, constant = nfloat 50.)
@@ -75,10 +75,10 @@ type SearchViewController() =
     override self.ViewDidLoad() =
         base.ViewDidLoad()
 
-        self.ConfigureViewController()
-        self.ConfigureLogoImageView()
+        self.configureController()
+        self.configureLogoImageView()
         self.configureUserNameTextField()
-        self.ConfigureActionButton()
+        self.configureActionButton()
 
     override self.ViewWillAppear(_) =
         base.ViewWillAppear(true)

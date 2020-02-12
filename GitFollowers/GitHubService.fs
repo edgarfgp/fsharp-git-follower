@@ -7,14 +7,17 @@ open GitFollowers.Models
 
 module GitHubService =
 
-    let getFollowers url =
+    let getFollowers searchTerm =
+
+        let urlString = sprintf "https://api.github.com/users/%s/followers?per_page=100&page=1" searchTerm
         async {
             let httpClient = new HttpClient()
             try
-                use! response = httpClient.GetAsync(Uri(url), HttpCompletionOption.ResponseHeadersRead) |> Async.AwaitTask
+                use! response = httpClient.GetAsync(Uri(urlString), HttpCompletionOption.ResponseHeadersRead)
+                                |> Async.AwaitTask
                 response.EnsureSuccessStatusCode |> ignore
 
-                let! followers = response.Content.ReadAsStringAsync() |> Async.AwaitTask
+                let! followers = response.Content.ReadAsStringAsync()|> Async.AwaitTask
 
                 let deserialized = Json.deserialize<Follower list> followers
 
