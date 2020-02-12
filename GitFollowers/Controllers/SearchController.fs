@@ -83,3 +83,4 @@ type SearchViewController() =
     override self.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         base.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
+        userNameTextField.Text <- ""

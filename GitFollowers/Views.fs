@@ -1,5 +1,7 @@
 namespace GitFollowers.Views
 
+open CoreFoundation
+open Foundation
 open GitFollowers.Models
 open System
 open UIKit
@@ -172,7 +174,7 @@ module Cells =
     open ImageViews
     open Labels
 
-    type FollowerCell(handle:IntPtr) as self =
+    type FollowerCell(handle: IntPtr) as self =
         inherit UICollectionViewCell(handle)
 
         let mutable folllower = Follower.CreateFollower()
@@ -197,10 +199,18 @@ module Cells =
                    userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
                    userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 20.) |]
 
-        static member val CellId = "FollowerCell" with get
+        static member val CellId = "FollowerCell"
 
         member this.Follower
             with get () = folllower
             and set value =
                 folllower <- value
-                userNameLabel.Text <- folllower.Login
+                userNameLabel.Text <- folllower.login
+
+                NSUrlSession.SharedSession.CreateDataTask(
+                    new NSUrlRequest(new NSUrl(folllower.avatar_url)),
+                      NSUrlSessionResponse(fun data response error ->
+                          if data <> null then
+                              DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                                  let image = UIImage.LoadFromData(data)
+                                  avatarImageView.Image <- image))).Resume()

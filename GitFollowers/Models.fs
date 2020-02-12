@@ -1,9 +1,9 @@
 namespace GitFollowers.Models
 
 type Follower =
-    { Login: string
-      AvatarUrl: string }
+    { login: string
+      avatar_url: string }
     static member CreateFollower(?login, ?avatarUrl) =
         let initMember x = Option.fold (fun state param -> param) <| x
-        { Login = initMember "Edgar" login
-          AvatarUrl = initMember "avatar-placeholder" avatarUrl }
+        { login = initMember "Edgar" login
+          avatar_url = initMember "avatar-placeholder" avatarUrl }
