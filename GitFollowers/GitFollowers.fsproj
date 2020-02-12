@@ -133,6 +133,7 @@
     <Compile Include="Models.fs" />
     <Compile Include="GitHubService.fs" />
     <Compile Include="Views.fs" />
+    <Compile Include="Controllers\UserInfoController.fs" />
     <Compile Include="Controllers\FollowerListController.fs" />
     <Compile Include="Controllers\SearchController.fs" />
     <Compile Include="Controllers\FavoriteListController.fs" />

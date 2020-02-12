@@ -1,8 +1,10 @@
 namespace GitFollowers.ViewControllers
 
+open CoreFoundation
 open System
 open CoreGraphics
 open GitFollowers
+open GitFollowers.Controllers
 open GitFollowers.Views.Cells
 open UIKit
 
@@ -46,6 +48,12 @@ type FollowerListViewController(userName: string) =
         let follower = followers.[int indexPath.Item]
         cell.Follower <- follower
         upcast cell
+
+    override self.ItemSelected(collectionView, indexPath) =
+        let index = int indexPath.Item
+        let follower = followers.[index]
+        let userInfoController = new UserInfoController(follower)
+        self.PresentViewController(userInfoController, true, null)
 
     override self.ViewWillAppear(_) =
         base.ViewWillAppear(true)
