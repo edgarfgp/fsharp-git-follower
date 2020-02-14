@@ -1,6 +1,5 @@
 namespace GitFollowers.ViewControllers
 
-open CoreFoundation
 open System
 open CoreGraphics
 open GitFollowers
@@ -8,7 +7,7 @@ open GitFollowers.Controllers
 open GitFollowers.Views.Cells
 open UIKit
 
-type FollowerListViewController(userName: string) =
+type FollowerListViewController(userName: string) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
     let followers  =
@@ -18,7 +17,7 @@ type FollowerListViewController(userName: string) =
 
     let numberOfFollowers = nint followers.Length
 
-    let createThreeColumnFlowLayout(view: UIView) : UICollectionViewFlowLayout =
+    let createThreeColumnFlowLayout(view: UIView) =
         let width = view.Bounds.Width
         let padding  = nfloat 12.
         let minimumItemSpacing = nfloat 10.
@@ -29,7 +28,7 @@ type FollowerListViewController(userName: string) =
         flowLayout.ItemSize <- CGSize(itemWidth,  itemWidth + nfloat 40.)
         flowLayout
 
-    override self.ViewDidLoad() =
+    override v.ViewDidLoad() =
         base.ViewDidLoad()
 
         self.CollectionView <- new UICollectionView(self.View.Bounds, createThreeColumnFlowLayout(self.View))
@@ -40,22 +39,23 @@ type FollowerListViewController(userName: string) =
 
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
 
-    override self.GetItemsCount(_, _) =
+    override v.GetItemsCount(_, _) =
         numberOfFollowers
 
-    override self.GetCell(collectionView, indexPath) =
+    override v.GetCell(collectionView, indexPath) =
         let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
         let follower = followers.[int indexPath.Item]
         cell.Follower <- follower
         upcast cell
 
-    override self.ItemSelected(collectionView, indexPath) =
+    override v.ItemSelected(_, indexPath) =
         let index = int indexPath.Item
         let follower = followers.[index]
         let userInfoController = new UserInfoController(follower)
-        self.PresentViewController(userInfoController, true, null)
+        let navController = new UINavigationController(rootViewController = userInfoController)
+        self.PresentViewController(navController, true, null)
 
-    override self.ViewWillAppear(_) =
+    override v.ViewWillAppear(_) =
         base.ViewWillAppear(true)
-        base.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
-        base.NavigationController.NavigationBar.PrefersLargeTitles <- true
+        self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
+        self.NavigationController.NavigationBar.PrefersLargeTitles <- true

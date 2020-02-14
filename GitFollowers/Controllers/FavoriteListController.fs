@@ -1,11 +1,11 @@
 namespace GitFollowers.ViewControllers
 
 open UIKit
-type FavoriteListViewController() =
+type FavoriteListViewController() as self =
     inherit UIViewController()
 
-     override x.ViewDidLoad() =
-
+     override v.ViewDidLoad() =
             base.ViewDidLoad()
-            base.View.BackgroundColor <- UIColor.SystemBackgroundColor
+
+            self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 

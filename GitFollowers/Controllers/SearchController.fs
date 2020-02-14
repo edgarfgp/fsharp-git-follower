@@ -7,7 +7,7 @@ open GitFollowers.Views.ViewControllers
 open System
 open UIKit
 
-type SearchViewController() =
+type SearchViewController() as self =
     inherit UIViewController()
 
     let logoImageView =
@@ -18,42 +18,7 @@ type SearchViewController() =
 
     let userNameTextField = new FGTextField("Enter username")
 
-    member self.navigateToFollowerListController() =
-        match userNameTextField.Text <> "" with
-        | false -> self.presentFGAlertOnMainThread()
-        | _ ->
-            let foloowerListVC = new FollowerListViewController(userNameTextField.Text)
-            foloowerListVC.Title <- userNameTextField.Text
-            self.NavigationController.PushViewController(foloowerListVC, animated = true)
-            userNameTextField.ResignFirstResponder() |> ignore
-
-    member self.configureController() = self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-
-    member self.configureLogoImageView() =
-        self.View.AddSubview(logoImageView)
-        NSLayoutConstraint.ActivateConstraints
-            ([| logoImageView.TopAnchor.ConstraintEqualTo
-                    (base.View.SafeAreaLayoutGuide.TopAnchor, constant = nfloat 80.)
-                logoImageView.CenterXAnchor.ConstraintEqualTo(base.View.CenterXAnchor)
-                logoImageView.HeightAnchor.ConstraintEqualTo(constant = nfloat 200.)
-                logoImageView.WidthAnchor.ConstraintEqualTo(constant = nfloat 200.) |])
-
-    member self.configureUserNameTextField() =
-        base.View.AddSubview(userNameTextField)
-
-        userNameTextField.Delegate <-
-            { new UITextFieldDelegate() with
-                member x.ShouldReturn(textField) =
-                    self.navigateToFollowerListController()
-                    true }
-
-        NSLayoutConstraint.ActivateConstraints
-            ([| userNameTextField.TopAnchor.ConstraintEqualTo(logoImageView.BottomAnchor, constant = nfloat 50.)
-                userNameTextField.LeadingAnchor.ConstraintEqualTo(base.View.LeadingAnchor, constant = nfloat 50.)
-                userNameTextField.TrailingAnchor.ConstraintEqualTo(base.View.TrailingAnchor, constant = nfloat -50.0)
-                userNameTextField.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
-
-    member self.presentFGAlertOnMainThread() =
+    let presentFGAlertOnMainThread() =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
             let alertVC =
                 new FGAlertVC("Empty Username", "Please enter a username . We need to know who to look for 😀", "Ok")
@@ -61,26 +26,64 @@ type SearchViewController() =
             alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
             self.PresentViewController(alertVC, true, null))
 
-    member self.configureActionButton() =
-        base.View.AddSubview(actionButton)
-        actionButton.TouchUpInside.Add(fun _ -> self.navigateToFollowerListController())
+    let navigateToFollowerListController() =
+        match userNameTextField.Text <> "" with
+        | false -> presentFGAlertOnMainThread()
+        | _ ->
+            let foloowerListVC = new FollowerListViewController(userNameTextField.Text)
+            foloowerListVC.Title <- userNameTextField.Text
+            self.NavigationController.PushViewController(foloowerListVC, animated = true)
+            userNameTextField.ResignFirstResponder() |> ignore
+
+    let configureController() = self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+
+    let configureLogoImageView() =
+        self.View.AddSubview(logoImageView)
+        NSLayoutConstraint.ActivateConstraints
+            ([| logoImageView.TopAnchor.ConstraintEqualTo
+                    (self.View.SafeAreaLayoutGuide.TopAnchor, constant = nfloat 80.)
+                logoImageView.CenterXAnchor.ConstraintEqualTo(self.View.CenterXAnchor)
+                logoImageView.HeightAnchor.ConstraintEqualTo(constant = nfloat 200.)
+                logoImageView.WidthAnchor.ConstraintEqualTo(constant = nfloat 200.) |])
+
+    let configureUserNameTextField() =
+        self.View.AddSubview(userNameTextField)
+
+        userNameTextField.ClearButtonMode <- UITextFieldViewMode.WhileEditing
+
+        userNameTextField.Delegate <-
+            { new UITextFieldDelegate() with
+                member x.ShouldReturn(textField) =
+                    navigateToFollowerListController()
+                    true }
 
         NSLayoutConstraint.ActivateConstraints
-            ([| actionButton.LeadingAnchor.ConstraintEqualTo(base.View.LeadingAnchor, constant = nfloat 50.)
-                actionButton.TrailingAnchor.ConstraintEqualTo(base.View.TrailingAnchor, constant = nfloat -50.0)
+            ([| userNameTextField.TopAnchor.ConstraintEqualTo(logoImageView.BottomAnchor, constant = nfloat 50.)
+                userNameTextField.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
+                userNameTextField.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, constant = nfloat -50.0)
+                userNameTextField.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
+
+    let configureActionButton() =
+        self.View.AddSubview(actionButton)
+        actionButton.TouchUpInside.Add(fun _ -> navigateToFollowerListController())
+
+        NSLayoutConstraint.ActivateConstraints
+            ([| actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
+                actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, constant = nfloat -50.0)
                 actionButton.BottomAnchor.ConstraintEqualTo
-                    (base.View.SafeAreaLayoutGuide.BottomAnchor, constant = nfloat -50.0)
+                    (self.View.SafeAreaLayoutGuide.BottomAnchor, constant = nfloat -50.0)
                 actionButton.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
 
-    override self.ViewDidLoad() =
+    //For the override methods we use base. for the rest we use self
+    override v.ViewDidLoad() =
         base.ViewDidLoad()
 
-        self.configureController()
-        self.configureLogoImageView()
-        self.configureUserNameTextField()
-        self.configureActionButton()
+        configureController()
+        configureLogoImageView()
+        configureUserNameTextField()
+        configureActionButton()
 
-    override self.ViewWillAppear(_) =
+    override v.ViewWillAppear(_) =
         base.ViewWillAppear(true)
-        base.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
+        self.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
         userNameTextField.Text <- ""

@@ -155,7 +155,6 @@ module ViewControllers =
                     actionButton.TrailingAnchor.ConstraintEqualTo(containerView.TrailingAnchor, constant = -padding)
                     actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
 
-
 module ImageViews =
 
     type FGAvatarImageView() as self =
