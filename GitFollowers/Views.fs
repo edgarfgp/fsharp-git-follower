@@ -32,7 +32,6 @@ module Labels =
             self.LineBreakMode <- UILineBreakMode.WordWrap
             self.TranslatesAutoresizingMaskIntoConstraints <- false
 
-
 module Buttons =
 
     type FGButton(backgroundColor: UIColor, text: string) as self =
