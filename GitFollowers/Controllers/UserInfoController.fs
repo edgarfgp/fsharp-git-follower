@@ -1,11 +1,13 @@
 namespace GitFollowers.Controllers
 
+open GitFollowers
 open System
 open GitFollowers.Models
 open UIKit
 
-type UserInfoController(follower: Follower) as self =
+type UserInfoController(userName : string) as self =
     inherit UIViewController()
+
 
     let padding = nfloat 20.
     let scrollView = new UIScrollView(BackgroundColor = UIColor.SystemBackgroundColor)
@@ -13,6 +15,11 @@ type UserInfoController(follower: Follower) as self =
     let headerView = new UIView()
     let itemViewOne = new UIView()
     let itemViewTwo = new UIView()
+
+    let getUserInfo  =
+        match GitHubService.getUserInfo userName with
+        | Ok value -> value
+        | Error _-> User.CreateUser()
 
     let configureScrollView () =
         self.View.AddSubview scrollView
@@ -88,6 +95,10 @@ type UserInfoController(follower: Follower) as self =
         configureViewController()
         configureScrollView()
         configureContentView()
+
+
+        getUserInfo |> ignore
+
 
 
 

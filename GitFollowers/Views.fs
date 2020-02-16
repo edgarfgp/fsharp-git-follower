@@ -32,6 +32,17 @@ module Labels =
             self.LineBreakMode <- UILineBreakMode.WordWrap
             self.TranslatesAutoresizingMaskIntoConstraints <- false
 
+    type FGSecondaryTitleLabel(fontSize : nfloat) as self =
+        inherit UILabel()
+
+        do
+            self.Font <- UIFont.SystemFontOfSize(fontSize, UIFontWeight.Medium)
+            self.TextColor <- UIColor.SecondaryLabelColor
+            self.AdjustsFontSizeToFitWidth <- true
+            self.MinimumScaleFactor <- nfloat 0.90
+            self.LineBreakMode <- UILineBreakMode.TailTruncation
+            self.TranslatesAutoresizingMaskIntoConstraints <- false
+
 module Buttons =
 
     type FGButton(backgroundColor: UIColor, text: string) as self =
@@ -97,9 +108,23 @@ module Views =
                     logoImageView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, constant = nfloat 170.)
                     logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.) |])
 
+module ImageViews =
+
+    type FGAvatarImageView() as self =
+        inherit UIImageView()
+
+        let placeHolderImage = UIImage.FromBundle("avatar-placeholder")
+
+        do
+            self.Layer.CornerRadius <- nfloat 10.
+            self.ClipsToBounds <- true
+            self.Image <- placeHolderImage
+            self.TranslatesAutoresizingMaskIntoConstraints <- false
+
 module ViewControllers =
     open Labels
     open Buttons
+    open ImageViews
 
     type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
         inherit UIViewController()
@@ -154,18 +179,19 @@ module ViewControllers =
                     actionButton.TrailingAnchor.ConstraintEqualTo(containerView.TrailingAnchor, constant = -padding)
                     actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
 
-module ImageViews =
+    type FGUserInfoHeaderVC() as self =
+        inherit UIViewController()
 
-    type FGAvatarImageView() as self =
-        inherit UIImageView()
-
-        let placeHolderImage = UIImage.FromBundle("avatar-placeholder")
+        let avatarImageView  = new  FGAvatarImageView()
+        let userNameLabel = new FGTitleLabel(UITextAlignment.Left,  nfloat 34.)
+        let namelabel = new FGSecondaryTitleLabel(nfloat 18.)
+        let locationImageView = new UIImageView()
+        let locationLabel =new  FGSecondaryTitleLabel(nfloat 18.)
+        let bioLabel = new FGBodyLabel("", UITextAlignment.Left, nint 3)
 
         do
-            self.Layer.CornerRadius <- nfloat 10.
-            self.ClipsToBounds <- true
-            self.Image <- placeHolderImage
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
+
+           ()
 
 module Cells =
 

@@ -51,7 +51,7 @@ type FollowerListViewController(userName: string) as self =
     override v.ItemSelected(_, indexPath) =
         let index = int indexPath.Item
         let follower = followers.[index]
-        let userInfoController = new UserInfoController(follower)
+        let userInfoController = new UserInfoController(follower.login)
         let navController = new UINavigationController(rootViewController = userInfoController)
         self.PresentViewController(navController, true, null)
 
