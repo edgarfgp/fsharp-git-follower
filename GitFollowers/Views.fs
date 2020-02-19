@@ -32,7 +32,7 @@ module Labels =
             self.LineBreakMode <- UILineBreakMode.WordWrap
             self.TranslatesAutoresizingMaskIntoConstraints <- false
 
-    type FGSecondaryTitleLabel(fontSize : nfloat) as self =
+    type FGSecondaryTitleLabel(fontSize: nfloat) as self =
         inherit UILabel()
 
         do
@@ -179,19 +179,95 @@ module ViewControllers =
                     actionButton.TrailingAnchor.ConstraintEqualTo(containerView.TrailingAnchor, constant = -padding)
                     actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
 
-    type FGUserInfoHeaderVC() as self =
+    type FGUserInfoHeaderVC(user: User) as self =
         inherit UIViewController()
 
-        let avatarImageView  = new  FGAvatarImageView()
-        let userNameLabel = new FGTitleLabel(UITextAlignment.Left,  nfloat 34.)
+        let textImageViewPadding = nfloat 12.
+
+        let avatarImageView = new FGAvatarImageView()
+        let userNameLabel = new FGTitleLabel(UITextAlignment.Left, nfloat 34.)
         let namelabel = new FGSecondaryTitleLabel(nfloat 18.)
         let locationImageView = new UIImageView()
-        let locationLabel =new  FGSecondaryTitleLabel(nfloat 18.)
+        let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
         let bioLabel = new FGBodyLabel("", UITextAlignment.Left, nint 3)
 
         do
+            avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
+            userNameLabel.TranslatesAutoresizingMaskIntoConstraints <- false
+            namelabel.TranslatesAutoresizingMaskIntoConstraints <- false
+            locationImageView.TranslatesAutoresizingMaskIntoConstraints <- false
+            locationLabel.TranslatesAutoresizingMaskIntoConstraints <- false
+            bioLabel.TranslatesAutoresizingMaskIntoConstraints <- false
 
-           ()
+            self.View.AddSubview avatarImageView
+            self.View.AddSubview userNameLabel
+            self.View.AddSubview namelabel
+            self.View.AddSubview locationImageView
+            self.View.AddSubview locationLabel
+            self.View.AddSubview bioLabel
+
+            userNameLabel.Text <- user.login
+            namelabel.Text <-
+                match user.name with
+                | Some value -> value
+                | None -> "Edgar"
+
+            locationLabel.Text <-
+                match user.location with
+                | Some value -> value
+                | None -> "Madrid"
+
+
+            bioLabel.Text <-
+                match user.bio with
+                | Some value -> value
+                | None -> "I'm a bio"
+
+            locationImageView.Image <- UIImage.GetSystemImage("mappin.and.ellipse")
+
+
+            locationImageView.TintColor <- UIColor.SecondaryLabelColor
+
+            NSLayoutConstraint.ActivateConstraints
+                ([| avatarImageView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor)
+                    avatarImageView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor)
+                    avatarImageView.HeightAnchor.ConstraintEqualTo(nfloat 90.)
+                    avatarImageView.WidthAnchor.ConstraintEqualTo(nfloat 90.)
+
+                    userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.TopAnchor)
+                    userNameLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, textImageViewPadding)
+                    userNameLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+                    userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 38.)
+
+                    namelabel.CenterYAnchor.ConstraintEqualTo(avatarImageView.CenterYAnchor, nfloat 8.)
+                    namelabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, textImageViewPadding)
+                    namelabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+                    namelabel.HeightAnchor.ConstraintEqualTo(nfloat 38.)
+
+                    locationImageView.BottomAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor)
+                    locationImageView.LeadingAnchor.ConstraintEqualTo
+                        (avatarImageView.TrailingAnchor, textImageViewPadding)
+                    locationImageView.WidthAnchor.ConstraintEqualTo(nfloat 20.)
+                    locationImageView.HeightAnchor.ConstraintEqualTo(nfloat 20.)
+
+                    locationLabel.CenterYAnchor.ConstraintEqualTo(locationImageView.CenterYAnchor)
+                    locationLabel.LeadingAnchor.ConstraintEqualTo(locationImageView.TrailingAnchor, nfloat 5.)
+                    locationLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+                    locationLabel.HeightAnchor.ConstraintEqualTo(nfloat 20.)
+
+                    bioLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor)
+                    bioLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.LeadingAnchor)
+                    bioLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+                    bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.)
+                    |])
+
+            NSUrlSession.SharedSession.CreateDataTask(
+                new NSUrlRequest(new NSUrl(user.avatar_url)),
+                    NSUrlSessionResponse(fun data response error ->
+                      if data <> null then
+                          DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                              let image = UIImage.LoadFromData(data)
+                              avatarImageView.Image <- image))).Resume()
 
 module Cells =
 
@@ -225,7 +301,7 @@ module Cells =
 
         static member val CellId = "FollowerCell"
 
-        member this.Follower
+        member x.Follower
             with get () = folllower
             and set value =
                 folllower <- value

@@ -3,11 +3,11 @@ namespace GitFollowers.Controllers
 open GitFollowers
 open System
 open GitFollowers.Models
+open GitFollowers.Views.ViewControllers
 open UIKit
 
 type UserInfoController(userName : string) as self =
     inherit UIViewController()
-
 
     let padding = nfloat 20.
     let scrollView = new UIScrollView(BackgroundColor = UIColor.SystemBackgroundColor)
@@ -16,9 +16,20 @@ type UserInfoController(userName : string) as self =
     let itemViewOne = new UIView()
     let itemViewTwo = new UIView()
 
+    let addChildViewController(childVC: UIViewController,containerView: UIView) =
+        self.AddChildViewController childVC
+        containerView.AddSubview(childVC.View)
+        childVC.View.Frame <- containerView.Bounds
+        childVC.DidMoveToParentViewController(self)
+
+    let configureElements user =
+        addChildViewController(new FGUserInfoHeaderVC(user), headerView)
+
     let getUserInfo  =
         match GitHubService.getUserInfo userName with
-        | Ok value -> value
+        | Ok value ->
+            configureElements value
+            value
         | Error _-> User.CreateUser()
 
     let configureScrollView () =
@@ -56,7 +67,6 @@ type UserInfoController(userName : string) as self =
         contentView.AddSubviews itemViewOne
         contentView.AddSubviews itemViewTwo
 
-        headerView.BackgroundColor <- UIColor.Yellow
         itemViewOne.BackgroundColor <- UIColor.Blue
         itemViewTwo.BackgroundColor <- UIColor.Red
 
@@ -79,12 +89,6 @@ type UserInfoController(userName : string) as self =
             itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor)
         |])
 
-    let addChildViewController(childVC: UIViewController,containerView: UIView) =
-        self.AddChildViewController childVC
-        containerView.AddSubview(childVC.View)
-        childVC.View.Frame <- containerView.Bounds
-        childVC.DidMoveToParentViewController(self)
-
     let configureViewController () =
         let doneButton = new UIBarButtonItem(UIBarButtonSystemItem.Done)
         doneButton.Clicked.Add(fun _ -> self.DismissModalViewController(true))
@@ -95,7 +99,6 @@ type UserInfoController(userName : string) as self =
         configureViewController()
         configureScrollView()
         configureContentView()
-
 
         getUserInfo |> ignore
 

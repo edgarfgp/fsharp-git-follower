@@ -3,7 +3,9 @@ namespace GitFollowers.Models
 open System
 
 type User =
-    { name: string option
+    { login: string
+      avatar_url: string
+      name: string option
       location: string option
       bio: string option
       public_repos: int
@@ -12,10 +14,12 @@ type User =
       following: int
       followers: int
       created_at: DateTime }
-    static member CreateUser(?name, ?location, ?bio, ?publicRepos, ?publicGists, ?htmlUrl, ?following, ?followers,
-                             ?createdAt) =
+    static member CreateUser(?login, ?avatarUrl, ?name, ?location, ?bio, ?publicRepos, ?publicGists, ?htmlUrl,
+                             ?following, ?followers, ?createdAt) =
         let initMember x = Option.fold (fun state param -> param) <| x
-        { name = initMember (Some "") name
+        { login = initMember "" login
+          avatar_url = initMember "" avatarUrl
+          name = initMember (Some "") name
           location = initMember (Some "") location
           bio = initMember (Some "") bio
           public_repos = initMember 0 publicRepos

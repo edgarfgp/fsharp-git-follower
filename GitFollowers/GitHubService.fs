@@ -16,7 +16,9 @@ module GitHubService =
               avatar_url = c.avatar_url })
 
     let mapUser (user: User) =
-        { name = user.name
+        { login = user.login
+          avatar_url = user.avatar_url
+          name = user.name
           location = user.location
           bio = user.bio
           public_repos = user.public_repos
