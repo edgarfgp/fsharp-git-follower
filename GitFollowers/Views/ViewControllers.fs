@@ -3,128 +3,14 @@ namespace GitFollowers.Views
 open CoreFoundation
 open Foundation
 open GitFollowers.Models
+open GitFollowers.Views.Buttons
+open GitFollowers.Views.ImageViews
+open GitFollowers.Views.Labels
+open GitFollowers.Views.Views
 open System
 open UIKit
 
-module Labels =
-    type FGTitleLabel(textAligment: UITextAlignment, fontSize: nfloat) as self =
-        inherit UILabel()
-        do
-            self.TextAlignment <- textAligment
-            self.Font <- UIFont.SystemFontOfSize(fontSize, UIFontWeight.Bold)
-            self.TextColor <- UIColor.LabelColor
-            self.AdjustsFontSizeToFitWidth <- true
-            self.MinimumScaleFactor <- nfloat 0.9
-            self.LineBreakMode <- UILineBreakMode.TailTruncation
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
-
-    type FGBodyLabel(text: string, textAligment: UITextAlignment, numberOfLines: nint) as self =
-        inherit UILabel()
-
-        do
-            self.Text <- text
-            self.TextAlignment <- textAligment
-            self.Lines <- numberOfLines
-            self.TextColor <- UIColor.SecondaryLabelColor
-            self.Font <- UIFont.PreferredBody
-            self.AdjustsFontSizeToFitWidth <- true
-            self.MinimumScaleFactor <- nfloat 0.75
-            self.LineBreakMode <- UILineBreakMode.WordWrap
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
-
-    type FGSecondaryTitleLabel(fontSize: nfloat) as self =
-        inherit UILabel()
-
-        do
-            self.Font <- UIFont.SystemFontOfSize(fontSize, UIFontWeight.Medium)
-            self.TextColor <- UIColor.SecondaryLabelColor
-            self.AdjustsFontSizeToFitWidth <- true
-            self.MinimumScaleFactor <- nfloat 0.90
-            self.LineBreakMode <- UILineBreakMode.TailTruncation
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
-
-module Buttons =
-
-    type FGButton(backgroundColor: UIColor, text: string) as self =
-        inherit UIButton()
-
-        do
-            self.BackgroundColor <- backgroundColor
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
-            self.SetTitle(text, UIControlState.Normal)
-            self.Layer.CornerRadius <- nfloat 10.
-            self.SetTitleColor(UIColor.White, UIControlState.Normal)
-            self.TitleLabel.Font <- UIFont.PreferredHeadline
-
-module TextFields =
-
-    type FGTextField(placeholder: string) as self =
-        inherit UITextField()
-        do
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
-            self.Layer.CornerRadius <- nfloat 10.
-            self.Layer.BorderWidth <- nfloat 2.
-            self.Layer.BorderColor <- UIColor.SystemGray4Color.CGColor
-
-            self.TextColor <- UIColor.LabelColor
-            self.TintColor <- UIColor.LabelColor
-            self.TextAlignment <- UITextAlignment.Center
-            self.Font <- UIFont.PreferredTitle2
-            self.AdjustsFontSizeToFitWidth <- true
-            self.MinimumFontSize <- nfloat 12.
-
-            self.BackgroundColor <- UIColor.TertiarySystemBackgroundColor
-            self.AutocorrectionType <- UITextAutocorrectionType.No
-
-            self.ReturnKeyType <- UIReturnKeyType.Go
-
-            self.Placeholder <- placeholder
-
-module Views =
-    open Labels
-
-    type FGEmptyView(message: string) as self =
-        inherit UIView()
-        let messagelabel = new FGTitleLabel(UITextAlignment.Center, nfloat 28.)
-        let logoImageView = new UIImageView(new UIImage("empty-state-logo"))
-
-        do
-            self.AddSubview(messagelabel)
-            self.AddSubview(logoImageView)
-            messagelabel.Text <- message
-            messagelabel.Lines <- nint 3
-            messagelabel.TextColor <- UIColor.SecondaryLabelColor
-            logoImageView.Image <- new UIImage("empty-state-logo")
-            logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
-
-            NSLayoutConstraint.ActivateConstraints
-                ([| messagelabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor, nfloat -150.0)
-                    messagelabel.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, nfloat 40.)
-                    messagelabel.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, nfloat -40.0)
-                    messagelabel.HeightAnchor.ConstraintEqualTo(nfloat 200.)
-
-                    logoImageView.WidthAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
-                    logoImageView.HeightAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
-                    logoImageView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, constant = nfloat 170.)
-                    logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.) |])
-
-module ImageViews =
-
-    type FGAvatarImageView() as self =
-        inherit UIImageView()
-
-        let placeHolderImage = UIImage.FromBundle("avatar-placeholder")
-
-        do
-            self.Layer.CornerRadius <- nfloat 10.
-            self.ClipsToBounds <- true
-            self.Image <- placeHolderImage
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
-
 module ViewControllers =
-    open Labels
-    open Buttons
-    open ImageViews
 
     type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
         inherit UIViewController()
@@ -189,7 +75,9 @@ module ViewControllers =
         let namelabel = new FGSecondaryTitleLabel(nfloat 18.)
         let locationImageView = new UIImageView()
         let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
-        let bioLabel = new FGBodyLabel("", UITextAlignment.Left, nint 3)
+        let bioLabel = new FGBodyLabel((match user.bio with
+                                        | Some value -> value
+                                        | None -> "N/A"), UITextAlignment.Left, nint 3)
 
         do
             avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -224,7 +112,6 @@ module ViewControllers =
                 | None -> "I'm a bio"
 
             locationImageView.Image <- UIImage.GetSystemImage("mappin.and.ellipse")
-
 
             locationImageView.TintColor <- UIColor.SecondaryLabelColor
 
@@ -269,48 +156,40 @@ module ViewControllers =
                               let image = UIImage.LoadFromData(data)
                               avatarImageView.Image <- image))).Resume()
 
-module Cells =
 
-    open ImageViews
-    open Labels
+    type ItemInfoVC(user: User) as self =
+        inherit UIViewController()
 
-    type FollowerCell(handle: IntPtr) as self =
-        inherit UICollectionViewCell(handle)
-
-        let mutable folllower = Follower.CreateFollower()
-
-        let padding = nfloat 8.
-        let avatarImageView = new FGAvatarImageView()
-        let userNameLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 16.)
+        let padding = nfloat 20.
+        let stackView = new UIStackView()
+        let itemInfoViewOne =new FGItemInfoView(ItemInfoType.Repo, user.public_repos)
+        let itemInfoViewTwo = new FGItemInfoView(ItemInfoType.Gists, user.public_gists)
+        let actionButton = new FGButton(UIColor.SystemPurpleColor, "Github Profile")
 
         do
-            self.AddSubview avatarImageView
-            self.AddSubview userNameLabel
+            self.View.Layer.CornerRadius <- nfloat 18.
+            self.View.BackgroundColor <- UIColor.SecondarySystemBackgroundColor
 
-            NSLayoutConstraint.ActivateConstraints
-                [| avatarImageView.TopAnchor.ConstraintEqualTo(self.ContentView.TopAnchor, padding)
-                   avatarImageView.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
-                   avatarImageView.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
-                   avatarImageView.HeightAnchor.ConstraintEqualTo(avatarImageView.WidthAnchor) |]
+            self.View.AddSubview stackView
+            self.View.AddSubview actionButton
 
-            NSLayoutConstraint.ActivateConstraints
-                [| userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor, nfloat 12.)
-                   userNameLabel.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
-                   userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
-                   userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 20.) |]
+            stackView.TranslatesAutoresizingMaskIntoConstraints <- false
 
-        static member val CellId = "FollowerCell"
+            stackView.AddArrangedSubview itemInfoViewOne
+            stackView.AddArrangedSubview itemInfoViewTwo
+            stackView.Axis <- UILayoutConstraintAxis.Horizontal
+            stackView.Distribution <- UIStackViewDistribution.EqualSpacing
 
-        member x.Follower
-            with get () = folllower
-            and set value =
-                folllower <- value
-                userNameLabel.Text <- folllower.login
+            actionButton.TouchUpInside.Add(fun args -> printfn "Hola edgar . eres una maquina")
 
-                NSUrlSession.SharedSession.CreateDataTask(
-                    new NSUrlRequest(new NSUrl(folllower.avatar_url)),
-                      NSUrlSessionResponse(fun data response error ->
-                          if data <> null then
-                              DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                  let image = UIImage.LoadFromData(data)
-                                  avatarImageView.Image <- image))).Resume()
+            NSLayoutConstraint.ActivateConstraints([|
+                stackView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor, padding)
+                stackView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, padding)
+                stackView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
+                stackView.HeightAnchor.ConstraintEqualTo(nfloat 50.)
+
+                actionButton.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor, -padding)
+                actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, padding)
+                actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
+                actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.)
+            |])

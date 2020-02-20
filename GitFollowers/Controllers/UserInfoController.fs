@@ -24,6 +24,8 @@ type UserInfoController(userName : string) as self =
 
     let configureElements user =
         addChildViewController(new FGUserInfoHeaderVC(user), headerView)
+        addChildViewController(new ItemInfoVC(user), itemViewOne)
+        addChildViewController(new ItemInfoVC(user), itemViewTwo)
 
     let getUserInfo  =
         match GitHubService.getUserInfo userName with
@@ -67,25 +69,22 @@ type UserInfoController(userName : string) as self =
         contentView.AddSubviews itemViewOne
         contentView.AddSubviews itemViewTwo
 
-        itemViewOne.BackgroundColor <- UIColor.Blue
-        itemViewTwo.BackgroundColor <- UIColor.Red
-
         NSLayoutConstraint.ActivateConstraints([|
 
             headerView.TopAnchor.ConstraintEqualTo(contentView.SafeAreaLayoutGuide.TopAnchor, padding)
             headerView.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
             headerView.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-            headerView.HeightAnchor.ConstraintEqualTo(nfloat 300.)
+            headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
 
             itemViewOne.TopAnchor.ConstraintEqualTo(headerView.BottomAnchor, padding)
             itemViewOne.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
             itemViewOne.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-            itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 300.)
+            itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
 
             itemViewTwo.TopAnchor.ConstraintEqualTo(itemViewOne.BottomAnchor, padding)
             itemViewTwo.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
             itemViewTwo.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-            itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 300.)
+            itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
             itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor)
         |])
 
