@@ -1,9 +1,12 @@
 namespace GitFollowers.Controllers
 
+open Foundation
 open GitFollowers
 open System
 open GitFollowers.Models
+open GitFollowers.Views
 open GitFollowers.Views.ViewControllers
+open SafariServices
 open UIKit
 
 type UserInfoController(userName : string) as self =
@@ -23,9 +26,24 @@ type UserInfoController(userName : string) as self =
         childVC.DidMoveToParentViewController(self)
 
     let configureElements user =
+        let itemInfoOne =
+            new ItemInfoVC(UIColor.SystemPurpleColor, "Github Profile", ItemInfoType.Repo, user.public_repos, ItemInfoType.Gists, user.public_gists)
+        let itemInfoTwo =
+            new ItemInfoVC(UIColor.SystemGreenColor, "Get Followers", ItemInfoType.Followers, user.followers, ItemInfoType.Following, user.following)
         addChildViewController(new FGUserInfoHeaderVC(user), headerView)
-        addChildViewController(new ItemInfoVC(user), itemViewOne)
-        addChildViewController(new ItemInfoVC(user), itemViewTwo)
+        addChildViewController(itemInfoOne, itemViewOne)
+        addChildViewController(itemInfoTwo, itemViewTwo)
+
+        itemInfoOne.ActionButtonClicked(fun _ ->
+            let safariVC = new SFSafariViewController(url = new NSUrl(user.html_url))
+            safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
+            self.PresentViewController(safariVC, true, null))
+
+        itemInfoTwo.ActionButtonClicked(fun _ ->
+            // TODO implement proper navigation to FollowerList
+            let searchViewController = new UIViewController()
+            searchViewController.View.BackgroundColor <- UIColor.SystemPinkColor
+            self.NavigationController.PushViewController(searchViewController, animated = true))
 
     let getUserInfo  =
         match GitHubService.getUserInfo userName with
@@ -100,8 +118,3 @@ type UserInfoController(userName : string) as self =
         configureContentView()
 
         getUserInfo |> ignore
-
-
-
-
-

@@ -75,9 +75,11 @@ module ViewControllers =
         let namelabel = new FGSecondaryTitleLabel(nfloat 18.)
         let locationImageView = new UIImageView()
         let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
-        let bioLabel = new FGBodyLabel((match user.bio with
-                                        | Some value -> value
-                                        | None -> "N/A"), UITextAlignment.Left, nint 3)
+
+        let bioLabel =
+            new FGBodyLabel((match user.bio with
+                             | Some value -> value
+                             | None -> "N/A"), UITextAlignment.Left, nint 3)
 
         do
             avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -145,26 +147,24 @@ module ViewControllers =
                     bioLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor)
                     bioLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.LeadingAnchor)
                     bioLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
-                    bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.)
-                    |])
+                    bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
-            NSUrlSession.SharedSession.CreateDataTask(
-                new NSUrlRequest(new NSUrl(user.avatar_url)),
-                    NSUrlSessionResponse(fun data response error ->
-                      if data <> null then
-                          DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                              let image = UIImage.LoadFromData(data)
-                              avatarImageView.Image <- image))).Resume()
+            NSUrlSession.SharedSession.CreateDataTask(new NSUrlRequest(new NSUrl(user.avatar_url)),
+                                                      NSUrlSessionResponse(fun data response error ->
+                                                          if data <> null then
+                                                              DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                                                                  let image = UIImage.LoadFromData(data)
+                                                                  avatarImageView.Image <- image))).Resume()
 
 
-    type ItemInfoVC(user: User) as self =
+    type ItemInfoVC(backgroundColor: UIColor, text: string, itemInfoOneType: ItemInfoType, itemInfoOneCount: int, itemInfoTwoType: ItemInfoType, itemInfoTwoCount: int) as self =
         inherit UIViewController()
-
         let padding = nfloat 20.
         let stackView = new UIStackView()
-        let itemInfoViewOne =new FGItemInfoView(ItemInfoType.Repo, user.public_repos)
-        let itemInfoViewTwo = new FGItemInfoView(ItemInfoType.Gists, user.public_gists)
-        let actionButton = new FGButton(UIColor.SystemPurpleColor, "Github Profile")
+        let itemInfoViewOne = new FGItemInfoView(itemInfoOneType, itemInfoOneCount)
+        let itemInfoViewTwo = new FGItemInfoView(itemInfoTwoType, itemInfoTwoCount)
+        let actionButton = new FGButton(backgroundColor, text)
+        let actionButtonClicked = Event<_>()
 
         do
             self.View.Layer.CornerRadius <- nfloat 18.
@@ -180,16 +180,17 @@ module ViewControllers =
             stackView.Axis <- UILayoutConstraintAxis.Horizontal
             stackView.Distribution <- UIStackViewDistribution.EqualSpacing
 
-            actionButton.TouchUpInside.Add(fun args -> printfn "Hola edgar . eres una maquina")
+            NSLayoutConstraint.ActivateConstraints
+                ([| stackView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor, padding)
+                    stackView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, padding)
+                    stackView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
+                    stackView.HeightAnchor.ConstraintEqualTo(nfloat 50.)
 
-            NSLayoutConstraint.ActivateConstraints([|
-                stackView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor, padding)
-                stackView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, padding)
-                stackView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
-                stackView.HeightAnchor.ConstraintEqualTo(nfloat 50.)
+                    actionButton.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor, -padding)
+                    actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, padding)
+                    actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
+                    actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
 
-                actionButton.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor, -padding)
-                actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, padding)
-                actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
-                actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.)
-            |])
+        member x.ActionButtonClicked(a) =
+            actionButton.TouchUpInside.Add(a)
+            actionButtonClicked.Trigger()
