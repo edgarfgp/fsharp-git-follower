@@ -37,6 +37,11 @@ type FollowerListViewController(userName: string) as self =
             { new UISearchController() with
                 member x.ObscuresBackgroundDuringPresentation = false }
 
+        self.NavigationItem.SearchController.SearchResultsUpdater <-
+            { new UISearchResultsUpdating() with
+                member x.UpdateSearchResultsForSearchController(searchController) =
+                    printfn "%A" searchController.SearchBar.Text }
+
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
 
     override v.GetItemsCount(_, _) =

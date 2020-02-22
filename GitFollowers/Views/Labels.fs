@@ -1,6 +1,7 @@
 namespace GitFollowers.Views
 
 open System
+open System.Net.Mime
 open UIKit
 
 module Labels =
@@ -16,19 +17,24 @@ module Labels =
             self.LineBreakMode <- UILineBreakMode.TailTruncation
             self.TranslatesAutoresizingMaskIntoConstraints <- false
 
-    type FGBodyLabel(text: string, textAligment: UITextAlignment, numberOfLines: nint) as self =
+    type FGBodyLabel() as self =
         inherit UILabel()
-
         do
-            self.Text <- text
-            self.TextAlignment <- textAligment
-            self.Lines <- numberOfLines
             self.TextColor <- UIColor.SecondaryLabelColor
             self.Font <- UIFont.PreferredBody
             self.AdjustsFontSizeToFitWidth <- true
             self.MinimumScaleFactor <- nfloat 0.75
             self.LineBreakMode <- UILineBreakMode.WordWrap
             self.TranslatesAutoresizingMaskIntoConstraints <- false
+
+        override self.Text
+            with set (value) = base.Text <- value
+
+        override self.TextAlignment
+            with set (value) = base.TextAlignment <- value
+
+        override self.Lines
+            with set (value) = base.Lines <- value
 
     type FGSecondaryTitleLabel(fontSize: nfloat) as self =
         inherit UILabel()

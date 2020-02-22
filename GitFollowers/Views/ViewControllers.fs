@@ -16,7 +16,7 @@ module ViewControllers =
         inherit UIViewController()
         let containerView = new UIView()
         let titleLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 20.)
-        let messageLabel = new FGBodyLabel(message, UITextAlignment.Center, nint 1)
+        let messageLabel = new FGBodyLabel()
         let actionButton = new FGButton(UIColor.SystemPinkColor, "Ok")
 
         let padding = nfloat 20.
@@ -24,6 +24,10 @@ module ViewControllers =
         do
             self.View.BackgroundColor <-
                 new UIColor(red = nfloat 0., green = nfloat 0., blue = nfloat 0., alpha = nfloat 0.75)
+
+            messageLabel.Text <- message
+            messageLabel.TextAlignment <- UITextAlignment.Center
+            messageLabel.Lines <- nint 1
 
             titleLabel.Text <- title
             self.View.AddSubview containerView
@@ -69,17 +73,12 @@ module ViewControllers =
         inherit UIViewController()
 
         let textImageViewPadding = nfloat 12.
-
         let avatarImageView = new FGAvatarImageView()
         let userNameLabel = new FGTitleLabel(UITextAlignment.Left, nfloat 34.)
         let namelabel = new FGSecondaryTitleLabel(nfloat 18.)
         let locationImageView = new UIImageView()
         let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
-
-        let bioLabel =
-            new FGBodyLabel((match user.bio with
-                             | Some value -> value
-                             | None -> "N/A"), UITextAlignment.Left, nint 3)
+        let bioLabel = new FGBodyLabel()
 
         do
             avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -100,18 +99,19 @@ module ViewControllers =
             namelabel.Text <-
                 match user.name with
                 | Some value -> value
-                | None -> "Edgar"
+                | None -> "N/A"
 
             locationLabel.Text <-
                 match user.location with
                 | Some value -> value
-                | None -> "Madrid"
+                | None -> "N/A"
 
-
+            bioLabel.TextAlignment <- UITextAlignment.Left
+            bioLabel.Lines <- nint 3
             bioLabel.Text <-
                 match user.bio with
                 | Some value -> value
-                | None -> "I'm a bio"
+                | None -> "N/A"
 
             locationImageView.Image <- UIImage.GetSystemImage("mappin.and.ellipse")
 

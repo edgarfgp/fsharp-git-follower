@@ -74,7 +74,6 @@ module Views =
             messagelabel.Text <- message
             messagelabel.Lines <- nint 3
             messagelabel.TextColor <- UIColor.SecondaryLabelColor
-            logoImageView.Image <- new UIImage("empty-state-logo")
             logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
 
             NSLayoutConstraint.ActivateConstraints
