@@ -22,8 +22,7 @@ module ViewControllers =
         let padding = nfloat 20.
 
         do
-            self.View.BackgroundColor <-
-                new UIColor(red = nfloat 0., green = nfloat 0., blue = nfloat 0., alpha = nfloat 0.75)
+            self.View.BackgroundColor <- UIColor.Black.ColorWithAlpha(nfloat 0.75)
 
             messageLabel.Text <- message
             messageLabel.TextAlignment <- UITextAlignment.Center
