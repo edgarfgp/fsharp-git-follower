@@ -20,6 +20,12 @@ type FollowerListViewController(userName: string) as self =
 
     let numberOfFollowers = nint followers.Length
 
+    let rec filter f list =
+        match list with
+        | x::xs when f x -> x::(filter f xs)
+        | _::xs -> filter f xs
+        | [] -> []
+
     let createThreeColumnFlowLayout(view: UIView) =
         let width = view.Bounds.Width
         let padding  = nfloat 12.
@@ -44,9 +50,7 @@ type FollowerListViewController(userName: string) as self =
             { new UISearchResultsUpdating() with
                 member x.UpdateSearchResultsForSearchController(searchController) =
                     let text = searchController.SearchBar.Text
-                    let result =
-                        followers
-                        |> List.filter(fun c -> c.login.ToLower().Contains(text.ToLower()))
+                    let result = filter (fun c -> c.login.ToLower().Contains(text.ToLower())) followers
                     printfn "%A" result.Length }
 
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
