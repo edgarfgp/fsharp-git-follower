@@ -46,7 +46,7 @@ type UserInfoController(userName : string) as self =
             self.NavigationController.PushViewController(searchViewController, animated = true))
 
     let getUserInfo  =
-        match GitHubService.getUserInfo userName with
+        match NetworkService.getUserInfo userName with
         | Ok value ->
             configureElements value
             value

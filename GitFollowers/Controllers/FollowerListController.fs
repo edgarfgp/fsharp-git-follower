@@ -12,7 +12,7 @@ type FollowerListViewController(userName: string) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
     let getFollowers username  =
-        match GitHubService.getFollowers username with
+        match NetworkService.getFollowers username with
         | Ok value -> value
         | Error _ -> []
 

@@ -5,7 +5,7 @@ open System.Net.Http
 open FSharp.Json
 open GitFollowers.Models
 
-module GitHubService =
+module NetworkService =
 
     let baseUrl = "https://api.github.com/users/"
 
