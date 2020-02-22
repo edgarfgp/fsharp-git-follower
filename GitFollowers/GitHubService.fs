@@ -44,7 +44,9 @@ module GitHubService =
 
                 return Ok(mapFollower deserialized)
 
-            with :? HttpRequestException as ex -> return ex.Message |> Error
+            with
+            | :? HttpRequestException as ex -> return ex.Message |> Error
+            | :? JsonDeserializationError as ex -> return ex.Message |> Error
         }
         |> Async.RunSynchronously
 
@@ -64,6 +66,9 @@ module GitHubService =
 
                 return Ok(mapUser deserialized)
 
-            with :? HttpRequestException as ex -> return ex.Message |> Error
+            with
+            | :? HttpRequestException as ex -> return ex.Message |> Error
+            | :? JsonDeserializationError as ex -> return ex.Message |> Error
+
         }
         |> Async.RunSynchronously

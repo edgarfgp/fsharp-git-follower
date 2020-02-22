@@ -74,7 +74,6 @@ type SearchViewController() as self =
                     (self.View.SafeAreaLayoutGuide.BottomAnchor, constant = nfloat -50.0)
                 actionButton.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
 
-    //For the override methods we use base. for the rest we use self
     override v.ViewDidLoad() =
         base.ViewDidLoad()
 

@@ -4,16 +4,19 @@ open System
 open CoreGraphics
 open GitFollowers
 open GitFollowers.Controllers
+open GitFollowers.Models
 open GitFollowers.Views.Cells
 open UIKit
 
 type FollowerListViewController(userName: string) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
-    let followers  =
-        match GitHubService.getFollowers userName with
+    let getFollowers username  =
+        match GitHubService.getFollowers username with
         | Ok value -> value
         | Error _ -> []
+
+    let followers = getFollowers userName
 
     let numberOfFollowers = nint followers.Length
 
@@ -40,7 +43,11 @@ type FollowerListViewController(userName: string) as self =
         self.NavigationItem.SearchController.SearchResultsUpdater <-
             { new UISearchResultsUpdating() with
                 member x.UpdateSearchResultsForSearchController(searchController) =
-                    printfn "%A" searchController.SearchBar.Text }
+                    let text = searchController.SearchBar.Text
+                    let result =
+                        followers
+                        |> List.filter(fun c -> c.login.ToLower().Contains(text.ToLower()))
+                    printfn "%A" result.Length }
 
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
 
