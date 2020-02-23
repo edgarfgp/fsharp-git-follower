@@ -66,9 +66,10 @@ module Views =
     type FGEmptyView(message: string) as self =
         inherit UIView()
         let messagelabel = new FGTitleLabel(UITextAlignment.Center, nfloat 28.)
-        let logoImageView = new UIImageView(new UIImage("empty-state-logo"))
+        let logoImageView = new UIImageView(UIImage.FromBundle("empty-state-logo"))
 
         do
+            self.BackgroundColor <- UIColor.Red
             self.AddSubview(messagelabel)
             self.AddSubview(logoImageView)
             messagelabel.Text <- message
@@ -87,3 +88,18 @@ module Views =
                     logoImageView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, constant = nfloat 170.)
                     logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.) |])
 
+    type LoadingView() as self =
+        inherit UIView()
+
+        do
+            self.BackgroundColor <- UIColor.SystemBackgroundColor
+            self.Alpha <- nfloat 0.
+            UIView.Animate(float 0.25, fun _ -> self.Alpha <- nfloat 0.8)
+            let activityIndicator = new UIActivityIndicatorView(UIActivityIndicatorViewStyle.Large)
+            self.AddSubview activityIndicator
+            activityIndicator.TranslatesAutoresizingMaskIntoConstraints <- false
+            NSLayoutConstraint.ActivateConstraints([|
+                activityIndicator.CenterXAnchor.ConstraintEqualTo(self.CenterXAnchor)
+                activityIndicator.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
+            |])
+            activityIndicator.StartAnimating()

@@ -37,11 +37,12 @@ type FollowerListViewController(userName: string) as self =
         flowLayout.ItemSize <- CGSize(itemWidth,  itemWidth + nfloat 40.)
         flowLayout
 
-    override v.ViewDidLoad() =
-        base.ViewDidLoad()
-
+    let configureCollectionView() =
         self.CollectionView <- new UICollectionView(self.View.Bounds, createThreeColumnFlowLayout(self.View))
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
+        self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
+
+    let configureSearchController() =
         self.NavigationItem.SearchController <-
             { new UISearchController() with
                 member x.ObscuresBackgroundDuringPresentation = false }
@@ -53,7 +54,10 @@ type FollowerListViewController(userName: string) as self =
                     let result = filter (fun c -> c.login.ToLower().Contains(text.ToLower())) followers
                     printfn "%A" result.Length }
 
-        self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
+    override v.ViewDidLoad() =
+        base.ViewDidLoad()
+        configureCollectionView()
+        configureSearchController()
 
     override v.GetItemsCount(_, _) =
         numberOfFollowers
