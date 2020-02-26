@@ -36,7 +36,7 @@ type AppDelegate() =
 
     override val Window = null with get, set
 
-    override this.FinishedLaunching(app, options) =
+    override this.FinishedLaunching(_, _) =
 
         this.Window <- new UIWindow(UIScreen.MainScreen.Bounds)
         this.Window.RootViewController <- creteTabBar

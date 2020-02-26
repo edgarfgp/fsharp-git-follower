@@ -111,7 +111,7 @@ type UserInfoController(userName : string) as self =
         doneButton.Clicked.Add(fun _ -> self.DismissModalViewController(true))
         self.NavigationItem.RightBarButtonItem <- doneButton
 
-    override v.ViewDidLoad() =
+    override __.ViewDidLoad() =
         base.ViewDidLoad()
         configureViewController()
         configureScrollView()

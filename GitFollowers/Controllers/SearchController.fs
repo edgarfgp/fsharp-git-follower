@@ -53,7 +53,7 @@ type SearchViewController() as self =
 
         userNameTextField.Delegate <-
             { new UITextFieldDelegate() with
-                member x.ShouldReturn(textField) =
+                member __.ShouldReturn(textField) =
                     navigateToFollowerListController()
                     true }
 
@@ -74,7 +74,7 @@ type SearchViewController() as self =
                     (self.View.SafeAreaLayoutGuide.BottomAnchor, constant = nfloat -50.0)
                 actionButton.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
 
-    override v.ViewDidLoad() =
+    override __.ViewDidLoad() =
         base.ViewDidLoad()
 
         configureController()
@@ -82,7 +82,7 @@ type SearchViewController() as self =
         configureUserNameTextField()
         configureActionButton()
 
-    override v.ViewWillAppear(_) =
+    override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         self.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
         userNameTextField.Text <- ""

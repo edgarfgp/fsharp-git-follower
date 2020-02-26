@@ -38,7 +38,7 @@ module Cells =
 
         static member val CellId = "FollowerCell"
 
-        member x.Follower
+        member __.Follower
             with get () = folllower
             and set value =
                 folllower <- value

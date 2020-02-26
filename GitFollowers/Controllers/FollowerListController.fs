@@ -45,37 +45,37 @@ type FollowerListViewController(userName: string) as self =
     let configureSearchController() =
         self.NavigationItem.SearchController <-
             { new UISearchController() with
-                member x.ObscuresBackgroundDuringPresentation = false }
+                member __.ObscuresBackgroundDuringPresentation = false }
 
         self.NavigationItem.SearchController.SearchResultsUpdater <-
             { new UISearchResultsUpdating() with
-                member x.UpdateSearchResultsForSearchController(searchController) =
+                member __.UpdateSearchResultsForSearchController(searchController) =
                     let text = searchController.SearchBar.Text
                     let result = filter (fun c -> c.login.ToLower().Contains(text.ToLower())) followers
                     printfn "%A" result.Length }
 
-    override v.ViewDidLoad() =
+    override __.ViewDidLoad() =
         base.ViewDidLoad()
         configureCollectionView()
         configureSearchController()
 
-    override v.GetItemsCount(_, _) =
+    override __.GetItemsCount(_, _) =
         numberOfFollowers
 
-    override v.GetCell(collectionView, indexPath) =
+    override __.GetCell(collectionView, indexPath) =
         let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
         let follower = followers.[int indexPath.Item]
         cell.Follower <- follower
         upcast cell
 
-    override v.ItemSelected(_, indexPath) =
+    override __.ItemSelected(_, indexPath) =
         let index = int indexPath.Item
         let follower = followers.[index]
         let userInfoController = new UserInfoController(follower.login)
         let navController = new UINavigationController(rootViewController = userInfoController)
         self.PresentViewController(navController, true, null)
 
-    override v.ViewWillAppear(_) =
+    override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true

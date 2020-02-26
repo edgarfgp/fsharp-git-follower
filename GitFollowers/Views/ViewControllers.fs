@@ -190,6 +190,6 @@ module ViewControllers =
                     actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
                     actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
 
-        member x.ActionButtonClicked(a) =
+        member __.ActionButtonClicked(a) =
             actionButton.TouchUpInside.Add(a)
             actionButtonClicked.Trigger()
