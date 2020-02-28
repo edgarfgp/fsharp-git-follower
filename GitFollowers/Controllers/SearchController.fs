@@ -11,12 +11,10 @@ open UIKit
 type SearchViewController() as self =
     inherit UIViewController()
 
-    let logoImageView =
-        new UIImageView(TranslatesAutoresizingMaskIntoConstraints = false, Image = UIImage.FromBundle("gh-logo.png"),
-                        ContentMode = UIViewContentMode.ScaleAspectFit)
-
+    let logoImageView = new UIImageView(TranslatesAutoresizingMaskIntoConstraints = false,
+                                        Image = UIImage.FromBundle("gh-logo.png"),
+                                        ContentMode = UIViewContentMode.ScaleAspectFit)
     let actionButton = new FGButton(UIColor.SystemGreenColor, "Get followers")
-
     let userNameTextField = new FGTextField("Enter username")
 
     let presentFGAlertOnMainThread(title , message) =
@@ -29,7 +27,8 @@ type SearchViewController() as self =
 
     let handleNavigationController() =
         match userNameTextField.Text <> "" with
-        | false -> presentFGAlertOnMainThread("Empty Username", "Please enter a username . We need to know who to look for 😀")
+        | false ->
+            presentFGAlertOnMainThread("Empty Username", "Please enter a username . We need to know who to look for 😀")
         | _ ->
             match NetworkService.getFollowers (userNameTextField.Text) with
             | Ok followers ->
@@ -38,8 +37,8 @@ type SearchViewController() as self =
                 self.NavigationController.PushViewController(foloowerListVC, animated = true)
                 userNameTextField.ResignFirstResponder() |> ignore
 
-            | Error error ->
-                presentFGAlertOnMainThread ("Error", error)
+            | Error _ ->
+                presentFGAlertOnMainThread ("Error", "No userName found")
 
     let configureController() =
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
@@ -55,15 +54,12 @@ type SearchViewController() as self =
 
     let configureUserNameTextField() =
         self.View.AddSubview(userNameTextField)
-
         userNameTextField.ClearButtonMode <- UITextFieldViewMode.WhileEditing
-
         userNameTextField.Delegate <-
             { new UITextFieldDelegate() with
                 member __.ShouldReturn(textField) =
                     handleNavigationController()
                     true }
-
         NSLayoutConstraint.ActivateConstraints
             ([| userNameTextField.TopAnchor.ConstraintEqualTo(logoImageView.BottomAnchor, constant = nfloat 50.)
                 userNameTextField.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
@@ -73,7 +69,6 @@ type SearchViewController() as self =
     let configureActionButton() =
         self.View.AddSubview(actionButton)
         actionButton.TouchUpInside.Add(fun _ -> handleNavigationController())
-
         NSLayoutConstraint.ActivateConstraints
             ([| actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
                 actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, constant = nfloat -50.0)
@@ -83,7 +78,6 @@ type SearchViewController() as self =
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
-
         configureController()
         configureLogoImageView()
         configureUserNameTextField()
