@@ -1,6 +1,7 @@
 namespace GitFollowers.ViewControllers
 
 open CoreFoundation
+open GitFollowers
 open GitFollowers.Views.Buttons
 open GitFollowers.Views.TextFields
 open GitFollowers.Views.ViewControllers
@@ -18,24 +19,30 @@ type SearchViewController() as self =
 
     let userNameTextField = new FGTextField("Enter username")
 
-    let presentFGAlertOnMainThread() =
+    let presentFGAlertOnMainThread(title , message) =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
             let alertVC =
-                new FGAlertVC("Empty Username", "Please enter a username . We need to know who to look for 😀", "Ok")
+                new FGAlertVC(title, message, "Ok")
             alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
             alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
             self.PresentViewController(alertVC, true, null))
 
-    let navigateToFollowerListController() =
+    let handleNavigationController() =
         match userNameTextField.Text <> "" with
-        | false -> presentFGAlertOnMainThread()
+        | false -> presentFGAlertOnMainThread("Empty Username", "Please enter a username . We need to know who to look for 😀")
         | _ ->
-            let foloowerListVC = new FollowerListViewController(userNameTextField.Text)
-            foloowerListVC.Title <- userNameTextField.Text
-            self.NavigationController.PushViewController(foloowerListVC, animated = true)
-            userNameTextField.ResignFirstResponder() |> ignore
+            match NetworkService.getFollowers (userNameTextField.Text) with
+            | Ok followers ->
+                let foloowerListVC = new FollowerListViewController(followers)
+                foloowerListVC.Title <- userNameTextField.Text
+                self.NavigationController.PushViewController(foloowerListVC, animated = true)
+                userNameTextField.ResignFirstResponder() |> ignore
 
-    let configureController() = self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+            | Error error ->
+                presentFGAlertOnMainThread ("Error", error)
+
+    let configureController() =
+        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 
     let configureLogoImageView() =
         self.View.AddSubview(logoImageView)
@@ -54,7 +61,7 @@ type SearchViewController() as self =
         userNameTextField.Delegate <-
             { new UITextFieldDelegate() with
                 member __.ShouldReturn(textField) =
-                    navigateToFollowerListController()
+                    handleNavigationController()
                     true }
 
         NSLayoutConstraint.ActivateConstraints
@@ -65,7 +72,7 @@ type SearchViewController() as self =
 
     let configureActionButton() =
         self.View.AddSubview(actionButton)
-        actionButton.TouchUpInside.Add(fun _ -> navigateToFollowerListController())
+        actionButton.TouchUpInside.Add(fun _ -> handleNavigationController())
 
         NSLayoutConstraint.ActivateConstraints
             ([| actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)

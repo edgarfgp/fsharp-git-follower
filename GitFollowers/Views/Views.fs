@@ -69,7 +69,7 @@ module Views =
         let logoImageView = new UIImageView(UIImage.FromBundle("empty-state-logo"))
 
         do
-            self.BackgroundColor <- UIColor.Red
+            messagelabel.TranslatesAutoresizingMaskIntoConstraints <- false
             self.AddSubview(messagelabel)
             self.AddSubview(logoImageView)
             messagelabel.Text <- message
@@ -86,7 +86,8 @@ module Views =
                     logoImageView.WidthAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
                     logoImageView.HeightAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
                     logoImageView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, constant = nfloat 170.)
-                    logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.) |])
+                    logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.)
+                    |])
 
     type LoadingView() as self =
         inherit UIView()

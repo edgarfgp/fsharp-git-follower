@@ -1,24 +1,18 @@
 namespace GitFollowers.ViewControllers
 
+open CoreFoundation
 open System
 open CoreGraphics
 open GitFollowers
 open GitFollowers.Controllers
 open GitFollowers.Models
 open GitFollowers.Views.Cells
+open GitFollowers.Views.ViewControllers
+open GitFollowers.Views.Views
 open UIKit
 
-type FollowerListViewController(userName: string) as self =
-    inherit UICollectionViewController(new UICollectionViewFlowLayout())
-
-    let getFollowers username  =
-        match NetworkService.getFollowers username with
-        | Ok value -> value
-        | Error _ -> []
-
-    let followers = getFollowers userName
-
-    let numberOfFollowers = nint followers.Length
+type FollowerListViewController(followers : Follower list) as self =
+    inherit UIViewController()
 
     let rec filter f list =
         match list with
@@ -37,12 +31,45 @@ type FollowerListViewController(userName: string) as self =
         flowLayout.ItemSize <- CGSize(itemWidth,  itemWidth + nfloat 40.)
         flowLayout
 
-    let configureCollectionView() =
-        self.CollectionView <- new UICollectionView(self.View.Bounds, createThreeColumnFlowLayout(self.View))
-        self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
-        self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
+    let showEmptyView() =
+        let emptyView = new FGEmptyView("This user has not followers.")
+        emptyView.Frame <- self.View.Bounds
+        emptyView.TranslatesAutoresizingMaskIntoConstraints <- false
+        self.View.AddSubview emptyView
 
-    let configureSearchController() =
+        NSLayoutConstraint.ActivateConstraints([|
+            emptyView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor)
+            emptyView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor)
+            emptyView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+            emptyView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor)
+                    |])
+
+    let configureCollectionView(followers : Follower list) =
+        let collectionView = new UICollectionView(self.View.Bounds, createThreeColumnFlowLayout(self.View))
+        collectionView.TranslatesAutoresizingMaskIntoConstraints <- false
+        self.View.AddSubview collectionView
+        collectionView.BackgroundColor <- UIColor.SystemBackgroundColor
+        collectionView.Delegate <- {
+            new UICollectionViewDelegate() with
+                member __.ItemSelected(_, indexPath) =
+                    let index = int indexPath.Item
+                    let follower = followers.[index]
+                    let userInfoController = new UserInfoController(follower.login)
+                    let navController = new UINavigationController(rootViewController = userInfoController)
+                    self.PresentViewController(navController, true, null) }
+        collectionView.DataSource <- {
+            new UICollectionViewDataSource() with
+                member __.GetCell(collectionView, indexPath) =
+                    let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
+                    let follower = followers.[int indexPath.Item]
+                    cell.Follower <- follower
+                    upcast cell
+                member __.GetItemsCount(_, _) =
+                    nint followers.Length }
+
+        collectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
+
+    let configureSearchController(followers : Follower list) =
         self.NavigationItem.SearchController <-
             { new UISearchController() with
                 member __.ObscuresBackgroundDuringPresentation = false }
@@ -56,24 +83,14 @@ type FollowerListViewController(userName: string) as self =
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
-        configureCollectionView()
-        configureSearchController()
+        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+        match followers.Length with
+        |  x when x > 0  ->
+            configureCollectionView(followers)
+            configureSearchController(followers)
+        |  _ ->
+            showEmptyView()
 
-    override __.GetItemsCount(_, _) =
-        numberOfFollowers
-
-    override __.GetCell(collectionView, indexPath) =
-        let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
-        let follower = followers.[int indexPath.Item]
-        cell.Follower <- follower
-        upcast cell
-
-    override __.ItemSelected(_, indexPath) =
-        let index = int indexPath.Item
-        let follower = followers.[index]
-        let userInfoController = new UserInfoController(follower.login)
-        let navController = new UINavigationController(rootViewController = userInfoController)
-        self.PresentViewController(navController, true, null)
 
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
