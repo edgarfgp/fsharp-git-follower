@@ -103,4 +103,8 @@ module Views =
                 activityIndicator.CenterXAnchor.ConstraintEqualTo(self.CenterXAnchor)
                 activityIndicator.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
             |])
+
             activityIndicator.StartAnimating()
+
+        member __.Dismiss() =
+            self.RemoveFromSuperview()

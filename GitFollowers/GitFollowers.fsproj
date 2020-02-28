@@ -145,6 +145,7 @@
         <Compile Include="Views\Views.fs" />
         <Compile Include="Views\Cells.fs" />
         <Compile Include="Views\ViewControllers.fs" />
+        <Compile Include="Views\Extensions.fs" />
         <Compile Include="Controllers\UserInfoController.fs" />
         <Compile Include="Controllers\FollowerListController.fs" />
         <Compile Include="Controllers\SearchController.fs" />
