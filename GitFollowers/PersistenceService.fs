@@ -12,8 +12,8 @@ type PersistenceService private () =
     static member Instance = instance
 
     member this.RetrieveFavorites() =
-        defaults.ArrayForKey("favorites") |> ignore
-        defaults.Synchronize()
+        defaults.StringForKey("favorites")
 
-    member this.Save(favorites: Models.Follower list) =
-        defaults.SetValueForKey(NSArray.FromObjects(favorites), new NSString("favorites")) |> ignore
+
+    member this.Save(favorites: string) =
+        defaults.SetString(favorites, "favorites")

@@ -8,6 +8,7 @@ open GitFollowers.Models
 open GitFollowers.Views
 open GitFollowers.Views.Cells
 open UIKit
+open FSharp.Json
 open Extensions
 
 type FollowerListViewController(userName : string) as self =
@@ -20,11 +21,15 @@ type FollowerListViewController(userName : string) as self =
         let loadingView = showLoadingView(self.View)
         match (NetworkService.getFollowers userName) |> Async.RunSynchronously with
         | Ok followers  ->
+            let defaults = PersistenceService.Instance
+            let favorites = Json.serialize(followers)
+            defaults.Save(favorites)
             match followers.Length with
             | x when x > 0 ->
                 loadingView.Dismiss()
                 self.Title <- userName
                 self.ConfigureCollectionView(followers)
+
             |  _ ->
                 loadingView.Dismiss()
                 showEmptyView("This user has no followers. Go follow him", self)
