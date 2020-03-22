@@ -65,23 +65,23 @@ module Views =
 
     type FGEmptyView(message: string) as self =
         inherit UIView()
-        let messagelabel = new FGTitleLabel(UITextAlignment.Center, nfloat 28.)
+        let messageLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 28.)
         let logoImageView = new UIImageView(UIImage.FromBundle("empty-state-logo"))
 
         do
-            messagelabel.TranslatesAutoresizingMaskIntoConstraints <- false
-            self.AddSubview(messagelabel)
+            messageLabel.TranslatesAutoresizingMaskIntoConstraints <- false
+            self.AddSubview(messageLabel)
             self.AddSubview(logoImageView)
-            messagelabel.Text <- message
-            messagelabel.Lines <- nint 3
-            messagelabel.TextColor <- UIColor.SecondaryLabelColor
+            messageLabel.Text <- message
+            messageLabel.Lines <- nint 3
+            messageLabel.TextColor <- UIColor.SecondaryLabelColor
             logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
 
             NSLayoutConstraint.ActivateConstraints
-                ([| messagelabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor, nfloat -150.0)
-                    messagelabel.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, nfloat 40.)
-                    messagelabel.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, nfloat -40.0)
-                    messagelabel.HeightAnchor.ConstraintEqualTo(nfloat 200.)
+                ([| messageLabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor, nfloat -150.0)
+                    messageLabel.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, nfloat 40.)
+                    messageLabel.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, nfloat -40.0)
+                    messageLabel.HeightAnchor.ConstraintEqualTo(nfloat 200.)
 
                     logoImageView.WidthAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
                     logoImageView.HeightAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)

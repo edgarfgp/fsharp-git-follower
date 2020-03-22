@@ -5,18 +5,24 @@ open GitFollowers.Models
 open GitFollowers.Views.Cells
 open UIKit
 open System
+open GitFollowers.Views.Extensions
 
 type FavoriteListViewController() as self =
     inherit UIViewController()
     override __.ViewDidLoad() =
         base.ViewDidLoad()
 
-        let userName  = Xamarin.Essentials.Preferences.Get("edgarfgp", "Blacky")
+        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 
-        match (NetworkService.getUserInfo userName) |> Async.RunSynchronously with
+        //let userName  = Xamarin.Essentials.Preferences.Get("edgarfgp", "Blacky")
+        let loadingView = showLoadingView(self.View)
+        match (NetworkService.getUserInfo "") |> Async.RunSynchronously with
         | Ok follower ->
-               self.ConfigureTableView(follower)
-        | Error error -> ()
+            loadingView.Dismiss()
+            self.ConfigureTableView(follower)
+        | Error _ ->
+            loadingView.Dismiss()
+            showEmptyView("This user has no favorites.", self)
 
     member __.ConfigureTableView(user:  User) =
         let tableView = new UITableView(frame = self.View.Bounds)

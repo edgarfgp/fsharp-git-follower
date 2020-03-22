@@ -12,5 +12,3 @@ type PersistenceService private () =
     let defaults = NSUserDefaults.StandardUserDefaults
     static let instance = PersistenceService()
     static member Instance = instance
-
-

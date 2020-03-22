@@ -90,4 +90,5 @@ type FollowerListViewController(userName : string) as self =
             flowLayout
 
     member __.AddFavoriteTapped() =
-         Xamarin.Essentials.Preferences.Set(userName, userName)
+         ()
+         //Xamarin.Essentials.Preferences.Set(userName, userName)
