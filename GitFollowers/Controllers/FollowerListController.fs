@@ -2,28 +2,23 @@ namespace GitFollowers.ViewControllers
 
 open System
 open CoreGraphics
+open GitFollowers
 open GitFollowers.Controllers
 open GitFollowers.Models
 open GitFollowers.Views
 open GitFollowers.Views.Cells
-open Extensions
 open UIKit
+open Extensions
 
 type FollowerListViewController(userName : string) as self =
     inherit UIViewController()
-
-    let rec filter f list =
-        match list with
-        | x::xs when f x -> x::(filter f xs)
-        | _::xs -> filter f xs
-        | [] -> []
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
 
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
         let loadingView = showLoadingView(self.View)
-        match GitFollowers.NetworkService.getFollowers userName with
+        match (NetworkService.getFollowers userName) |> Async.RunSynchronously with
         | Ok followers  ->
             match followers.Length with
             | x when x > 0 ->
@@ -41,6 +36,9 @@ type FollowerListViewController(userName : string) as self =
         base.ViewWillAppear(true)
         self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+        self.NavigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem= UIBarButtonSystemItem.Add)
+        self.NavigationItem.RightBarButtonItem.Clicked
+        |> Event.add(fun _ -> self.AddFavoriteTapped())
 
     member __.ConfigureCollectionView(followers : Follower list) =
 
@@ -75,9 +73,8 @@ type FollowerListViewController(userName : string) as self =
         self.NavigationItem.SearchController.SearchResultsUpdater <-
             { new UISearchResultsUpdating() with
                 member __.UpdateSearchResultsForSearchController(searchController) =
-                    let text = searchController.SearchBar.Text
-                    let result = filter (fun c -> c.login.ToLower().Contains(text.ToLower())) followers
-                    printfn "%A" result.Length }
+                   // Implement search logic
+                   ()}
 
         collectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
 
@@ -91,3 +88,6 @@ type FollowerListViewController(userName : string) as self =
             flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
             flowLayout.ItemSize <- CGSize(itemWidth,  itemWidth + nfloat 40.)
             flowLayout
+
+    member __.AddFavoriteTapped() =
+         Xamarin.Essentials.Preferences.Set(userName, userName)

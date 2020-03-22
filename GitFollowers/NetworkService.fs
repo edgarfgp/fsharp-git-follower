@@ -48,10 +48,8 @@ module NetworkService =
             | :? HttpRequestException as ex -> return ex.Message |> Error
             | :? JsonDeserializationError as ex -> return ex.Message |> Error
         }
-        |> Async.RunSynchronously
 
     let getUserInfo userName =
-
         let urlString = sprintf "%s%s" baseUrl userName
         async {
             let httpClient = new HttpClient()
@@ -71,4 +69,11 @@ module NetworkService =
             | :? JsonDeserializationError as ex -> return ex.Message |> Error
 
         }
-        |> Async.RunSynchronously
+
+//        let musicEntries = Async.Catch(Http.AsyncRequestString((Strings.BaseUrlWithParam term)))
+//            match! musicEntries with
+//            | Choice1Of2 musicList ->
+//                let musicList = Json.deserialize<MusicList> musicList
+//                return musicList.results
+//            | Choice2Of2 _ -> return []
+

@@ -1,7 +1,6 @@
 namespace GitFollowers.Views
 
 open System
-open System.Net.Mime
 open UIKit
 
 module Labels =

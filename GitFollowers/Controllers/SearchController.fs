@@ -35,10 +35,10 @@ type SearchViewController() as self =
         | false ->
              presentFGAlertOnMainThread("Empty Username", "Please enter a username . We need to know who to look for 😀", self)
         | _ ->
-            match NetworkService.getUserInfo userNameTextField.Text with
+            match (NetworkService.getUserInfo userNameTextField.Text) |> Async.RunSynchronously with
             | Ok value ->
-                let foloowerListVC = new FollowerListViewController(value.login)
-                self.NavigationController.PushViewController(foloowerListVC, animated = true)
+                let followerListVC = new FollowerListViewController(value.login)
+                self.NavigationController.PushViewController(followerListVC, animated = true)
                 userNameTextField.ResignFirstResponder() |> ignore
             | Error _->
                 presentFGAlertOnMainThread ("Error", "No userName found", self)
@@ -68,7 +68,9 @@ type SearchViewController() as self =
 
     member __.ConfigureActionButton() =
         self.View.AddSubview(actionButton)
-        actionButton.TouchUpInside.Add(fun _ -> self.HandleNavigation())
+        actionButton.TouchUpInside
+        |> Event.add(fun _ -> self.HandleNavigation())
+
         NSLayoutConstraint.ActivateConstraints
             ([| actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
                 actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, constant = nfloat -50.0)

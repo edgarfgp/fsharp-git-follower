@@ -5,6 +5,7 @@ open Foundation
 open GitFollowers.Models
 open System
 open UIKit
+open UIKit
 
 module Cells =
 
@@ -14,7 +15,7 @@ module Cells =
     type FollowerCell(handle: IntPtr) as self =
         inherit UICollectionViewCell(handle)
 
-        let mutable folllower = Follower.CreateFollower()
+        let mutable follower = Follower.CreateFollower()
 
         let padding = nfloat 8.
         let avatarImageView = new FGAvatarImageView()
@@ -39,16 +40,55 @@ module Cells =
         static member val CellId = "FollowerCell"
 
         member __.Follower
-            with get () = folllower
+            with get () = follower
             and set value =
-                folllower <- value
-                userNameLabel.Text <- folllower.login
+                follower <- value
+                userNameLabel.Text <- follower.login
 
-                NSUrlSession.SharedSession.CreateDataTask(
-                    new NSUrlRequest(new NSUrl(folllower.avatar_url)),
-                      NSUrlSessionResponse(fun data response error ->
-                          if data <> null then
-                              DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                  let image = UIImage.LoadFromData(data)
-                                  avatarImageView.Image <- image))).Resume()
+                NSUrlSession.SharedSession.CreateDataTask(new NSUrlRequest(new NSUrl(follower.avatar_url)),
+                                                          NSUrlSessionResponse(fun data response error ->
+                                                              if data <> null then
+                                                                  DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                                                                      let image = UIImage.LoadFromData(data)
+                                                                      avatarImageView.Image <- image))).Resume()
 
+    type FavoriteCell(handle: IntPtr) as self =
+        inherit UITableViewCell(handle)
+
+        let mutable user = User.CreateUser()
+
+        let padding = nfloat 12.
+        let avatarImageView = new FGAvatarImageView()
+        let userNameLabel = new FGTitleLabel(UITextAlignment.Left, nfloat 16.)
+
+        do
+            self.Accessory <- UITableViewCellAccessory.DisclosureIndicator
+            self.AddSubview avatarImageView
+            self.AddSubview userNameLabel
+
+            NSLayoutConstraint.ActivateConstraints
+                [| avatarImageView.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
+                   avatarImageView.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, padding)
+                   avatarImageView.HeightAnchor.ConstraintEqualTo(constant = nfloat 60.)
+                   avatarImageView.WidthAnchor.ConstraintEqualTo(constant = nfloat 60.) |]
+
+            NSLayoutConstraint.ActivateConstraints
+                [| userNameLabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
+                   userNameLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, padding * nfloat 2.)
+                   userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
+                   userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 40.) |]
+
+        static member val CellId = "FollowerTableCell"
+
+        member __.User
+            with get () = user
+            and set value =
+                user <- value
+                userNameLabel.Text <- user.login
+
+                NSUrlSession.SharedSession.CreateDataTask(new NSUrlRequest(new NSUrl(user.avatar_url)),
+                                                          NSUrlSessionResponse(fun data response error ->
+                                                              if data <> null then
+                                                                  DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                                                                      let image = UIImage.LoadFromData(data)
+                                                                      avatarImageView.Image <- image))).Resume()

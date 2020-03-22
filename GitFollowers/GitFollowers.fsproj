@@ -78,6 +78,10 @@
             <HintPath>..\packages\FSharp.Core.4.6.2\lib\netstandard1.6\FSharp.Core.dll</HintPath>
             <Private>True</Private>
         </Reference>
+        <Reference Include="FSharp.Data, Version=3.3.3.0, Culture=neutral, PublicKeyToken=null">
+          <HintPath>..\packages\FSharp.Data.3.3.3\lib\netstandard2.0\FSharp.Data.dll</HintPath>
+          <Private>True</Private>
+        </Reference>
         <Reference Include="FSharp.Json, Version=0.4.0.0, Culture=neutral, PublicKeyToken=null">
             <HintPath>..\packages\FSharp.Json.0.4.0\lib\netstandard2.0\FSharp.Json.dll</HintPath>
             <Private>True</Private>
@@ -136,8 +140,8 @@
         <None Include="Info.plist" />
         <None Include="Entitlements.plist" />
         <Compile Include="Models.fs" />
-        <Compile Include="PersistenceService.fs" />
         <Compile Include="NetworkService.fs" />
+        <Compile Include="PersistenceService.fs" />
         <Compile Include="Views\Labels.fs" />
         <Compile Include="Views\Buttons.fs" />
         <Compile Include="Views\TextFields.fs" />

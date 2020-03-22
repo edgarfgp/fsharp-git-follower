@@ -1,10 +1,10 @@
 namespace GitFollowers.Controllers
 
 open Foundation
-open GitFollowers
 open System
 open GitFollowers.Models
 open GitFollowers.Views
+open GitFollowers
 open GitFollowers.Views.ViewControllers
 open SafariServices
 open UIKit
@@ -24,7 +24,7 @@ type UserInfoController(userName : string) as self =
         self.ConfigureScrollView()
         self.ConfigureContentView()
 
-        match NetworkService.getUserInfo userName with
+        match (NetworkService.getUserInfo userName) |> Async.RunSynchronously with
         | Ok value ->
             self.ConfigureElements value
         | Error _-> ()
