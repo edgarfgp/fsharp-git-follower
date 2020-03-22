@@ -14,7 +14,9 @@ type FavoriteListViewController() as self =
 
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 
-        //let userName  = Xamarin.Essentials.Preferences.Get("edgarfgp", "Blacky")
+        let favorites = PersistenceService.Instance
+        let result = favorites.RetrieveFavorites()
+
         let loadingView = showLoadingView(self.View)
         match (NetworkService.getUserInfo "") |> Async.RunSynchronously with
         | Ok follower ->
