@@ -14,28 +14,19 @@ type UpdateResult =
     | FavouriteAdded
     | UpdateError of string
 
-type PersistenceService private () =
-    static let favorites = "favorites"
-    let defaults = NSUserDefaults.StandardUserDefaults
-    static let instance = PersistenceService()
-    static member Instance = instance
+module PersistenceService =
+    let private favorites = "favorites"
+    let private defaults = NSUserDefaults.StandardUserDefaults
 
-    member this.Update(follower : Follower) : Result<UpdateResult, string> =
-            match this.RetrieveFavorites() with
-            | Ok favourites ->
-                    let hasFollowers = favourites |> List.tryFind(fun c -> c.login = follower.login)
-                    match hasFollowers  with
-                    | Some _  -> Ok AlreadyExists
-                    | None ->
-                       let newFavorites = favourites |> List.append [follower]
-                       match this.Save(newFavorites) with
-                       | Ok _ ->
-                            Ok FavouriteAdded
-                       | Error error -> Ok (UpdateError error)
-            | Error error ->
-                Ok (UpdateError error)
+    let Save(followers : Follower list) =
+        try
+            let result = Json.serialize followers
+            defaults.SetString(result, "favorites")
+            Ok true
+        with
+            | :? JsonDeserializationError as ex -> ex.Message |> Error
 
-    member this.RetrieveFavorites() : Result<Follower list, string> =
+    let RetrieveFavorites() : Result<Follower list, string> =
         try
             match defaults.StringForKey(favorites) with
             | result when result <> null &&  result <> ""->
@@ -45,10 +36,17 @@ type PersistenceService private () =
         with
             | :? JsonDeserializationError as ex -> ex.Message |> Error
 
-    member this.Save(followers : Follower list) =
-        try
-            let result = Json.serialize followers
-            defaults.SetString(result, "favorites")
-            Ok true
-        with
-            | :? JsonDeserializationError as ex -> ex.Message |> Error
+    let Update(follower : Follower) : Result<UpdateResult, string> =
+            match RetrieveFavorites() with
+            | Ok favourites ->
+                    let hasFollowers = favourites |> List.tryFind(fun c -> c.login = follower.login)
+                    match hasFollowers  with
+                    | Some _  -> Ok AlreadyExists
+                    | None ->
+                       let newFavorites = favourites |> List.append [follower]
+                       match Save(newFavorites) with
+                       | Ok _ ->
+                            Ok FavouriteAdded
+                       | Error error -> Ok (UpdateError error)
+            | Error error ->
+                Ok (UpdateError error)

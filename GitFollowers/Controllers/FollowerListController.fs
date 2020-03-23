@@ -21,8 +21,6 @@ type FollowerListViewController(userName : string) as self =
         let loadingView = showLoadingView(self.View)
         match (NetworkService.getFollowers userName) |> Async.RunSynchronously with
         | Ok followers  ->
-            let defaults = PersistenceService.Instance
-            let favorites = Json.serialize(followers)
             match followers.Length with
             | x when x > 0 ->
                 loadingView.Dismiss()
@@ -94,11 +92,10 @@ type FollowerListViewController(userName : string) as self =
             flowLayout
 
     member __.AddFavoriteTapped() =
-        let userDefault = PersistenceService.Instance
         match (NetworkService.getUserInfo userName) |> Async.RunSynchronously with
         | Ok value ->
             let follower = (Follower.CreateFollower(value.login, value.avatar_url))
-            match (userDefault.Update follower) with
+            match (PersistenceService.Update follower) with
             | Ok updateResult ->
                 match updateResult with
                 | AlreadyExists ->

@@ -15,8 +15,8 @@ type FavoriteListViewController() as self =
 
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 
-        let persistence = PersistenceService.Instance
-        match persistence.RetrieveFavorites() with
+
+        match PersistenceService.RetrieveFavorites() with
         | Ok favourites ->
             match favourites with
             | [] ->
