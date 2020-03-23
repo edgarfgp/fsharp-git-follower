@@ -23,7 +23,6 @@ type FollowerListViewController(userName : string) as self =
         | Ok followers  ->
             let defaults = PersistenceService.Instance
             let favorites = Json.serialize(followers)
-            defaults.Save(favorites)
             match followers.Length with
             | x when x > 0 ->
                 loadingView.Dismiss()
@@ -95,5 +94,19 @@ type FollowerListViewController(userName : string) as self =
             flowLayout
 
     member __.AddFavoriteTapped() =
-         ()
-         //Xamarin.Essentials.Preferences.Set(userName, userName)
+        let userDefault = PersistenceService.Instance
+        match (NetworkService.getUserInfo userName) |> Async.RunSynchronously with
+        | Ok value ->
+            let follower = (Follower.CreateFollower(value.login, value.avatar_url))
+            match (userDefault.Update follower) with
+            | Ok updateResult ->
+                match updateResult with
+                | AlreadyExists ->
+                    presentFGAlertOnMainThread ("Favorite", "This use is already in your favorites", self)
+                | FavouriteAdded ->
+                    presentFGAlertOnMainThread ("Favorite", "Favorite Added", self)
+                | UpdateError ex -> presentFGAlertOnMainThread ("Favorite", ex, self)
+            | Error error ->
+                presentFGAlertOnMainThread ("Favorite", error, self)
+        | Error error->
+            presentFGAlertOnMainThread ("Favorite", error, self)

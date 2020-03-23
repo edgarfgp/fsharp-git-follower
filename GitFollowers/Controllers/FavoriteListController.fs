@@ -1,34 +1,30 @@
 namespace GitFollowers.ViewControllers
 
-open FSharp.Json
 open GitFollowers
 open GitFollowers.Models
 open GitFollowers.Views.Cells
 open UIKit
 open System
 open GitFollowers.Views.Extensions
-open FSharp.Json
 
 type FavoriteListViewController() as self =
     inherit UIViewController()
+
     override __.ViewDidLoad() =
         base.ViewDidLoad()
 
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 
-        let favorites = PersistenceService.Instance
-        let result = favorites.RetrieveFavorites()
-        let favorites = Json.deserialize<Follower list> result
-        self.ConfigureTableView(favorites)
+        let persistence = PersistenceService.Instance
+        match persistence.RetrieveFavorites() with
+        | Ok favourites ->
+            match favourites with
+            | [] ->
+                showEmptyView("No Favorites", self)
+            | _ ->
+                self.ConfigureTableView(favourites)
 
-        //let loadingView = showLoadingView(self.View)
-//        match (NetworkService.getUserInfo "") |> Async.RunSynchronously with
-//        | Ok follower ->
-//            loadingView.Dismiss()
-//            self.ConfigureTableView(follower)
-//        | Error _ ->
-//            loadingView.Dismiss()
-//            showEmptyView("This user has no favorites.", self)
+        | Error ex -> failwith ex
 
     member __.ConfigureTableView(followers:  Follower list) =
         let tableView = new UITableView(frame = self.View.Bounds)
@@ -52,3 +48,4 @@ type FavoriteListViewController() as self =
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+
