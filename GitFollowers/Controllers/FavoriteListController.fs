@@ -10,24 +10,13 @@ open GitFollowers.Views.Extensions
 type FavoriteListViewController() as self =
     inherit UIViewController()
 
+    let tableView = new UITableView()
     override __.ViewDidLoad() =
         base.ViewDidLoad()
-
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
 
-
-        match PersistenceService.RetrieveFavorites() with
-        | Ok favourites ->
-            match favourites with
-            | [] ->
-                showEmptyView("No Favorites", self)
-            | _ ->
-                self.ConfigureTableView(favourites)
-
-        | Error ex -> failwith ex
-
     member __.ConfigureTableView(followers:  Follower list) =
-        let tableView = new UITableView(frame = self.View.Bounds)
+        tableView.Frame <- self.View.Bounds
         tableView.TranslatesAutoresizingMaskIntoConstraints <- false
         tableView.RowHeight <- nfloat 100.
         self.View.AddSubview tableView
@@ -48,4 +37,15 @@ type FavoriteListViewController() as self =
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+        match PersistenceService.RetrieveFavorites() with
+        | Ok favourites ->
+            match favourites with
+            | [] ->
+                showEmptyView("No Favorites", self)
+            | _ ->
+                self.ConfigureTableView(favourites)
+
+        | Error ex -> failwith ex
+
+
 
