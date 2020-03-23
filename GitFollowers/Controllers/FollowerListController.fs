@@ -8,11 +8,12 @@ open GitFollowers.Models
 open GitFollowers.Views
 open GitFollowers.Views.Cells
 open UIKit
-open FSharp.Json
 open Extensions
 
 type FollowerListViewController(userName : string) as self =
     inherit UIViewController()
+
+    let userDefaults = UserDefaults.Instance
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
@@ -95,14 +96,14 @@ type FollowerListViewController(userName : string) as self =
         match (NetworkService.getUserInfo userName) |> Async.RunSynchronously with
         | Ok value ->
             let follower = (Follower.CreateFollower(value.login, value.avatar_url))
-            match (PersistenceService.Update follower) with
+            match (userDefaults.Update follower) with
             | Ok updateResult ->
                 match updateResult with
-                | AlreadyExists ->
-                    presentFGAlertOnMainThread ("Favorite", "This use is already in your favorites", self)
+                | AlreadyExists name ->
+                    let message= "This use is already in your favorites " + (name.login)
+                    presentFGAlertOnMainThread ("Favorite", message, self)
                 | FavouriteAdded ->
                     presentFGAlertOnMainThread ("Favorite", "Favorite Added", self)
-                | UpdateError ex -> presentFGAlertOnMainThread ("Favorite", ex, self)
             | Error error ->
                 presentFGAlertOnMainThread ("Favorite", error, self)
         | Error error->

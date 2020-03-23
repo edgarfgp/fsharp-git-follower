@@ -10,6 +10,8 @@ open GitFollowers.Views.Extensions
 type FavoriteListViewController() as self =
     inherit UIViewController()
 
+    let userDefaults = UserDefaults.Instance
+
     let tableView = new UITableView()
     override __.ViewDidLoad() =
         base.ViewDidLoad()
@@ -37,15 +39,15 @@ type FavoriteListViewController() as self =
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        match PersistenceService.RetrieveFavorites() with
-        | Ok favourites ->
+        match userDefaults.RetrieveFavorites() with
+        | Some favourites ->
             match favourites with
             | [] ->
                 showEmptyView("No Favorites", self)
             | _ ->
                 self.ConfigureTableView(favourites)
 
-        | Error ex -> failwith ex
+        | None  ->  presentFGAlertOnMainThread("Error", "Error getting Favorites", self)
 
 
 
