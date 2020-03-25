@@ -139,6 +139,7 @@
         <InterfaceDefinition Include="LaunchScreen.storyboard" />
         <None Include="Info.plist" />
         <None Include="Entitlements.plist" />
+        <Compile Include="Helpers.fs" />
         <Compile Include="Models.fs" />
         <Compile Include="NetworkService.fs" />
         <Compile Include="PersistenceService.fs" />
@@ -150,10 +151,8 @@
         <Compile Include="Views\Cells.fs" />
         <Compile Include="Views\ViewControllers.fs" />
         <Compile Include="Views\Extensions.fs" />
-        <Compile Include="Controllers\UserInfoController.fs" />
         <Compile Include="Controllers\FollowerListController.fs" />
         <Compile Include="Controllers\SearchController.fs" />
-        <Compile Include="Controllers\FavoriteListController.fs" />
         <Compile Include="AppDelegate.fs" />
         <Compile Include="Main.fs" />
         <None Include="packages.config" />

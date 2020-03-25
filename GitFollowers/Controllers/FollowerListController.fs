@@ -2,25 +2,75 @@ namespace GitFollowers.ViewControllers
 
 open System
 open CoreGraphics
+open Foundation
 open GitFollowers
-open GitFollowers.Controllers
 open GitFollowers.Models
 open GitFollowers.Views
 open GitFollowers.Views.Cells
+open GitFollowers.Views.ViewControllers
+open GitFollowers.Views.Views
+open SafariServices
 open UIKit
 open Extensions
 
-type FollowerListViewController(userName : string) as self =
+type LoadingState =
+    | LoadingError of string
+    | Loaded of Follower list
+
+type FavoriteListViewController() as self =
+    inherit UIViewController()
+
+    let userDefaults = UserDefaults.Instance
+    override __.ViewDidLoad() =
+        base.ViewDidLoad()
+        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+
+    member __.ConfigureTableView(followers:  Follower list) =
+        let tableView = new UITableView(self.View.Bounds)
+        tableView.TranslatesAutoresizingMaskIntoConstraints <- false
+        tableView.RowHeight <- nfloat 100.
+        self.View.AddSubview tableView
+        tableView.DataSource <- {
+            new UITableViewDataSource() with
+                member __.GetCell(tableView, indexPath) =
+                    let cell = tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
+                    let follower = followers.[int indexPath.Item]
+                    let user = User.CreateUser(follower.login, follower.avatar_url)
+                    cell.User <- user
+                    upcast cell
+                member __.RowsInSection(tableView, section) =
+                    nint followers.Length
+        }
+
+        tableView.RegisterClassForCellReuse(typeof<FavoriteCell>, FavoriteCell.CellId)
+
+    override __.ViewWillAppear(_) =
+        base.ViewWillAppear(true)
+        self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+        let favorites = userDefaults.RetrieveFavorites()
+        match favorites with
+        | Ok favs ->
+            self.ConfigureTableView(favs)
+        | Error _  ->  showEmptyView("No Favorites", self)
+
+and FollowerListViewController(userName : string) as self =
     inherit UIViewController()
 
     let userDefaults = UserDefaults.Instance
 
+    let loadingView = LoadingView.Instance
+
+    let followers = NetworkService.getFollowers userName |> Async.RunSynchronously
+
+    //let followers = NetworkServiceVersion2.getFollowers userName  |> Async.RunSynchronously
+
+    let userInfo = NetworkService.getUserInfo userName |> Async.RunSynchronously
+
     override __.ViewDidLoad() =
         base.ViewDidLoad()
-
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-        let loadingView = showLoadingView(self.View)
-        match (NetworkService.getFollowers userName) |> Async.RunSynchronously with
+        loadingView.Show(self.View)
+        match followers with
         | Ok followers  ->
             match followers.Length with
             | x when x > 0 ->
@@ -33,7 +83,7 @@ type FollowerListViewController(userName : string) as self =
                 showEmptyView("This user has no followers. Go follow him", self)
         | Error error ->
             loadingView.Dismiss()
-            presentFGAlertOnMainThread ("Error", error, self)
+            presentFGAlertOnMainThread ("Error", "", self)
 
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
@@ -43,8 +93,7 @@ type FollowerListViewController(userName : string) as self =
         self.NavigationItem.RightBarButtonItem.Clicked
         |> Event.add(fun _ -> self.AddFavoriteTapped())
 
-    member __.ConfigureCollectionView(followers : Follower list) =
-
+    member private __.ConfigureCollectionView(followers : Follower list) =
         let collectionView = new UICollectionView(self.View.Bounds, self.CreateThreeColumnFlowLayout(self.View))
         collectionView.TranslatesAutoresizingMaskIntoConstraints <- false
         self.View.AddSubview collectionView
@@ -81,7 +130,7 @@ type FollowerListViewController(userName : string) as self =
 
         collectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
 
-    member __.CreateThreeColumnFlowLayout(view: UIView) =
+    member private __.CreateThreeColumnFlowLayout(view: UIView) =
             let width = view.Bounds.Width
             let padding  = nfloat 12.
             let minimumItemSpacing = nfloat 10.
@@ -92,19 +141,119 @@ type FollowerListViewController(userName : string) as self =
             flowLayout.ItemSize <- CGSize(itemWidth,  itemWidth + nfloat 40.)
             flowLayout
 
-    member __.AddFavoriteTapped() =
+    member private __.AddFavoriteTapped() =
+        match userInfo with
+        | Ok value ->
+            let follower = Follower.CreateFollower(value.login, value.avatar_url)
+            let favsUserDefaults = (userDefaults.Update follower)
+            match favsUserDefaults with
+            | Ok status ->
+                match status with
+                | AlreadyExists -> presentFGAlertOnMainThread ("Favorite", "This user is already in your favorites ", self)
+                | FavouriteAdded -> presentFGAlertOnMainThread ("Favorite", "Favorite Added", self)
+            | Error error -> presentFGAlertOnMainThread ("Favorite", error, self)
+        | Error error-> presentFGAlertOnMainThread ("Favorite", "sadasd", self)
+
+and UserInfoController(userName : string) as self =
+    inherit UIViewController()
+
+    let padding = nfloat 20.
+    let contentView = new UIView()
+    let headerView = new UIView()
+    let itemViewOne = new UIView()
+    let itemViewTwo = new UIView()
+
+    override __.ViewDidLoad() =
+        base.ViewDidLoad()
+        self.ConfigureViewController()
+        self.ConfigureScrollView()
+        self.ConfigureContentView()
+
         match (NetworkService.getUserInfo userName) |> Async.RunSynchronously with
         | Ok value ->
-            let follower = (Follower.CreateFollower(value.login, value.avatar_url))
-            match (userDefaults.Update follower) with
-            | Ok updateResult ->
-                match updateResult with
-                | AlreadyExists name ->
-                    let message= "This use is already in your favorites " + (name.login)
-                    presentFGAlertOnMainThread ("Favorite", message, self)
-                | FavouriteAdded ->
-                    presentFGAlertOnMainThread ("Favorite", "Favorite Added", self)
-            | Error error ->
-                presentFGAlertOnMainThread ("Favorite", error, self)
-        | Error error->
-            presentFGAlertOnMainThread ("Favorite", error, self)
+            self.ConfigureElements value
+        | Error _-> ()
+
+    member private __.AddChildViewController(childVC: UIViewController,containerView: UIView) =
+        self.AddChildViewController childVC
+        containerView.AddSubview(childVC.View)
+        childVC.View.Frame <- containerView.Bounds
+        childVC.DidMoveToParentViewController(self)
+
+    member private __.ConfigureViewController () =
+        let doneButton = new UIBarButtonItem(UIBarButtonSystemItem.Done)
+        doneButton.Clicked.Add(fun _ -> self.DismissModalViewController(true))
+        self.NavigationItem.RightBarButtonItem <- doneButton
+
+    member private __.ConfigureContentView () =
+        headerView.TranslatesAutoresizingMaskIntoConstraints <- false
+        itemViewOne.TranslatesAutoresizingMaskIntoConstraints <- false
+        itemViewTwo.TranslatesAutoresizingMaskIntoConstraints <- false
+
+        contentView.AddSubviews headerView
+        contentView.AddSubviews itemViewOne
+        contentView.AddSubviews itemViewTwo
+
+        NSLayoutConstraint.ActivateConstraints([|
+
+            headerView.TopAnchor.ConstraintEqualTo(contentView.SafeAreaLayoutGuide.TopAnchor, padding)
+            headerView.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
+            headerView.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
+            headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
+
+            itemViewOne.TopAnchor.ConstraintEqualTo(headerView.BottomAnchor, padding)
+            itemViewOne.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
+            itemViewOne.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
+            itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
+
+            itemViewTwo.TopAnchor.ConstraintEqualTo(itemViewOne.BottomAnchor, padding)
+            itemViewTwo.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
+            itemViewTwo.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
+            itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
+            itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor)
+        |])
+
+    member private __.ConfigureScrollView () =
+        let scrollView = new UIScrollView(BackgroundColor = UIColor.SystemBackgroundColor)
+        self.View.AddSubview scrollView
+        scrollView.AddSubview contentView
+
+        scrollView.TranslatesAutoresizingMaskIntoConstraints <- false
+        contentView.TranslatesAutoresizingMaskIntoConstraints <- false
+
+        NSLayoutConstraint.ActivateConstraints([|
+            scrollView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor);
+            scrollView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor);
+            scrollView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+            scrollView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor)
+        |])
+
+        NSLayoutConstraint.ActivateConstraints([|
+            contentView.TopAnchor.ConstraintEqualTo(scrollView.TopAnchor)
+            contentView.LeadingAnchor.ConstraintEqualTo(scrollView.LeadingAnchor)
+            contentView.TrailingAnchor.ConstraintEqualTo(scrollView.TrailingAnchor)
+            contentView.BottomAnchor.ConstraintEqualTo(scrollView.BottomAnchor)
+        |])
+
+        NSLayoutConstraint.ActivateConstraints([|
+            contentView.WidthAnchor.ConstraintEqualTo(scrollView.WidthAnchor)
+        |])
+
+    member private __.ConfigureElements user =
+        let itemInfoOne =
+            new ItemInfoVC(UIColor.SystemPurpleColor, "Github Profile", ItemInfoType.Repo, user.public_repos, ItemInfoType.Gists, user.public_gists)
+        let itemInfoTwo =
+            new ItemInfoVC(UIColor.SystemGreenColor, "Get Followers", ItemInfoType.Followers, user.followers, ItemInfoType.Following, user.following)
+        self.AddChildViewController(new FGUserInfoHeaderVC(user), headerView)
+        self.AddChildViewController(itemInfoOne, itemViewOne)
+        self.AddChildViewController(itemInfoTwo, itemViewTwo)
+
+        itemInfoOne.ActionButtonClicked(fun _ ->
+            let safariVC = new SFSafariViewController(url = new NSUrl(user.html_url))
+            safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
+            self.PresentViewController(safariVC, true, null))
+
+        itemInfoTwo.ActionButtonClicked(fun _ ->
+            let userFollowerListViewController = new FollowerListViewController(user.login)
+            userFollowerListViewController.View.BackgroundColor <- UIColor.SystemBackgroundColor
+            self.NavigationController.PushViewController(userFollowerListViewController, animated = true))

@@ -4,6 +4,7 @@ open GitFollowers.Views.Labels
 open System
 open UIKit
 
+
 type ItemInfoType =
     | Repo
     | Gists
@@ -89,22 +90,37 @@ module Views =
                     logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.)
                     |])
 
-    type LoadingView() as self =
+    type LoadingView private () as view =
         inherit UIView()
+        static let instance = LoadingView()
+
+        let activityIndicator = new UIActivityIndicatorView(UIActivityIndicatorViewStyle.Large)
 
         do
-            self.BackgroundColor <- UIColor.SystemBackgroundColor
-            self.Alpha <- nfloat 0.
-            UIView.Animate(float 0.25, fun _ -> self.Alpha <- nfloat 0.8)
-            let activityIndicator = new UIActivityIndicatorView(UIActivityIndicatorViewStyle.Large)
-            self.AddSubview activityIndicator
+            view.BackgroundColor <- UIColor.SystemBackgroundColor
+            view.Alpha <- nfloat 0.
+            UIView.Animate(float 0.25, fun _ -> view.Alpha <- nfloat 0.8)
+            view.AddSubview activityIndicator
             activityIndicator.TranslatesAutoresizingMaskIntoConstraints <- false
             NSLayoutConstraint.ActivateConstraints([|
-                activityIndicator.CenterXAnchor.ConstraintEqualTo(self.CenterXAnchor)
-                activityIndicator.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
+                activityIndicator.CenterXAnchor.ConstraintEqualTo(view.CenterXAnchor)
+                activityIndicator.CenterYAnchor.ConstraintEqualTo(view.CenterYAnchor)
             |])
 
             activityIndicator.StartAnimating()
 
+        member __.Show(parentView : UIView) =
+            view.Frame <- parentView.Frame
+            view.TranslatesAutoresizingMaskIntoConstraints <- false
+            parentView.AddSubview view
+            NSLayoutConstraint.ActivateConstraints([|
+                view.TopAnchor.ConstraintEqualTo(parentView.TopAnchor)
+                view.LeadingAnchor.ConstraintEqualTo(parentView.LeadingAnchor)
+                view.TrailingAnchor.ConstraintEqualTo(parentView.TrailingAnchor)
+                view.BottomAnchor.ConstraintEqualTo(parentView.BottomAnchor)
+            |])
+
         member __.Dismiss() =
-            self.RemoveFromSuperview()
+            view.RemoveFromSuperview()
+
+        static member Instance = instance
