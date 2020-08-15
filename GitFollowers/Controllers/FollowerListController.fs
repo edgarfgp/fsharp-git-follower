@@ -1,6 +1,7 @@
 namespace GitFollowers.ViewControllers
 
 open System
+open System.Threading
 open CoreGraphics
 open Foundation
 open GitFollowers
@@ -56,35 +57,42 @@ type FavoriteListViewController() as self =
 and FollowerListViewController(userName : string) as self =
     inherit UIViewController()
 
-    let userDefaults = UserDefaults.Instance
-
     let loadingView = LoadingView.Instance
-
-    let followers = NetworkService.getFollowers userName |> Async.RunSynchronously
-
-    //let followers = NetworkServiceVersion2.getFollowers userName  |> Async.RunSynchronously
-
+    let userDefaults = UserDefaults.Instance
     let userInfo = NetworkService.getUserInfo userName |> Async.RunSynchronously
+    
+    member __.userName = userName
+    
+    member __.GetFollowers(userName : string) =
+        loadingView.Show(self.View)
+        let mainThread = SynchronizationContext.Current
+        async {
+            do! Async.SwitchToThreadPool()
+            let! result = NetworkService.getFollowers userName
+            match result with
+            | Ok followers  ->
+                if followers.Length > 0
+                then
+                    do! Async.SwitchToContext mainThread
+                    loadingView.Dismiss()
+                    self.ConfigureCollectionView(followers)
+                else
+                    do! Async.SwitchToContext mainThread
+                    loadingView.Dismiss()
+                    showEmptyView("This user has no followers. Go follow him", self)
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                loadingView.Dismiss()
+                presentFGAlertOnMainThread ("Error", "Error while processing your request. Please try again later", self)    
+        }
+        |> Async.Start
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-        loadingView.Show(self.View)
-        match followers with
-        | Ok followers  ->
-            match followers.Length with
-            | x when x > 0 ->
-                loadingView.Dismiss()
-                self.Title <- userName
-                self.ConfigureCollectionView(followers)
-
-            |  _ ->
-                loadingView.Dismiss()
-                showEmptyView("This user has no followers. Go follow him", self)
-        | Error error ->
-            loadingView.Dismiss()
-            presentFGAlertOnMainThread ("Error", "", self)
-
+        self.Title <- userName
+        self.GetFollowers(userName)
+        
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)

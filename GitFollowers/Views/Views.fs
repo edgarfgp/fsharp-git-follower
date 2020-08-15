@@ -92,7 +92,7 @@ module Views =
 
     type LoadingView private () as view =
         inherit UIView()
-        static let instance = LoadingView()
+        static let instance = new LoadingView()
 
         let activityIndicator = new UIActivityIndicatorView(UIActivityIndicatorViewStyle.Large)
 

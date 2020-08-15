@@ -36,8 +36,6 @@ type SearchViewController() as self =
         userNameTextField.Text <- String.Empty
 
     member __.HandleNavigation() =
-        loadingView.Show(self.View)
-
         let userName = userNameTextField.Text |> Option.OfString
         match userName with
         | Some text ->
@@ -46,7 +44,6 @@ type SearchViewController() as self =
             self.NavigationController.PushViewController(followerListVC, animated = true)
             userNameTextField.ResignFirstResponder() |> ignore
         | _ ->
-            loadingView.Dismiss()
             presentFGAlertOnMainThread("Empty Username", "Please enter a username . We need to know who to look for 😀", self)
 
     member __.ConfigureLogoImageView() =
