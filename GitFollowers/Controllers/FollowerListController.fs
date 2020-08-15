@@ -13,11 +13,6 @@ open GitFollowers.Views.Views
 open SafariServices
 open UIKit
 open Extensions
-
-type LoadingState =
-    | LoadingError of string
-    | Loaded of Follower list
-
 type FavoriteListViewController() as self =
     inherit UIViewController()
 
@@ -59,9 +54,35 @@ and FollowerListViewController(userName : string) as self =
 
     let loadingView = LoadingView.Instance
     let userDefaults = UserDefaults.Instance
-    let userInfo = NetworkService.getUserInfo userName |> Async.RunSynchronously
     
     member __.userName = userName
+    
+    member __.GetUserInfo(userName : string) =
+        let mainThread = SynchronizationContext.Current
+        async {
+            do! Async.SwitchToThreadPool()
+            let! result = NetworkService.getUserInfo userName
+            match result with
+            | Ok value ->
+                let follower = Follower.CreateFollower(value.login, value.avatar_url)
+                let defaults = (userDefaults.Update follower)
+                match defaults with
+                | Ok status ->
+                    match status with
+                    | AlreadyExists ->
+                        do! Async.SwitchToContext mainThread
+                        presentFGAlertOnMainThread ("Favorite", "This user is already in your favorites ", self)
+                    | FavouriteAdded ->
+                        do! Async.SwitchToContext mainThread
+                        presentFGAlertOnMainThread ("Favorite", "Favorite Added", self)
+                | Error _ ->
+                    do! Async.SwitchToContext mainThread
+                    presentFGAlertOnMainThread ("Error", "Error while trying to save the favorite", self)
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                presentFGAlertOnMainThread ("Error", "Error while processing request. Please try again later.", self)
+        }
+        |> Async.Start
     
     member __.GetFollowers(userName : string) =
         loadingView.Show(self.View)
@@ -150,18 +171,7 @@ and FollowerListViewController(userName : string) as self =
             flowLayout
 
     member private __.AddFavoriteTapped() =
-        match userInfo with
-        | Ok value ->
-            let follower = Follower.CreateFollower(value.login, value.avatar_url)
-            let favsUserDefaults = (userDefaults.Update follower)
-            match favsUserDefaults with
-            | Ok status ->
-                match status with
-                | AlreadyExists -> presentFGAlertOnMainThread ("Favorite", "This user is already in your favorites ", self)
-                | FavouriteAdded -> presentFGAlertOnMainThread ("Favorite", "Favorite Added", self)
-            | Error error -> presentFGAlertOnMainThread ("Favorite", error, self)
-        | Error error-> presentFGAlertOnMainThread ("Favorite", "sadasd", self)
-
+        self.GetUserInfo(userName)
 and UserInfoController(userName : string) as self =
     inherit UIViewController()
 
