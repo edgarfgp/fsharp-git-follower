@@ -2,6 +2,7 @@ namespace GitFollowers.Views
 
 open CoreFoundation
 open Foundation
+open GitFollowers.Helpers
 open GitFollowers.Models
 open GitFollowers.Views.Buttons
 open GitFollowers.Views.ImageViews
@@ -36,7 +37,8 @@ module ViewControllers =
 
             messageLabel.Lines <- nint 4
             actionButton.SetTitle(buttonTitle, UIControlState.Normal)
-            actionButton.TouchUpInside.Add(fun _ -> self.DismissViewController(true, null))
+            actionButton.TouchUpInside
+            |> Event.add((fun _ -> self.DismissViewController(true, null)))
 
             containerView.BackgroundColor <- UIColor.SystemBackgroundColor
             containerView.Layer.CornerRadius <- nfloat 16.
@@ -74,7 +76,7 @@ module ViewControllers =
         let textImageViewPadding = nfloat 12.
         let avatarImageView = new FGAvatarImageView()
         let userNameLabel = new FGTitleLabel(UITextAlignment.Left, nfloat 34.)
-        let namelabel = new FGSecondaryTitleLabel(nfloat 18.)
+        let nameLabel = new FGSecondaryTitleLabel(nfloat 18.)
         let locationImageView = new UIImageView()
         let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
         let bioLabel = new FGBodyLabel()
@@ -82,20 +84,20 @@ module ViewControllers =
         do
             avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
             userNameLabel.TranslatesAutoresizingMaskIntoConstraints <- false
-            namelabel.TranslatesAutoresizingMaskIntoConstraints <- false
+            nameLabel.TranslatesAutoresizingMaskIntoConstraints <- false
             locationImageView.TranslatesAutoresizingMaskIntoConstraints <- false
             locationLabel.TranslatesAutoresizingMaskIntoConstraints <- false
             bioLabel.TranslatesAutoresizingMaskIntoConstraints <- false
 
             self.View.AddSubview avatarImageView
             self.View.AddSubview userNameLabel
-            self.View.AddSubview namelabel
+            self.View.AddSubview nameLabel
             self.View.AddSubview locationImageView
             self.View.AddSubview locationLabel
             self.View.AddSubview bioLabel
 
             userNameLabel.Text <- user.login
-            namelabel.Text <-
+            nameLabel.Text <-
                 match user.name with
                 | Some value -> value
                 | None -> "N/A"
@@ -112,8 +114,7 @@ module ViewControllers =
                 | Some value -> value
                 | None -> "N/A"
 
-            locationImageView.Image <- UIImage.GetSystemImage("mappin.and.ellipse")
-
+            locationImageView.Image <- UIImage.GetSystemImage(SFImages.location)
             locationImageView.TintColor <- UIColor.SecondaryLabelColor
 
             NSLayoutConstraint.ActivateConstraints
@@ -127,10 +128,10 @@ module ViewControllers =
                     userNameLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
                     userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 38.)
 
-                    namelabel.CenterYAnchor.ConstraintEqualTo(avatarImageView.CenterYAnchor, nfloat 8.)
-                    namelabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, textImageViewPadding)
-                    namelabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
-                    namelabel.HeightAnchor.ConstraintEqualTo(nfloat 38.)
+                    nameLabel.CenterYAnchor.ConstraintEqualTo(avatarImageView.CenterYAnchor, nfloat 8.)
+                    nameLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, textImageViewPadding)
+                    nameLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+                    nameLabel.HeightAnchor.ConstraintEqualTo(nfloat 38.)
 
                     locationImageView.BottomAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor)
                     locationImageView.LeadingAnchor.ConstraintEqualTo
@@ -163,8 +164,6 @@ module ViewControllers =
         let itemInfoViewOne = new FGItemInfoView(itemInfoOneType, itemInfoOneCount)
         let itemInfoViewTwo = new FGItemInfoView(itemInfoTwoType, itemInfoTwoCount)
         let actionButton = new FGButton(backgroundColor, text)
-        let actionButtonClicked = Event<_>()
-
         do
             self.View.Layer.CornerRadius <- nfloat 18.
             self.View.BackgroundColor <- UIColor.SecondarySystemBackgroundColor
@@ -190,6 +189,6 @@ module ViewControllers =
                     actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
                     actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
 
-        member __.ActionButtonClicked(a) =
-            actionButton.TouchUpInside.Add(a)
-            actionButtonClicked.Trigger()
+        member __.ActionButtonClicked(handler) =
+            actionButton.TouchUpInside
+            |> Event.add handler

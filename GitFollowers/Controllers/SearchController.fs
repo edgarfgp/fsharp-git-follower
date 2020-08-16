@@ -1,15 +1,11 @@
 namespace GitFollowers.ViewControllers
 
-open GitFollowers
-open GitFollowers.Helpers
-open GitFollowers.Helpers
-open GitFollowers.Helpers
+open Foundation
 open GitFollowers.Helpers
 open GitFollowers.Views
 open GitFollowers.Views.Buttons
 open GitFollowers.Views.TextFields
 open System
-open GitFollowers.Views.Views
 open UIKit
 open Extensions
 

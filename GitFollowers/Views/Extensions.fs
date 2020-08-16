@@ -27,17 +27,3 @@ module Extensions =
             emptyView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor)
         |])
 
-    let showLoadingView(parentView: UIView) =
-        let loadingView = LoadingView.Instance
-        loadingView.Frame <- parentView.Frame
-        loadingView.TranslatesAutoresizingMaskIntoConstraints <- false
-        parentView.AddSubview loadingView
-        NSLayoutConstraint.ActivateConstraints([|
-            loadingView.TopAnchor.ConstraintEqualTo(parentView.TopAnchor)
-            loadingView.LeadingAnchor.ConstraintEqualTo(parentView.LeadingAnchor)
-            loadingView.TrailingAnchor.ConstraintEqualTo(parentView.TrailingAnchor)
-            loadingView.BottomAnchor.ConstraintEqualTo(parentView.BottomAnchor)
-        |])
-
-        loadingView
-
