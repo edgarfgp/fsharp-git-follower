@@ -13,6 +13,7 @@ open GitFollowers.Views.Views
 open SafariServices
 open UIKit
 open Extensions
+
 type FavoriteListViewController() as self =
     inherit UIViewController()
 
@@ -180,17 +181,30 @@ and UserInfoController(userName : string) as self =
     let headerView = new UIView()
     let itemViewOne = new UIView()
     let itemViewTwo = new UIView()
+    
+    member __.userName = userName
+    
+    member __.GetUserInfo(userName : string) =
+        let mainThread = SynchronizationContext.Current
+        async {
+            do! Async.SwitchToThreadPool()
+            let! result = NetworkService.getUserInfo userName
+            match result with
+            | Ok value ->
+                do! Async.SwitchToContext mainThread
+                self.ConfigureElements value
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                presentFGAlertOnMainThread ("Error", "Error while processing request. Please try again later.", self)
+        }
+        |> Async.Start
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
+        self.GetUserInfo userName
         self.ConfigureViewController()
         self.ConfigureScrollView()
         self.ConfigureContentView()
-
-        match (NetworkService.getUserInfo userName) |> Async.RunSynchronously with
-        | Ok value ->
-            self.ConfigureElements value
-        | Error _-> ()
 
     member private __.AddChildViewController(childVC: UIViewController,containerView: UIView) =
         self.AddChildViewController childVC

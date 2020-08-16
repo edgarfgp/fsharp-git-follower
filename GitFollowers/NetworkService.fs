@@ -4,6 +4,7 @@ open System
 open System.Net.Http
 open FSharp.Json
 open GitFollowers.Models
+open Foundation
 
 module NetworkService =
     let private baseUrl = "https://api.github.com/users/"
@@ -54,3 +55,4 @@ module NetworkService =
             | :? HttpRequestException as ex -> return ex.Message |> Error
             | :? JsonDeserializationError as ex -> return ex.Message |> Error
         }
+   

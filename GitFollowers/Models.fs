@@ -1,6 +1,7 @@
 namespace GitFollowers.Models
 
 open System
+open Foundation
 
 type User =
     { login: string
@@ -34,6 +35,14 @@ type Follower =
     { login: string
       avatar_url: string }
     static member CreateFollower(?login, ?avatarUrl) =
-        let initMember x = Option.fold (fun state param -> param) <| x
+        let initMember x = Option.fold (fun _ param -> param) <| x
         { login = initMember "Edgar" login
           avatar_url = initMember "avatar-placeholder" avatarUrl }
+     
+type Section()= inherit NSObject()
+
+type NSFollower(login:string, avatar_url: string) =
+  inherit NSObject()
+  member __.login = login
+  member __.avatar_url = avatar_url
+  

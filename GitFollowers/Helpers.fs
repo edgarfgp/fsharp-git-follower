@@ -1,7 +1,9 @@
 namespace GitFollowers.Helpers
 
-module SFImages =
+module ImageNames =
     let location = "mappin.and.ellipse"
+    let avatarPlaceHolder = "avatar-placeholder"
+
 module Option =
     let OfString (str: string) =
         if str |> System.String.IsNullOrWhiteSpace |> not then

@@ -114,7 +114,7 @@ module ViewControllers =
                 | Some value -> value
                 | None -> "N/A"
 
-            locationImageView.Image <- UIImage.GetSystemImage(SFImages.location)
+            locationImageView.Image <- UIImage.GetSystemImage(ImageNames.location)
             locationImageView.TintColor <- UIColor.SecondaryLabelColor
 
             NSLayoutConstraint.ActivateConstraints
@@ -149,13 +149,19 @@ module ViewControllers =
                     bioLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
                     bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
-            NSUrlSession.SharedSession.CreateDataTask(new NSUrlRequest(new NSUrl(user.avatar_url)),
-                                                      NSUrlSessionResponse(fun data response error ->
-                                                          if data <> null then
-                                                              DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                                                  let image = UIImage.LoadFromData(data)
-                                                                  avatarImageView.Image <- image))).Resume()
-
+            self.DownloadImage(user.avatar_url)
+            
+        member __.DownloadImage(url: string) =
+            let request = new NSUrlRequest(new NSUrl(url))
+            let response =
+                NSUrlSessionResponse(
+                    fun data _ _ ->
+                        if data <> null then
+                            let image = UIImage.LoadFromData(data)
+                            self.InvokeOnMainThread(fun _ -> avatarImageView.Image <- image))
+                
+            let dataTask = NSUrlSession.SharedSession.CreateDataTask(request, response)
+            dataTask.Resume()
 
     type ItemInfoVC(backgroundColor: UIColor, text: string, itemInfoOneType: ItemInfoType, itemInfoOneCount: int, itemInfoTwoType: ItemInfoType, itemInfoTwoCount: int) as self =
         inherit UIViewController()
