@@ -17,11 +17,8 @@ type SearchViewController() as self =
     inherit UIViewController()
 
     let logoImageView = new UIImageView()
-    let actionButton = new FGButton(UIColor.SystemGreenColor, "Get followers")
+    let actionButton = new FGButton(UIColor.SystemGrayColor, "Get followers")
     let userNameTextField = new FGTextField("Enter username")
-
-    let loadingView = LoadingView.Instance
-
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
@@ -34,12 +31,16 @@ type SearchViewController() as self =
         base.ViewWillAppear(true)
         self.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
         userNameTextField.Text <- String.Empty
+        actionButton.Enabled <- false
+        actionButton.BackgroundColor <- UIColor.SystemGrayColor
 
     member __.HandleNavigation() =
-        let userName = userNameTextField.Text |> Option.OfString
+        let userName =
+            userNameTextField.Text
+            |> Option.OfString
+
         match userName with
         | Some text ->
-            loadingView.Dismiss()
             let followerListVC = new FollowerListViewController(text)
             self.NavigationController.PushViewController(followerListVC, animated = true)
             userNameTextField.ResignFirstResponder() |> ignore
@@ -66,6 +67,8 @@ type SearchViewController() as self =
                 with member __.ShouldReturn(textField) =
                         self.HandleNavigation()
                         true }
+        userNameTextField.EditingChanged
+        |> Event.add(fun _ -> self.UserNameTextFieldDidChange())
 
         NSLayoutConstraint.ActivateConstraints
             ([| userNameTextField.TopAnchor.ConstraintEqualTo(logoImageView.BottomAnchor, constant = nfloat 50.)
@@ -73,8 +76,18 @@ type SearchViewController() as self =
                 userNameTextField.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, constant = nfloat -50.0)
                 userNameTextField.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |])
 
+    member __.UserNameTextFieldDidChange() =
+        let text = userNameTextField.Text
+        if text <> "" then
+            actionButton.Enabled <- true
+            actionButton.BackgroundColor <- UIColor.SystemGreenColor
+        else
+            actionButton.Enabled <- false
+            actionButton.BackgroundColor <- UIColor.SystemGrayColor
+            
     member __.ConfigureActionButton() =
         self.View.AddSubview(actionButton)
+        actionButton.Enabled <- false
         actionButton.TouchUpInside
         |> Event.add(fun _ -> self.HandleNavigation())
 
