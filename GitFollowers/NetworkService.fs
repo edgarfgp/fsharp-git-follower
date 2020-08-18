@@ -8,23 +8,27 @@ open Foundation
 
 module NetworkService =
     let private baseUrl = "https://api.github.com/users/"
+
     let getFollowers searchTerm =
-        let urlString = sprintf "%s%s/followers?per_page=100&page=1" baseUrl searchTerm
+        let urlString =
+            sprintf "%s%s/followers?per_page=100&page=1" baseUrl searchTerm
+
         async {
             try
                 let httpClient = new HttpClient()
+
                 use! response =
                     httpClient.GetAsync(Uri(urlString), HttpCompletionOption.ResponseHeadersRead)
                     |> Async.AwaitTask
-                                
-                response.EnsureSuccessStatusCode
-                |> ignore
+
+                response.EnsureSuccessStatusCode |> ignore
 
                 let! followers =
                     response.Content.ReadAsStringAsync()
                     |> Async.AwaitTask
 
-                let deserialized = Json.deserialize<Follower list> followers
+                let deserialized =
+                    Json.deserialize<Follower list> followers
 
                 return Ok deserialized
             with
@@ -40,14 +44,13 @@ module NetworkService =
                 use! response =
                     httpClient.GetAsync(Uri(urlString), HttpCompletionOption.ResponseHeadersRead)
                     |> Async.AwaitTask
-                    
-                response.EnsureSuccessStatusCode
-                |> ignore
+
+                response.EnsureSuccessStatusCode |> ignore
 
                 let! user =
                     response.Content.ReadAsStringAsync()
                     |> Async.AwaitTask
-                    
+
                 let deserialized = Json.deserialize<User> user
 
                 return Ok deserialized
@@ -55,4 +58,3 @@ module NetworkService =
             | :? HttpRequestException as ex -> return ex.Message |> Error
             | :? JsonDeserializationError as ex -> return ex.Message |> Error
         }
-   

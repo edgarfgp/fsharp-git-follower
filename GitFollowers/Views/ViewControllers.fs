@@ -149,19 +149,7 @@ module ViewControllers =
                     bioLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
                     bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
-            self.DownloadImage(user.avatar_url)
-            
-        member __.DownloadImage(url: string) =
-            let request = new NSUrlRequest(new NSUrl(url))
-            let response =
-                NSUrlSessionResponse(
-                    fun data _ _ ->
-                        if data <> null then
-                            let image = UIImage.LoadFromData(data)
-                            self.InvokeOnMainThread(fun _ -> avatarImageView.Image <- image))
-                
-            let dataTask = NSUrlSession.SharedSession.CreateDataTask(request, response)
-            dataTask.Resume()
+            UIImageView.downloadImageFromUrl(user.avatar_url, avatarImageView)
 
     type ItemInfoVC(backgroundColor: UIColor, text: string, itemInfoOneType: ItemInfoType, itemInfoOneCount: int, itemInfoTwoType: ItemInfoType, itemInfoTwoCount: int) as self =
         inherit UIViewController()

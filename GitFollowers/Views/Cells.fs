@@ -1,22 +1,15 @@
 namespace GitFollowers.Views
 
-open CoreFoundation
-open Foundation
+open GitFollowers.Helpers
 open GitFollowers.Models
 open System
 open UIKit
-open UIKit
+open ImageViews
+open Labels
 
 module Cells =
-
-    open ImageViews
-    open Labels
-
     type FollowerCell(handle: IntPtr) as self =
         inherit UICollectionViewCell(handle)
-
-        let mutable follower = Follower.CreateFollower()
-
         let padding = nfloat 8.
         let avatarImageView = new FGAvatarImageView()
         let userNameLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 16.)
@@ -39,23 +32,12 @@ module Cells =
 
         static member val CellId = "FollowerCell"
 
-        member __.Follower
-            with get () = follower
-            and set value =
-                follower <- value
+        member __.SetUp(follower : Follower) =
                 userNameLabel.Text <- follower.login
-
-                NSUrlSession.SharedSession.CreateDataTask(new NSUrlRequest(new NSUrl(follower.avatar_url)),
-                                                          NSUrlSessionResponse(fun data response error ->
-                                                              if data <> null then
-                                                                  DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                                                      let image = UIImage.LoadFromData(data)
-                                                                      avatarImageView.Image <- image))).Resume()
+                UIImageView.downloadImageFromUrl(follower.avatar_url, avatarImageView)
 
     type FavoriteCell(handle: IntPtr) as self =
         inherit UITableViewCell(handle)
-
-        let mutable user = User.CreateUser()
 
         let padding = nfloat 12.
         let avatarImageView = new FGAvatarImageView()
@@ -80,15 +62,6 @@ module Cells =
 
         static member val CellId = "FollowerTableCell"
 
-        member __.User
-            with get () = user
-            and set value =
-                user <- value
+        member __.SetUp(user : User) =
                 userNameLabel.Text <- user.login
-
-                NSUrlSession.SharedSession.CreateDataTask(new NSUrlRequest(new NSUrl(user.avatar_url)),
-                                                          NSUrlSessionResponse(fun data response error ->
-                                                              if data <> null then
-                                                                  DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                                                      let image = UIImage.LoadFromData(data)
-                                                                      avatarImageView.Image <- image))).Resume()
+                UIImageView.downloadImageFromUrl(user.avatar_url, avatarImageView)

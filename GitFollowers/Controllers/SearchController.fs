@@ -1,6 +1,5 @@
 namespace GitFollowers.ViewControllers
 
-open Foundation
 open GitFollowers.Helpers
 open GitFollowers.Views
 open GitFollowers.Views.Buttons
@@ -46,7 +45,7 @@ type SearchViewController() as self =
     member __.ConfigureLogoImageView() =
         logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
         logoImageView.ContentMode <- UIViewContentMode.ScaleAspectFill
-        logoImageView.Image <- UIImage.FromBundle("gh-logo.png")
+        logoImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo)
         self.View.AddSubview(logoImageView)
         NSLayoutConstraint.ActivateConstraints
             ([| logoImageView.TopAnchor.ConstraintEqualTo
