@@ -70,7 +70,104 @@ and FollowerListViewController(userName: string) as self =
     let loadingView = LoadingView.Instance
     let userDefaults = UserDefaults.Instance
 
-    member __.userName = userName
+    let collectionView =
+        lazy (new UICollectionView(self.View.Bounds, self.CreateThreeColumnFlowLayout(self.View)))
+
+    override __.ViewDidLoad() =
+        base.ViewDidLoad()
+
+        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+        self.Title <- userName
+        self.GetFollowers(userName)
+
+        collectionView.Value.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
+
+        self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
+        self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+        self.NavigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = UIBarButtonSystemItem.Add)
+        self.NavigationItem.RightBarButtonItem.Clicked
+        |> Event.add (fun _ -> self.GetUserInfo(userName))
+
+    member private __.ConfigureCollectionView(followers: Follower list) =
+        collectionView.Value.TranslatesAutoresizingMaskIntoConstraints <- false
+        self.View.AddSubview collectionView.Value
+        collectionView.Value.BackgroundColor <- UIColor.SystemBackgroundColor
+
+        collectionView.Value.Delegate <-
+            { new UICollectionViewDelegate() with
+                member __.ItemSelected(_, indexPath) =
+                    let index = int indexPath.Item
+                    let follower = followers.[index]
+                    let userInfoController = new UserInfoController(follower.login)
+
+                    let navController =
+                        new UINavigationController(rootViewController = userInfoController)
+
+                    self.PresentViewController(navController, true, null) }
+
+        collectionView.Value.DataSource <-
+            { new UICollectionViewDataSource() with
+                member __.GetCell(collectionView, indexPath) =
+                    let cell =
+                        collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
+
+                    let follower = followers.[int indexPath.Item]
+                    cell.SetUp follower
+                    upcast cell
+
+                member __.GetItemsCount(_, _) = nint followers.Length }
+
+        self.NavigationItem.SearchController <-
+            { new UISearchController() with
+                member __.ObscuresBackgroundDuringPresentation = false }
+
+        self.NavigationItem.SearchController.SearchResultsUpdater <-
+            { new UISearchResultsUpdating() with
+                member __.UpdateSearchResultsForSearchController(searchController) =
+                    // Implement search logic
+                    () }
+
+    member private __.CreateThreeColumnFlowLayout(view: UIView) =
+        let width = view.Bounds.Width
+        let padding = nfloat 12.
+        let minimumItemSpacing = nfloat 10.
+
+        let availableWidth =
+            width
+            - (padding * nfloat 2.)
+            - (minimumItemSpacing * nfloat 2.)
+
+        let itemWidth = availableWidth / nfloat 3.
+        let flowLayout = new UICollectionViewFlowLayout()
+        flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
+        flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
+        flowLayout
+
+    member __.GetFollowers(userName: string) =
+        loadingView.Show(self.View)
+        let mainThread = SynchronizationContext.Current
+        async {
+            do! Async.SwitchToThreadPool()
+            let! result = NetworkService.getFollowers userName
+
+            match result with
+            | Ok followers ->
+                if followers.Length > 0 then
+                    do! Async.SwitchToContext mainThread
+                    loadingView.Dismiss()
+                    self.ConfigureCollectionView(followers)
+                else
+                    do! Async.SwitchToContext mainThread
+                    loadingView.Dismiss()
+                    showEmptyView ("This user has no followers. Go follow him", self)
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                loadingView.Dismiss()
+                presentFGAlertOnMainThread
+                    ("Error", "Error while processing your request. Please try again later", self)
+        }
+        |> Async.Start
+
 
     member __.GetUserInfo(userName: string) =
         let mainThread = SynchronizationContext.Current
@@ -103,107 +200,6 @@ and FollowerListViewController(userName: string) as self =
         }
         |> Async.Start
 
-    member __.GetFollowers(userName: string) =
-        loadingView.Show(self.View)
-        let mainThread = SynchronizationContext.Current
-        async {
-            do! Async.SwitchToThreadPool()
-            let! result = NetworkService.getFollowers userName
-
-            match result with
-            | Ok followers ->
-                if followers.Length > 0 then
-                    do! Async.SwitchToContext mainThread
-                    loadingView.Dismiss()
-                    self.ConfigureCollectionView(followers)
-                else
-                    do! Async.SwitchToContext mainThread
-                    loadingView.Dismiss()
-                    showEmptyView ("This user has no followers. Go follow him", self)
-            | Error _ ->
-                do! Async.SwitchToContext mainThread
-                loadingView.Dismiss()
-                presentFGAlertOnMainThread
-                    ("Error", "Error while processing your request. Please try again later", self)
-        }
-        |> Async.Start
-
-    override __.ViewDidLoad() =
-        base.ViewDidLoad()
-        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-        self.Title <- userName
-        self.GetFollowers(userName)
-
-    override __.ViewWillAppear(_) =
-        base.ViewWillAppear(true)
-        self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
-        self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        self.NavigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = UIBarButtonSystemItem.Add)
-        self.NavigationItem.RightBarButtonItem.Clicked
-        |> Event.add (fun _ -> self.AddFavoriteTapped())
-
-    member private __.ConfigureCollectionView(followers: Follower list) =
-        let collectionView =
-            new UICollectionView(self.View.Bounds, self.CreateThreeColumnFlowLayout(self.View))
-
-        collectionView.TranslatesAutoresizingMaskIntoConstraints <- false
-        self.View.AddSubview collectionView
-        collectionView.BackgroundColor <- UIColor.SystemBackgroundColor
-
-        collectionView.Delegate <-
-            { new UICollectionViewDelegate() with
-                member __.ItemSelected(_, indexPath) =
-                    let index = int indexPath.Item
-                    let follower = followers.[index]
-                    let userInfoController = new UserInfoController(follower.login)
-
-                    let navController =
-                        new UINavigationController(rootViewController = userInfoController)
-
-                    self.PresentViewController(navController, true, null) }
-
-        collectionView.DataSource <-
-            { new UICollectionViewDataSource() with
-                member __.GetCell(collectionView, indexPath) =
-                    let cell =
-                        collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
-
-                    let follower = followers.[int indexPath.Item]
-                    cell.SetUp follower
-                    upcast cell
-
-                member __.GetItemsCount(_, _) = nint followers.Length }
-
-        self.NavigationItem.SearchController <-
-            { new UISearchController() with
-                member __.ObscuresBackgroundDuringPresentation = false }
-
-        self.NavigationItem.SearchController.SearchResultsUpdater <-
-            { new UISearchResultsUpdating() with
-                member __.UpdateSearchResultsForSearchController(searchController) =
-                    // Implement search logic
-                    () }
-
-        collectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
-
-    member private __.CreateThreeColumnFlowLayout(view: UIView) =
-        let width = view.Bounds.Width
-        let padding = nfloat 12.
-        let minimumItemSpacing = nfloat 10.
-
-        let availableWidth =
-            width
-            - (padding * nfloat 2.)
-            - (minimumItemSpacing * nfloat 2.)
-
-        let itemWidth = availableWidth / nfloat 3.
-        let flowLayout = new UICollectionViewFlowLayout()
-        flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
-        flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
-        flowLayout
-
-    member private __.AddFavoriteTapped() = self.GetUserInfo(userName)
-
 and UserInfoController(userName: string) as self =
     inherit UIViewController()
 
@@ -212,8 +208,6 @@ and UserInfoController(userName: string) as self =
     let headerView = new UIView()
     let itemViewOne = new UIView()
     let itemViewTwo = new UIView()
-
-    member __.userName = userName
 
     member __.GetUserInfo(userName: string) =
         let mainThread = SynchronizationContext.Current
