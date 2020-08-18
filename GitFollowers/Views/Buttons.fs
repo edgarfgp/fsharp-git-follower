@@ -15,5 +15,3 @@ module Buttons =
             self.Layer.CornerRadius <- nfloat 10.
             self.SetTitleColor(UIColor.White, UIControlState.Normal)
             self.TitleLabel.Font <- UIFont.PreferredHeadline
-
-

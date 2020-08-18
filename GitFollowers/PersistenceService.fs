@@ -29,7 +29,7 @@ type UserDefaults private () as self =
                 |> List.tryFind (fun c -> c.login = follower.login)
 
             match hasFollowers with
-            | Some follower -> Ok AlreadyExists
+            | Some _ -> Ok AlreadyExists
             | None ->
                 newFollower
                 |> List.append [ follower ]

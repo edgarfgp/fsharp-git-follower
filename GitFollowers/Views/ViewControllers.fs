@@ -16,9 +16,14 @@ module ViewControllers =
     type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
         inherit UIViewController()
         let containerView = new UIView()
-        let titleLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 20.)
+
+        let titleLabel =
+            new FGTitleLabel(UITextAlignment.Center, nfloat 20.)
+
         let messageLabel = new FGBodyLabel()
-        let actionButton = new FGButton(UIColor.SystemPinkColor, "Ok")
+
+        let actionButton =
+            new FGButton(UIColor.SystemPinkColor, "Ok")
 
         let padding = nfloat 20.
 
@@ -38,7 +43,7 @@ module ViewControllers =
             messageLabel.Lines <- nint 4
             actionButton.SetTitle(buttonTitle, UIControlState.Normal)
             actionButton.TouchUpInside
-            |> Event.add((fun _ -> self.DismissViewController(true, null)))
+            |> Event.add ((fun _ -> self.DismissViewController(true, null)))
 
             containerView.BackgroundColor <- UIColor.SystemBackgroundColor
             containerView.Layer.CornerRadius <- nfloat 16.
@@ -75,7 +80,10 @@ module ViewControllers =
 
         let textImageViewPadding = nfloat 12.
         let avatarImageView = new FGAvatarImageView()
-        let userNameLabel = new FGTitleLabel(UITextAlignment.Left, nfloat 34.)
+
+        let userNameLabel =
+            new FGTitleLabel(UITextAlignment.Left, nfloat 34.)
+
         let nameLabel = new FGSecondaryTitleLabel(nfloat 18.)
         let locationImageView = new UIImageView()
         let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
@@ -149,15 +157,26 @@ module ViewControllers =
                     bioLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
                     bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
-            UIImageView.downloadImageFromUrl(user.avatar_url, avatarImageView)
+            UIImageView.downloadImageFromUrl (user.avatar_url, avatarImageView)
 
-    type ItemInfoVC(backgroundColor: UIColor, text: string, itemInfoOneType: ItemInfoType, itemInfoOneCount: int, itemInfoTwoType: ItemInfoType, itemInfoTwoCount: int) as self =
+    type ItemInfoVC(backgroundColor: UIColor,
+                    text: string,
+                    itemInfoOneType: ItemInfoType,
+                    itemInfoOneCount: int,
+                    itemInfoTwoType: ItemInfoType,
+                    itemInfoTwoCount: int) as self =
         inherit UIViewController()
         let padding = nfloat 20.
         let stackView = new UIStackView()
-        let itemInfoViewOne = new FGItemInfoView(itemInfoOneType, itemInfoOneCount)
-        let itemInfoViewTwo = new FGItemInfoView(itemInfoTwoType, itemInfoTwoCount)
+
+        let itemInfoViewOne =
+            new FGItemInfoView(itemInfoOneType, itemInfoOneCount)
+
+        let itemInfoViewTwo =
+            new FGItemInfoView(itemInfoTwoType, itemInfoTwoCount)
+
         let actionButton = new FGButton(backgroundColor, text)
+
         do
             self.View.Layer.CornerRadius <- nfloat 18.
             self.View.BackgroundColor <- UIColor.SecondarySystemBackgroundColor
@@ -184,5 +203,4 @@ module ViewControllers =
                     actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
 
         member __.ActionButtonClicked(handler) =
-            actionButton.TouchUpInside
-            |> Event.add handler
+            actionButton.TouchUpInside |> Event.add handler

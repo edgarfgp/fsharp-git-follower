@@ -7,6 +7,7 @@ module TextFields =
 
     type FGTextField(placeholder: string) as self =
         inherit UITextField()
+
         do
             self.TranslatesAutoresizingMaskIntoConstraints <- false
             self.Layer.CornerRadius <- nfloat 10.
@@ -26,5 +27,3 @@ module TextFields =
             self.ReturnKeyType <- UIReturnKeyType.Go
 
             self.Placeholder <- placeholder
-
-

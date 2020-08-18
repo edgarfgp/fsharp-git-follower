@@ -12,7 +12,10 @@ type SearchViewController() as self =
     inherit UIViewController()
 
     let logoImageView = new UIImageView()
-    let actionButton = new FGButton(UIColor.SystemGrayColor, "Get followers")
+
+    let actionButton =
+        new FGButton(UIColor.SystemGrayColor, "Get followers")
+
     let userNameTextField = new FGTextField("Enter username")
 
     override __.ViewDidLoad() =
@@ -31,8 +34,7 @@ type SearchViewController() as self =
 
     member __.HandleNavigation() =
         let userName =
-            userNameTextField.Text
-            |> Option.OfString
+            userNameTextField.Text |> Option.OfString
 
         match userName with
         | Some text ->
@@ -40,7 +42,8 @@ type SearchViewController() as self =
             self.NavigationController.PushViewController(followerListVC, animated = true)
             userNameTextField.ResignFirstResponder() |> ignore
         | _ ->
-            presentFGAlertOnMainThread("Empty Username", "Please enter a username . We need to know who to look for 😀", self)
+            presentFGAlertOnMainThread
+                ("Empty Username", "Please enter a username . We need to know who to look for 😀", self)
 
     member __.ConfigureLogoImageView() =
         logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -58,12 +61,12 @@ type SearchViewController() as self =
         self.View.AddSubview(userNameTextField)
         userNameTextField.ClearButtonMode <- UITextFieldViewMode.WhileEditing
         userNameTextField.Delegate <-
-            { new UITextFieldDelegate()
-                with member __.ShouldReturn(textField) =
-                        self.HandleNavigation()
-                        true }
+            { new UITextFieldDelegate() with
+                member __.ShouldReturn(textField) =
+                    self.HandleNavigation()
+                    true }
         userNameTextField.EditingChanged
-        |> Event.add(fun _ -> self.UserNameTextFieldDidChange())
+        |> Event.add (fun _ -> self.UserNameTextFieldDidChange())
 
         NSLayoutConstraint.ActivateConstraints
             ([| userNameTextField.TopAnchor.ConstraintEqualTo(logoImageView.BottomAnchor, constant = nfloat 50.)
@@ -79,12 +82,12 @@ type SearchViewController() as self =
         else
             actionButton.Enabled <- false
             actionButton.BackgroundColor <- UIColor.SystemGrayColor
-            
+
     member __.ConfigureActionButton() =
         self.View.AddSubview(actionButton)
         actionButton.Enabled <- false
         actionButton.TouchUpInside
-        |> Event.add(fun _ -> self.HandleNavigation())
+        |> Event.add (fun _ -> self.HandleNavigation())
 
         NSLayoutConstraint.ActivateConstraints
             ([| actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)

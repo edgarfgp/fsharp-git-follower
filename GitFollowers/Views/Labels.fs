@@ -5,10 +5,11 @@ open UIKit
 
 module Labels =
 
-    type FGTitleLabel(textAligment: UITextAlignment, fontSize: nfloat) as self =
+    type FGTitleLabel(textAlignment: UITextAlignment, fontSize: nfloat) as self =
         inherit UILabel()
+
         do
-            self.TextAlignment <- textAligment
+            self.TextAlignment <- textAlignment
             self.Font <- UIFont.SystemFontOfSize(fontSize, UIFontWeight.Bold)
             self.TextColor <- UIColor.LabelColor
             self.AdjustsFontSizeToFitWidth <- true
@@ -18,6 +19,7 @@ module Labels =
 
     type FGBodyLabel() as self =
         inherit UILabel()
+
         do
             self.TextColor <- UIColor.SecondaryLabelColor
             self.Font <- UIFont.PreferredBody
@@ -45,4 +47,3 @@ module Labels =
             self.MinimumScaleFactor <- nfloat 0.90
             self.LineBreakMode <- UILineBreakMode.TailTruncation
             self.TranslatesAutoresizingMaskIntoConstraints <- false
-
