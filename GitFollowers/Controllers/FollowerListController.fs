@@ -64,7 +64,7 @@ type FavoriteListViewController() as self =
         | Ok fav -> self.ConfigureTableView(fav)
         | Error _ -> showEmptyView ("No Favorites", self)
 
-and FollowerListViewController(userName: string) as self =
+and FollowerListViewController(service: IGitHubService, userName: string) as self =
     inherit UIViewController()
 
     let loadingView = LoadingView.Instance
@@ -98,7 +98,7 @@ and FollowerListViewController(userName: string) as self =
                 member __.ItemSelected(_, indexPath) =
                     let index = int indexPath.Item
                     let follower = followers.[index]
-                    let userInfoController = new UserInfoController(follower.login)
+                    let userInfoController = new UserInfoController(GitHubService(), follower.login)
 
                     let navController =
                         new UINavigationController(rootViewController = userInfoController)
@@ -148,7 +148,7 @@ and FollowerListViewController(userName: string) as self =
         let mainThread = SynchronizationContext.Current
         async {
             do! Async.SwitchToThreadPool()
-            let! result = NetworkService.getFollowers userName
+            let! result = service.GetFollowers userName
 
             match result with
             | Ok followers ->
@@ -173,7 +173,7 @@ and FollowerListViewController(userName: string) as self =
         let mainThread = SynchronizationContext.Current
         async {
             do! Async.SwitchToThreadPool()
-            let! result = NetworkService.getUserInfo userName
+            let! result = service.GetUserInfo userName
 
             match result with
             | Ok value ->
@@ -200,7 +200,7 @@ and FollowerListViewController(userName: string) as self =
         }
         |> Async.Start
 
-and UserInfoController(userName: string) as self =
+and UserInfoController(service: IGitHubService, userName: string) as self =
     inherit UIViewController()
 
     let padding = nfloat 20.
@@ -213,8 +213,7 @@ and UserInfoController(userName: string) as self =
         let mainThread = SynchronizationContext.Current
         async {
             do! Async.SwitchToThreadPool()
-            let! result = NetworkService.getUserInfo userName
-
+            let! result = service.GetUserInfo userName
             match result with
             | Ok value ->
                 do! Async.SwitchToContext mainThread
@@ -325,7 +324,7 @@ and UserInfoController(userName: string) as self =
 
         itemInfoTwo.ActionButtonClicked(fun _ ->
             let userFollowerListViewController =
-                new FollowerListViewController(user.login)
+                new FollowerListViewController(GitHubService(), user.login)
 
             userFollowerListViewController.View.BackgroundColor <- UIColor.SystemBackgroundColor
             self.NavigationController.PushViewController(userFollowerListViewController, animated = true))

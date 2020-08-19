@@ -6,55 +6,61 @@ open FSharp.Json
 open GitFollowers.Models
 open Foundation
 
-module NetworkService =
-    let private baseUrl = "https://api.github.com/users/"
+type IGitHubService =
+    abstract GetFollowers: string -> Async<Result<Follower list, string>>
 
-    let getFollowers searchTerm =
-        let urlString =
-            sprintf "%s%s/followers?per_page=100&page=1" baseUrl searchTerm
+    abstract GetUserInfo: string -> Async<Result<User, string>>
 
-        async {
-            try
+type GitHubService() =
+    let baseUrl = "https://api.github.com/users/"
+
+    interface IGitHubService with
+        member __.GetFollowers(searchTerm: string) =
+            let urlString =
+                sprintf "%s%s/followers?per_page=100&page=1" baseUrl searchTerm
+
+            async {
+                try
+                    let httpClient = new HttpClient()
+
+                    use! response =
+                        httpClient.GetAsync(Uri(urlString), HttpCompletionOption.ResponseHeadersRead)
+                        |> Async.AwaitTask
+
+                    response.EnsureSuccessStatusCode |> ignore
+
+                    let! followers =
+                        response.Content.ReadAsStringAsync()
+                        |> Async.AwaitTask
+
+                    let deserialized =
+                        Json.deserialize<Follower list> followers
+
+                    return Ok deserialized
+                with
+                | :? HttpRequestException as ex -> return ex.Message |> Error
+                | :? JsonDeserializationError as ex -> return ex.Message |> Error
+            }
+
+        member __.GetUserInfo(userName: string) =
+            let urlString = sprintf "%s%s" baseUrl userName
+            async {
                 let httpClient = new HttpClient()
+                try
+                    use! response =
+                        httpClient.GetAsync(Uri(urlString), HttpCompletionOption.ResponseHeadersRead)
+                        |> Async.AwaitTask
 
-                use! response =
-                    httpClient.GetAsync(Uri(urlString), HttpCompletionOption.ResponseHeadersRead)
-                    |> Async.AwaitTask
+                    response.EnsureSuccessStatusCode |> ignore
 
-                response.EnsureSuccessStatusCode |> ignore
+                    let! user =
+                        response.Content.ReadAsStringAsync()
+                        |> Async.AwaitTask
 
-                let! followers =
-                    response.Content.ReadAsStringAsync()
-                    |> Async.AwaitTask
+                    let deserialized = Json.deserialize<User> user
 
-                let deserialized =
-                    Json.deserialize<Follower list> followers
-
-                return Ok deserialized
-            with
-            | :? HttpRequestException as ex -> return ex.Message |> Error
-            | :? JsonDeserializationError as ex -> return ex.Message |> Error
-        }
-
-    let getUserInfo userName =
-        let urlString = sprintf "%s%s" baseUrl userName
-        async {
-            let httpClient = new HttpClient()
-            try
-                use! response =
-                    httpClient.GetAsync(Uri(urlString), HttpCompletionOption.ResponseHeadersRead)
-                    |> Async.AwaitTask
-
-                response.EnsureSuccessStatusCode |> ignore
-
-                let! user =
-                    response.Content.ReadAsStringAsync()
-                    |> Async.AwaitTask
-
-                let deserialized = Json.deserialize<User> user
-
-                return Ok deserialized
-            with
-            | :? HttpRequestException as ex -> return ex.Message |> Error
-            | :? JsonDeserializationError as ex -> return ex.Message |> Error
-        }
+                    return Ok deserialized
+                with
+                | :? HttpRequestException as ex -> return ex.Message |> Error
+                | :? JsonDeserializationError as ex -> return ex.Message |> Error
+            }
