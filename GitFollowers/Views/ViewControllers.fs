@@ -43,8 +43,6 @@ module ViewControllers =
 
             messageLabel.Lines <- nint 4
             actionButton.SetTitle(buttonTitle, UIControlState.Normal)
-            actionButton.TouchUpInside
-            |> Event.add ((fun _ -> self.DismissViewController(true, null)))
 
             containerView.BackgroundColor <- UIColor.SystemBackgroundColor
             containerView.Layer.CornerRadius <- nfloat 16.
@@ -75,6 +73,8 @@ module ViewControllers =
                     actionButton.LeadingAnchor.ConstraintEqualTo(containerView.LeadingAnchor, constant = padding)
                     actionButton.TrailingAnchor.ConstraintEqualTo(containerView.TrailingAnchor, constant = -padding)
                     actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
+        member __.ActionButtonClicked(handler) =
+            actionButton.TouchUpInside |> Event.add handler
 
     type FGUserInfoHeaderVC(user: User) as self =
         inherit UIViewController()

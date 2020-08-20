@@ -10,7 +10,7 @@ open UIKit
 
 [<AutoOpen>]
 module UserInfoController =
-    
+
     type UserInfoController(service: IGitHubService, userName: string) as self =
         inherit UIViewController()
         let padding = nfloat 20.
@@ -18,9 +18,9 @@ module UserInfoController =
         let headerView = new UIView()
         let itemViewOne = new UIView()
         let itemViewTwo = new UIView()
-        
+
         let didRequestFollowers = new Event<_>()
-        
+
         [<CLIEvent>]
         member this.DidRequestFollowers = didRequestFollowers.Publish
 
@@ -141,5 +141,8 @@ module UserInfoController =
                 self.PresentViewController(safariVC, true, null))
 
             itemInfoTwo.ActionButtonClicked(fun _ ->
-                didRequestFollowers.Trigger(self, user.login)
-                self.DismissViewController(true, null))
+                if user.followers > 0 then
+                    didRequestFollowers.Trigger(self, user.login)
+                    self.DismissViewController(true, null)
+                else
+                    presentFGAlertOnMainThread ("Not followers", "This user does not have followers", self))

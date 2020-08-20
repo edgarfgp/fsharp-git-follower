@@ -2,6 +2,7 @@ namespace GitFollowers
 
 open System
 open System.Threading
+open CoreFoundation
 open CoreGraphics
 open GitFollowers
 open GitFollowers.Controllers
@@ -50,7 +51,7 @@ module FollowerListController =
                         let userInfoController =
                             new UserInfoController(GitHubService(), follower.login)
 
-                        userInfoController.DidRequestFollowers.Add(fun (sender, arg) ->
+                        userInfoController.DidRequestFollowers.Add(fun (_, arg) ->
                             self.GetFollowers(arg)
                             collectionView.Value.ReloadData())
 
@@ -77,8 +78,7 @@ module FollowerListController =
 
             self.NavigationItem.SearchController.SearchResultsUpdater <-
                 { new UISearchResultsUpdating() with
-                    member __.UpdateSearchResultsForSearchController(searchController) =
-                        () }
+                    member __.UpdateSearchResultsForSearchController(searchController) = () }
 
         member private __.CreateThreeColumnFlowLayout(view: UIView) =
             let width = view.Bounds.Width
@@ -111,15 +111,22 @@ module FollowerListController =
                         self.ConfigureCollectionView(followers)
                     else
                         do! Async.SwitchToContext mainThread
-                        // FIXME For now we will the configure method with [] to reset the state
-                        self.ConfigureCollectionView(followers)
                         loadingView.Dismiss()
                         showEmptyView ("This user has no followers. Go follow him", self)
                 | Error _ ->
                     do! Async.SwitchToContext mainThread
                     loadingView.Dismiss()
-                    presentFGAlertOnMainThread
-                        ("Error", "Error while processing your request. Please try again later", self)
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                        let alertVC =
+                            new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok")
+
+                        alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
+                        alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
+                        self.PresentViewController(alertVC, true, null)
+                        alertVC.ActionButtonClicked(fun _ ->
+                            alertVC.DismissViewController(true, null)
+                            self.NavigationController.PopToRootViewController(true)
+                            |> ignore))
             }
             |> Async.Start
 

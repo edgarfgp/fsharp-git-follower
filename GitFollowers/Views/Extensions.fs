@@ -12,6 +12,7 @@ module Extensions =
             let alertVC = new FGAlertVC(title, message, "Ok")
             alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
             alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
+            alertVC.ActionButtonClicked(fun _ -> self.DismissViewController(true, null))
             self.PresentViewController(alertVC, true, null))
 
     let showEmptyView (message: string, self: UIViewController) =
