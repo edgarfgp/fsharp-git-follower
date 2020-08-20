@@ -111,6 +111,8 @@ module FollowerListController =
                         self.ConfigureCollectionView(followers)
                     else
                         do! Async.SwitchToContext mainThread
+                        // FIXME For now we will the configure method with [] to reset the state
+                        self.ConfigureCollectionView(followers)
                         loadingView.Dismiss()
                         showEmptyView ("This user has no followers. Go follow him", self)
                 | Error _ ->
