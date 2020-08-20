@@ -5,7 +5,6 @@ open System
 open UIKit
 open Foundation
 
-open GitFollowers.ViewControllers
 
 [<Register("AppDelegate")>]
 type AppDelegate() =

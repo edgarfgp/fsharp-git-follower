@@ -11,6 +11,7 @@ open GitFollowers.Views.Views
 open System
 open UIKit
 
+[<AutoOpen>]
 module ViewControllers =
 
     type FGAlertVC(title: string, message: string, buttonTitle: string) as self =

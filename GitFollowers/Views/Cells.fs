@@ -7,6 +7,7 @@ open UIKit
 open ImageViews
 open Labels
 
+[<AutoOpen>]
 module Cells =
     type FollowerCell(handle: IntPtr) as self =
         inherit UICollectionViewCell(handle)

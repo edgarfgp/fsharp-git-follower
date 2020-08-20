@@ -3,6 +3,7 @@ namespace GitFollowers.Views
 open System
 open UIKit
 
+[<AutoOpen>]
 module Labels =
 
     type FGTitleLabel(textAlignment: UITextAlignment, fontSize: nfloat) as self =

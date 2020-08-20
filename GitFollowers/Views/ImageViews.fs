@@ -4,6 +4,7 @@ open System
 open GitFollowers.Helpers
 open UIKit
 
+[<AutoOpen>]
 module ImageViews =
 
     type FGAvatarImageView() as self =

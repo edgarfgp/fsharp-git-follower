@@ -3,6 +3,7 @@ namespace GitFollowers.Views
 open System
 open UIKit
 
+[<AutoOpen>]
 module TextFields =
 
     type FGTextField(placeholder: string) as self =

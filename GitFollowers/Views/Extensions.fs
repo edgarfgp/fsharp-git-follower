@@ -5,6 +5,7 @@ open GitFollowers.Views.ViewControllers
 open GitFollowers.Views.Views
 open UIKit
 
+[<AutoOpen>]
 module Extensions =
     let presentFGAlertOnMainThread (title, message, self: UIViewController) =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->

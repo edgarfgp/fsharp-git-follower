@@ -5,13 +5,14 @@ open GitFollowers.Views.Labels
 open System
 open UIKit
 
-type ItemInfoType =
+[<AutoOpen>]
+module Views =
+    
+    type ItemInfoType =
     | Repo
     | Gists
     | Followers
     | Following
-
-module Views =
 
     type FGItemInfoView(itemInfoType: ItemInfoType, withCount: int) as self =
         inherit UIView()

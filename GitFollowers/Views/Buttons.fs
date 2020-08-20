@@ -3,6 +3,7 @@ namespace GitFollowers.Views
 open System
 open UIKit
 
+[<AutoOpen>]
 module Buttons =
 
     type FGButton(backgroundColor: UIColor, text: string) as self =
