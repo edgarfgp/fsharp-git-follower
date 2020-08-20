@@ -19,6 +19,8 @@ module FollowerListController =
         let loadingView = LoadingView.Instance
         let userDefaults = UserDefaults.Instance
 
+        let mutable page: int = 1
+
         let collectionView =
             lazy (new UICollectionView(self.View.Bounds, self.CreateThreeColumnFlowLayout(self.View)))
 
@@ -27,7 +29,7 @@ module FollowerListController =
 
             self.View.BackgroundColor <- UIColor.SystemBackgroundColor
             self.Title <- userName
-            self.GetFollowers(userName)
+            self.GetFollowers(userName, page)
 
             collectionView.Value.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
 
@@ -51,14 +53,23 @@ module FollowerListController =
                         let userInfoController =
                             new UserInfoController(GitHubService(), follower.login)
 
-                        userInfoController.DidRequestFollowers.Add(fun (_, arg) ->
-                            self.GetFollowers(arg)
+                        userInfoController.DidRequestFollowers.Add(fun (_, userName) ->
+                            self.GetFollowers(userName, page)
+                            self.Title <- userName
                             collectionView.Value.ReloadData())
 
                         let navController =
                             new UINavigationController(rootViewController = userInfoController)
 
-                        self.PresentViewController(navController, true, null) }
+                        self.PresentViewController(navController, true, null)
+
+                    member __.DraggingEnded(scrollView, willDecelerate) =
+                        let offsetY = scrollView.ContentOffset.Y
+                        let contentHeight = scrollView.ContentSize.Height
+                        let height = scrollView.Frame.Size.Height
+                        if offsetY > contentHeight - height then
+                            page <- page + 1
+                            self.GetFollowers(userName, page) }
 
             collectionView.Value.DataSource <-
                 { new UICollectionViewDataSource() with
@@ -96,12 +107,12 @@ module FollowerListController =
             flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
             flowLayout
 
-        member __.GetFollowers(userName: string) =
+        member __.GetFollowers(userName: string, page: int) =
             loadingView.Show(self.View)
             let mainThread = SynchronizationContext.Current
             async {
                 do! Async.SwitchToThreadPool()
-                let! result = service.GetFollowers userName
+                let! result = service.GetFollowers(userName, page)
 
                 match result with
                 | Ok followers ->

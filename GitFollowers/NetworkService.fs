@@ -7,7 +7,7 @@ open GitFollowers.Models
 open Foundation
 
 type IGitHubService =
-    abstract GetFollowers: string -> Async<Result<Follower list, string>>
+    abstract GetFollowers: string * int -> Async<Result<Follower list, string>>
 
     abstract GetUserInfo: string -> Async<Result<User, string>>
 
@@ -15,9 +15,9 @@ type GitHubService() =
     let baseUrl = "https://api.github.com/users/"
 
     interface IGitHubService with
-        member __.GetFollowers(searchTerm: string) =
+        member __.GetFollowers(searchTerm: string, page: int) =
             let urlString =
-                sprintf "%s%s/followers?per_page=100&page=1" baseUrl searchTerm
+                sprintf "%s%s/followers?per_page=100&page=%d" baseUrl searchTerm page
 
             async {
                 try
