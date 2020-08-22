@@ -1,6 +1,8 @@
 namespace GitFollowers.Helpers
 
 open System
+open System.Net.Http
+open System.Threading
 open CoreFoundation
 open CoreGraphics
 open Foundation
@@ -23,35 +25,40 @@ module Option =
         else None
 
 module UIImageView =
+
+    let mainThread = SynchronizationContext.Current
+
     let downloadImageFromUrl (url: string, image: UIImageView) =
-        let request = new NSUrlRequest(new NSUrl(url))
+        async {
+            let httpClient = new HttpClient()
 
-        let response =
-            NSUrlSessionResponse(fun data _ _ ->
-                if data <> null then
-                    let newImage = UIImage.LoadFromData(data)
-                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> image.Image <- newImage))
+            let! response =
+                httpClient.GetByteArrayAsync(url)
+                |> Async.AwaitTask
 
-        let dataTask =
-            NSUrlSession.SharedSession.CreateDataTask(request, response)
+            let newImage =
+                UIImage.LoadFromData(NSData.FromArray(response))
 
-        dataTask.Resume()
-        
+            DispatchQueue.MainQueue.DispatchAsync(fun _ -> image.Image <- newImage)
+        }
+        |> Async.Start
+
+
 [<AutoOpen>]
 module UICollectionView =
-    
-     let CreateThreeColumnFlowLayout(view: UIView) =
-            let width = view.Bounds.Width
-            let padding = nfloat 12.
-            let minimumItemSpacing = nfloat 10.
 
-            let availableWidth =
-                width
-                - (padding * nfloat 2.)
-                - (minimumItemSpacing * nfloat 2.)
+    let CreateThreeColumnFlowLayout (view: UIView) =
+        let width = view.Bounds.Width
+        let padding = nfloat 12.
+        let minimumItemSpacing = nfloat 10.
 
-            let itemWidth = availableWidth / nfloat 3.
-            let flowLayout = new UICollectionViewFlowLayout()
-            flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
-            flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
-            flowLayout
+        let availableWidth =
+            width
+            - (padding * nfloat 2.)
+            - (minimumItemSpacing * nfloat 2.)
+
+        let itemWidth = availableWidth / nfloat 3.
+        let flowLayout = new UICollectionViewFlowLayout()
+        flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
+        flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
+        flowLayout
