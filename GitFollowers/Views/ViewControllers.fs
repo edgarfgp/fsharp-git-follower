@@ -1,7 +1,9 @@
 namespace GitFollowers.Views
 
+open System.Threading
 open CoreFoundation
 open Foundation
+open GitFollowers.Helpers
 open GitFollowers.Helpers
 open GitFollowers.Models
 open GitFollowers.Views.Buttons

@@ -26,20 +26,21 @@ module Option =
 
 module UIImageView =
 
-    let mainThread = SynchronizationContext.Current
-
     let downloadImageFromUrl (url: string, image: UIImageView) =
         async {
-            let httpClient = new HttpClient()
+            try
+                let httpClient = new HttpClient()
 
-            let! response =
-                httpClient.GetByteArrayAsync(url)
-                |> Async.AwaitTask
+                let! response =
+                    httpClient.GetByteArrayAsync(url)
+                    |> Async.AwaitTask
 
-            let newImage =
-                UIImage.LoadFromData(NSData.FromArray(response))
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    image.Image <- UIImage.LoadFromData(NSData.FromArray(response)))
 
-            DispatchQueue.MainQueue.DispatchAsync(fun _ -> image.Image <- newImage)
+            with :? HttpRequestException as ex ->
+                DispatchQueue.MainQueue.DispatchAsync(fun _ -> image.Image <- UIImage.FromBundle(ImageNames.ghLogo))
+                printfn "%O" ex.Message
         }
         |> Async.Start
 
