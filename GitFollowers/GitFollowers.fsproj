@@ -135,8 +135,8 @@
         <Compile Include="Views\ViewControllers.fs" />
         <Compile Include="Views\Extensions.fs" />
         <Compile Include="Controllers\UserInfoViewController.fs" />
-        <Compile Include="Controllers\FavoriteListViewController.fs" />
         <Compile Include="Controllers\FollowerListViewController.fs" />
+        <Compile Include="Controllers\FavoriteListViewController.fs" />
         <Compile Include="Controllers\SearchController.fs" />
         <Compile Include="AppDelegate.fs" />
         <Compile Include="Main.fs" />
