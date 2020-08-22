@@ -3,9 +3,9 @@ namespace GitFollowers
 open System
 open System.Threading
 open CoreFoundation
-open CoreGraphics
 open GitFollowers
 open GitFollowers.Controllers
+open GitFollowers.Helpers
 open GitFollowers.Models
 open GitFollowers.Views
 open UIKit
@@ -19,10 +19,12 @@ module FollowerListController =
         let loadingView = LoadingView.Instance
         let userDefaults = UserDefaults.Instance
 
+        let mainThread = SynchronizationContext.Current
+
         let mutable page: int = 1
 
         let collectionView =
-            lazy (new UICollectionView(self.View.Bounds, self.CreateThreeColumnFlowLayout(self.View)))
+            lazy (new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.View)))
 
         override __.ViewDidLoad() =
             base.ViewDidLoad()
@@ -37,7 +39,7 @@ module FollowerListController =
             self.NavigationController.NavigationBar.PrefersLargeTitles <- true
             self.NavigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = UIBarButtonSystemItem.Add)
             self.NavigationItem.RightBarButtonItem.Clicked
-            |> Event.add (fun _ -> self.GetUserInfo(userName))
+            |> Event.add (fun _ -> self.AddToFavorites(userName))
 
         member private __.ConfigureCollectionView(followers: Follower list) =
             collectionView.Value.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -69,7 +71,27 @@ module FollowerListController =
                         let height = scrollView.Frame.Size.Height
                         if offsetY > contentHeight - height then
                             page <- page + 1
-                            self.GetFollowers(userName, page) }
+                            loadingView.Show(self.View)
+                            async {
+                                do! Async.SwitchToThreadPool()
+                                let! result = service.GetFollowers(userName, page)
+
+                                match result with
+                                | Ok followers ->
+                                    if followers.Length > 0 then
+                                        do! Async.SwitchToContext mainThread
+                                        loadingView.Dismiss()
+                                        self.ConfigureCollectionView(followers)
+                                    
+                                    do! Async.SwitchToContext mainThread
+                                    loadingView.Dismiss()
+
+                                | Error _ ->
+                                    do! Async.SwitchToContext mainThread
+                                    loadingView.Dismiss()
+                                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.ShowAlertAndGoBack())
+                            }
+                            |> Async.Start }
 
             collectionView.Value.DataSource <-
                 { new UICollectionViewDataSource() with
@@ -91,25 +113,20 @@ module FollowerListController =
                 { new UISearchResultsUpdating() with
                     member __.UpdateSearchResultsForSearchController(searchController) = () }
 
-        member private __.CreateThreeColumnFlowLayout(view: UIView) =
-            let width = view.Bounds.Width
-            let padding = nfloat 12.
-            let minimumItemSpacing = nfloat 10.
+        member __.ShowAlertAndGoBack() =
+            let alertVC =
+                new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok")
 
-            let availableWidth =
-                width
-                - (padding * nfloat 2.)
-                - (minimumItemSpacing * nfloat 2.)
-
-            let itemWidth = availableWidth / nfloat 3.
-            let flowLayout = new UICollectionViewFlowLayout()
-            flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
-            flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
-            flowLayout
+            alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
+            alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
+            self.PresentViewController(alertVC, true, null)
+            alertVC.ActionButtonClicked(fun _ ->
+                alertVC.DismissViewController(true, null)
+                self.NavigationController.PopToRootViewController(true)
+                |> ignore)
 
         member __.GetFollowers(userName: string, page: int) =
             loadingView.Show(self.View)
-            let mainThread = SynchronizationContext.Current
             async {
                 do! Async.SwitchToThreadPool()
                 let! result = service.GetFollowers(userName, page)
@@ -127,22 +144,11 @@ module FollowerListController =
                 | Error _ ->
                     do! Async.SwitchToContext mainThread
                     loadingView.Dismiss()
-                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                        let alertVC =
-                            new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok")
-
-                        alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
-                        alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
-                        self.PresentViewController(alertVC, true, null)
-                        alertVC.ActionButtonClicked(fun _ ->
-                            alertVC.DismissViewController(true, null)
-                            self.NavigationController.PopToRootViewController(true)
-                            |> ignore))
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.ShowAlertAndGoBack())
             }
             |> Async.Start
 
-        member __.GetUserInfo(userName: string) =
-            let mainThread = SynchronizationContext.Current
+        member __.AddToFavorites(userName: string) =
             async {
                 do! Async.SwitchToThreadPool()
                 let! result = service.GetUserInfo userName

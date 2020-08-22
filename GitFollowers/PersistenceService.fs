@@ -5,10 +5,6 @@ open FSharp.Json
 open GitFollowers.Models
 open GitFollowers.Helpers
 
-type UpdateResult =
-    | AlreadyExists
-    | FavouriteAdded
-
 type UserDefaults private () as self =
     let favorites = "favorites"
     let defaults = NSUserDefaults.StandardUserDefaults
@@ -18,7 +14,7 @@ type UserDefaults private () as self =
     member __.SaveFavorite(followers: Follower list) =
         followers
         |> Json.serialize
-        |> fun c -> defaults.SetString(c, "favorites")
+        |> fun c -> defaults.SetString(c, favorites)
 
     member __.Update(follower: Follower) =
         let followers = self.RetrieveFavorites()
