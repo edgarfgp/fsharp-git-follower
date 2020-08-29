@@ -4,6 +4,7 @@ open System
 open System.Threading
 open Foundation
 open GitFollowers
+open GitFollowers.Helpers
 open GitFollowers.Views
 open SafariServices
 open UIKit
@@ -55,11 +56,7 @@ module UserInfoController =
             childVC.DidMoveToParentViewController(self)
 
         member private __.ConfigureViewController() =
-            let doneButton =
-                new UIBarButtonItem(UIBarButtonSystemItem.Done)
-
-            doneButton.Clicked.Add(fun _ -> self.DismissModalViewController(true))
-            self.NavigationItem.RightBarButtonItem <- doneButton
+            addRightNavigationItem(self.NavigationItem, UIBarButtonSystemItem.Done, fun _ -> self.DismissModalViewController(true))
 
         member private __.ConfigureContentView() =
             headerView.TranslatesAutoresizingMaskIntoConstraints <- false

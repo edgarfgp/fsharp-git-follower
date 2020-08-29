@@ -32,7 +32,7 @@ module FollowerListController =
             
             self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
             self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-            addRightNavigationItem(self.NavigationItem, fun _ -> self.AddToFavorites(userName))
+            addRightNavigationItem(self.NavigationItem, UIBarButtonSystemItem.Add, fun _ -> self.AddToFavorites(userName))
 
             self.View.BackgroundColor <- UIColor.SystemBackgroundColor
             self.Title <- userName

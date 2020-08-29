@@ -67,7 +67,7 @@ module UICollectionView =
 [<AutoOpen>]
 module UIViewController =
     
-    let addRightNavigationItem(navigationItem : UINavigationItem, action) =
-        navigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = UIBarButtonSystemItem.Add)
+    let addRightNavigationItem(navigationItem : UINavigationItem, systemItem: UIBarButtonSystemItem,  action) =
+        navigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = systemItem)
         navigationItem.RightBarButtonItem.Clicked
             |> Event.add (action)
