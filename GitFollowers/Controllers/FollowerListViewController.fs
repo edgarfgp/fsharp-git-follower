@@ -6,6 +6,7 @@ open CoreFoundation
 open GitFollowers
 open GitFollowers.Controllers
 open GitFollowers.Helpers
+open GitFollowers.Helpers
 open GitFollowers.Models
 open GitFollowers.Views
 open UIKit
@@ -28,18 +29,16 @@ module FollowerListController =
 
         override __.ViewDidLoad() =
             base.ViewDidLoad()
+            
+            self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
+            self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+            addRightNavigationItem(self.NavigationItem, fun _ -> self.AddToFavorites(userName))
 
             self.View.BackgroundColor <- UIColor.SystemBackgroundColor
             self.Title <- userName
             self.GetFollowers(userName, page)
 
             collectionView.Value.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
-
-            self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
-            self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-            self.NavigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = UIBarButtonSystemItem.Add)
-            self.NavigationItem.RightBarButtonItem.Clicked
-            |> Event.add (fun _ -> self.AddToFavorites(userName))
 
         member private __.ConfigureCollectionView(followers: Follower list) =
             collectionView.Value.TranslatesAutoresizingMaskIntoConstraints <- false

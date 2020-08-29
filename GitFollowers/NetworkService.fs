@@ -4,7 +4,6 @@ open System
 open System.Net.Http
 open FSharp.Json
 open GitFollowers.Models
-open Foundation
 
 type IGitHubService =
     abstract GetFollowers: string * int -> Async<Result<Follower list, string>>
@@ -18,7 +17,6 @@ type GitHubService() =
         member __.GetFollowers(searchTerm: string, page: int) =
             let urlString =
                 sprintf "%s%s/followers?per_page=100&page=%d" baseUrl searchTerm page
-
             async {
                 try
                     let httpClient = new HttpClient()

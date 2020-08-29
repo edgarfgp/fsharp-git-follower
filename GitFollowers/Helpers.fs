@@ -63,3 +63,11 @@ module UICollectionView =
         flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
         flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
         flowLayout
+        
+[<AutoOpen>]
+module UIViewController =
+    
+    let addRightNavigationItem(navigationItem : UINavigationItem, action) =
+        navigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = UIBarButtonSystemItem.Add)
+        navigationItem.RightBarButtonItem.Clicked
+            |> Event.add (action)
