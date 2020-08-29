@@ -2,7 +2,6 @@ namespace GitFollowers.Helpers
 
 open System
 open System.Net.Http
-open System.Threading
 open CoreFoundation
 open CoreGraphics
 open Foundation

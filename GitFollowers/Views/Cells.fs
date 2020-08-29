@@ -1,6 +1,7 @@
 namespace GitFollowers.Views
 
 open GitFollowers.Helpers
+open GitFollowers.Helpers
 open GitFollowers.Models
 open System
 open UIKit
@@ -67,6 +68,6 @@ module Cells =
 
         static member val CellId = "FollowerTableCell"
 
-        member __.SetUp(user: User) =
-            userNameLabel.Text <- user.login
-            UIImageView.downloadImageFromUrl (user.avatar_url, avatarImageView)
+        member __.SetUp(follower: Follower) =
+            userNameLabel.Text <- follower.login
+            UIImageView.downloadImageFromUrl(follower.avatar_url, avatarImageView)

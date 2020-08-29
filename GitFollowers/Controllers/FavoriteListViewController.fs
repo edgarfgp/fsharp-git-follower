@@ -39,23 +39,8 @@ module FavoriteListController =
                     member __.GetCell(tableView, indexPath) =
                         let cell =
                             tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
-
                         let follower = followers.[int indexPath.Item]
-
-                        let user =
-                            { login = follower.login
-                              avatar_url = follower.avatar_url
-                              name = None
-                              location = None
-                              bio = None
-                              public_repos = 0
-                              public_gists = 0
-                              html_url = ""
-                              following = 0
-                              followers = 0
-                              created_at = DateTime.Now }
-
-                        cell.SetUp user
+                        cell.SetUp(follower)
                         upcast cell
 
                     member __.RowsInSection(tableView, section) = nint followers.Length }
