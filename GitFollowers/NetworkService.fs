@@ -8,6 +8,8 @@ type IGitHubService =
     abstract GetFollowers: string * int -> Async<Result<Follower list, string>>
 
     abstract GetUserInfo: string -> Async<Result<User, string>>
+    
+    abstract DownloadDataFromUrl : string -> Async<Result<byte[], string>>
 
 type GitHubService() =
     let baseUrl = "https://api.github.com/users/"
@@ -60,4 +62,19 @@ type GitHubService() =
                 with
                 | :? HttpRequestException as ex -> return ex.Message |> Error
                 | :? JsonDeserializationError as ex -> return ex.Message |> Error
+            }
+ 
+        member __.DownloadDataFromUrl (url: string) =
+            async {
+                try
+                    let httpClient = new HttpClient()
+
+                    let! response =
+                        httpClient.GetByteArrayAsync(url)
+                        |> Async.AwaitTask
+                        
+                    return Ok response
+
+                with
+                | :? HttpRequestException as ex -> return ex.Message |> Error
             }

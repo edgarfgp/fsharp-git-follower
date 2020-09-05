@@ -122,7 +122,7 @@ type UserInfoController(service: IGitHubService, userName: string) as self =
                            ItemInfoType.Following,
                            user.following)
 
-        self.AddChildViewController(new FGUserInfoHeaderVC(user), headerView)
+        self.AddChildViewController(new FGUserInfoHeaderVC(user, GitHubService()), headerView)
         self.AddChildViewController(itemInfoOne, itemViewOne)
         self.AddChildViewController(itemInfoTwo, itemViewTwo)
 

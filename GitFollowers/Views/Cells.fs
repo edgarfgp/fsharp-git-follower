@@ -1,6 +1,9 @@
 namespace GitFollowers
 
 open System
+open System.Threading
+open CoreFoundation
+open Foundation
 open UIKit
 
 type FollowerCell(handle: IntPtr) as self =
@@ -10,6 +13,8 @@ type FollowerCell(handle: IntPtr) as self =
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Center, nfloat 16.)
+        
+    let mainThread = SynchronizationContext.Current
 
     do
         self.AddSubview avatarImageView
@@ -29,9 +34,21 @@ type FollowerCell(handle: IntPtr) as self =
 
     static member val CellId = "FollowerCell"
 
-    member __.SetUp(follower: Follower) =
+    member __.SetUp(follower: Follower, service : IGitHubService) =
         userNameLabel.Text <- follower.login
-        downloadImageFromUrl (follower.avatar_url, avatarImageView)
+        async {
+            do! Async.SwitchToThreadPool()
+            let! result = service.DownloadDataFromUrl(follower.avatar_url)
+            match result with
+            | Ok data ->
+                    do! Async.SwitchToContext mainThread
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ghLogo))
+        }
+        |> Async.Start
 
 type FavoriteCell(handle: IntPtr) as self =
     inherit UITableViewCell(handle)
@@ -41,6 +58,8 @@ type FavoriteCell(handle: IntPtr) as self =
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Left, nfloat 16.)
+        
+    let mainThread = SynchronizationContext.Current
 
     do
         self.Accessory <- UITableViewCellAccessory.DisclosureIndicator
@@ -61,6 +80,19 @@ type FavoriteCell(handle: IntPtr) as self =
 
     static member val CellId = "FollowerTableCell"
 
-    member __.SetUp(follower: Follower) =
+    member __.SetUp(follower: Follower, service : IGitHubService) =
         userNameLabel.Text <- follower.login
-        downloadImageFromUrl(follower.avatar_url, avatarImageView)
+        async {
+            do! Async.SwitchToThreadPool()
+            let! result = service.DownloadDataFromUrl(follower.avatar_url)
+            match result with
+            | Ok data ->
+                    do! Async.SwitchToContext mainThread
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ghLogo))
+        }
+        |> Async.Start
+        

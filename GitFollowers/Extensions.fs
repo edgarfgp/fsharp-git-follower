@@ -1,10 +1,19 @@
 namespace GitFollowers
 
+open System
+open System.Net.Http
 open CoreFoundation
+open CoreGraphics
+open Foundation
 open UIKit
 
 [<AutoOpen>]
-module Extensions =
+module UIViewController =
+    let addRightNavigationItem(navigationItem : UINavigationItem, systemItem: UIBarButtonSystemItem,  action) =
+        navigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = systemItem)
+        navigationItem.RightBarButtonItem.Clicked
+            |> Event.add (action)
+            
     let presentFGAlertOnMainThread (title, message, self: UIViewController) =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
             let alertVC = new FGAlertVC(title, message, "Ok")
@@ -24,3 +33,23 @@ module Extensions =
                 emptyView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor)
                 emptyView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
                 emptyView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor) |])
+            
+            
+[<AutoOpen>]
+module UICollectionView =
+
+    let CreateThreeColumnFlowLayout (view: UIView) =
+        let width = view.Bounds.Width
+        let padding = nfloat 12.
+        let minimumItemSpacing = nfloat 10.
+
+        let availableWidth =
+            width
+            - (padding * nfloat 2.)
+            - (minimumItemSpacing * nfloat 2.)
+
+        let itemWidth = availableWidth / nfloat 3.
+        let flowLayout = new UICollectionViewFlowLayout()
+        flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
+        flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
+        flowLayout

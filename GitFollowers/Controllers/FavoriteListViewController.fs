@@ -36,7 +36,7 @@ type FavoriteListViewController() as self =
                     let cell =
                         tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
                     let follower = followers.[int indexPath.Item]
-                    cell.SetUp(follower)
+                    cell.SetUp(follower, GitHubService())
                     upcast cell
 
                 member __.RowsInSection(tableView, section) = nint followers.Length }

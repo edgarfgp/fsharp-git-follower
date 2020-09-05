@@ -1,6 +1,9 @@
 namespace GitFollowers
 
 open System
+open System.Threading
+open CoreFoundation
+open Foundation
 open UIKit
 
 type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
@@ -62,10 +65,11 @@ type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
                 actionButton.LeadingAnchor.ConstraintEqualTo(containerView.LeadingAnchor, constant = padding)
                 actionButton.TrailingAnchor.ConstraintEqualTo(containerView.TrailingAnchor, constant = -padding)
                 actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |])
+
     member __.ActionButtonClicked(handler) =
         actionButton.TouchUpInside |> Event.add handler
 
-type FGUserInfoHeaderVC(user: User) as self =
+type FGUserInfoHeaderVC(user: User, service: IGitHubService) as self =
     inherit UIViewController()
 
     let textImageViewPadding = nfloat 12.
@@ -78,6 +82,8 @@ type FGUserInfoHeaderVC(user: User) as self =
     let locationImageView = new UIImageView()
     let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
     let bioLabel = new FGBodyLabel()
+
+    let mainThread = SynchronizationContext.Current
 
     do
         avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -132,8 +138,7 @@ type FGUserInfoHeaderVC(user: User) as self =
                 nameLabel.HeightAnchor.ConstraintEqualTo(nfloat 38.)
 
                 locationImageView.BottomAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor)
-                locationImageView.LeadingAnchor.ConstraintEqualTo
-                    (avatarImageView.TrailingAnchor, textImageViewPadding)
+                locationImageView.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, textImageViewPadding)
                 locationImageView.WidthAnchor.ConstraintEqualTo(nfloat 20.)
                 locationImageView.HeightAnchor.ConstraintEqualTo(nfloat 20.)
 
@@ -147,7 +152,20 @@ type FGUserInfoHeaderVC(user: User) as self =
                 bioLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
                 bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
-        downloadImageFromUrl (user.avatar_url, avatarImageView)
+        async {
+            do! Async.SwitchToThreadPool()
+            let! result = service.DownloadDataFromUrl(user.avatar_url)
+
+            match result with
+            | Ok data ->
+                do! Async.SwitchToContext mainThread
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ghLogo))
+        }
+        |> Async.Start
 
 type ItemInfoVC(backgroundColor: UIColor,
                 text: string,

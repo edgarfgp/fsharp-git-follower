@@ -91,7 +91,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                         collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
 
                     let follower = followers.[int indexPath.Item]
-                    cell.SetUp follower
+                    cell.SetUp(follower, GitHubService())
                     upcast cell
 
                 member __.GetItemsCount(_, _) = nint followers.Length }

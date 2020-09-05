@@ -3,13 +3,14 @@ namespace GitFollowers
 open System
 open UIKit
 
-    
+
 type ItemInfoType =
 | Repo
 | Gists
 | Followers
 | Following
 
+[<AutoOpen>]
 type FGItemInfoView(itemInfoType: ItemInfoType, withCount: int) as self =
     inherit UIView()
 
