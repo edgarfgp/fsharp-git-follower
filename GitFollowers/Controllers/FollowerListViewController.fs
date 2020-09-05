@@ -21,10 +21,11 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
-        
+
         self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        addRightNavigationItem(self.NavigationItem, UIBarButtonSystemItem.Add, fun _ -> self.AddToFavorites(userName))
+        addRightNavigationItem
+            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> self.AddToFavorites(userName)))
 
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
         self.Title <- userName
@@ -73,7 +74,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                                     do! Async.SwitchToContext mainThread
                                     loadingView.Dismiss()
                                     self.ConfigureCollectionView(followers)
-                                
+
                                 do! Async.SwitchToContext mainThread
                                 loadingView.Dismiss()
 
@@ -125,6 +126,10 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
             match result with
             | Ok followers ->
                 if followers.Length > 0 then
+                    followers
+                    |> List.map(fun c -> Repository.insertFollower c |> Async.RunSynchronously |> ignore)
+                    |> ignore
+
                     do! Async.SwitchToContext mainThread
                     loadingView.Dismiss()
                     self.ConfigureCollectionView(followers)
@@ -166,7 +171,6 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                     presentFGAlertOnMainThread ("Error", "Error while trying to save the favorite", self)
             | Error _ ->
                 do! Async.SwitchToContext mainThread
-                presentFGAlertOnMainThread
-                    ("Error", "Error while processing request. Please try again later.", self)
+                presentFGAlertOnMainThread ("Error", "Error while processing request. Please try again later.", self)
         }
         |> Async.Start

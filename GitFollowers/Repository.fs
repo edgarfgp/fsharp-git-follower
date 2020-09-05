@@ -1,19 +1,34 @@
 namespace GitFollowers
 
+open System
+open System.IO
 open SQLite
 
 type FollowerObject() =
     [<PrimaryKey; AutoIncrement>]
     member val Id = 0 with get, set
-
     member val Login = "" with get, set
     member val AvatarUrl = "" with get, set
 
 module Repository =
-    let connect dbPath =
+
+    let getDbPath =
+        let docFolder =
+            Environment.GetFolderPath(Environment.SpecialFolder.Personal)
+
+        let libFolder =
+            Path.Combine(docFolder, "..", "Library", "Databases")
+
+        if not (Directory.Exists libFolder)
+        then Directory.CreateDirectory(libFolder) |> ignore
+        else ()
+
+        Path.Combine(libFolder, "GitFollowers.db3")
+
+    let connect =
         async {
             let db =
-                SQLiteAsyncConnection(SQLiteConnectionString dbPath)
+                SQLiteAsyncConnection(SQLiteConnectionString getDbPath)
 
             do! db.CreateTableAsync<FollowerObject>()
                 |> Async.AwaitTask
@@ -29,10 +44,9 @@ module Repository =
         obj.AvatarUrl <- item.avatar_url
         obj
 
-
-    let insertContact dbPath follower =
+    let insertFollower (follower: Follower) =
         async {
-            let! database = connect dbPath
+            let! database = connect
             let obj = convertToObject follower
 
             do! database.InsertAsync(obj)
@@ -44,5 +58,6 @@ module Repository =
                 |> Async.AwaitTask
 
             let rowId = rowIdObj |> int
+
             return { follower with id = rowId }
         }

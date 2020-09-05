@@ -118,7 +118,7 @@ type FGUserInfoHeaderVC(user: User, service: IGitHubService) as self =
             | Some value -> value
             | None -> "N/A"
 
-        locationImageView.Image <- UIImage.GetSystemImage(location)
+        locationImageView.Image <- UIImage.GetSystemImage(ImageNames.location)
         locationImageView.TintColor <- UIColor.SecondaryLabelColor
 
         NSLayoutConstraint.ActivateConstraints
@@ -163,7 +163,7 @@ type FGUserInfoHeaderVC(user: User, service: IGitHubService) as self =
                     avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
             | Error _ ->
                 do! Async.SwitchToContext mainThread
-                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ghLogo))
+                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
         }
         |> Async.Start
 

@@ -8,7 +8,7 @@ type FGAvatarImageView() as self =
     inherit UIImageView()
 
     let placeHolderImage =
-        UIImage.FromBundle(avatarPlaceHolder)
+        UIImage.FromBundle(ImageNames.avatarPlaceHolder)
 
     do
         self.Layer.CornerRadius <- nfloat 10.

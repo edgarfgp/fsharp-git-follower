@@ -3,7 +3,9 @@ namespace GitFollowers
 open System
 
 type User =
-    { login: string
+    {
+      id: int
+      login: string
       avatar_url: string
       name: string option
       location: string option

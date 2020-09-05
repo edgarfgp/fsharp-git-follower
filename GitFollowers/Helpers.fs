@@ -1,13 +1,5 @@
 namespace GitFollowers
 
-open System
-open System.Net.Http
-open CoreFoundation
-open CoreGraphics
-open Foundation
-open UIKit
-
-[<AutoOpen>]
 module ImageNames =
     let location = "mappin.and.ellipse"
     let avatarPlaceHolder = "avatar-placeholder"
