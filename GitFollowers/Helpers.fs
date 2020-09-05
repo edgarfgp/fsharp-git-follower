@@ -1,4 +1,4 @@
-namespace GitFollowers.Helpers
+namespace GitFollowers
 
 open System
 open System.Net.Http
@@ -7,6 +7,7 @@ open CoreGraphics
 open Foundation
 open UIKit
 
+[<AutoOpen>]
 module ImageNames =
     let location = "mappin.and.ellipse"
     let avatarPlaceHolder = "avatar-placeholder"
@@ -17,12 +18,14 @@ module ImageNames =
     let person2 = "person.2"
     let emptyStateLogo = "empty-state-logo"
 
+[<AutoOpen>]
 module Option =
     let OfString (str: string) =
         if str |> System.String.IsNullOrWhiteSpace |> not
         then Some str
         else None
 
+[<AutoOpen>]
 module UIImageView =
 
     let downloadImageFromUrl (url: string, image: UIImageView) =

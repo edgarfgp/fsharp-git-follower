@@ -1,8 +1,6 @@
-namespace GitFollowers.Views
+namespace GitFollowers
 
 open CoreFoundation
-open GitFollowers.Views.ViewControllers
-open GitFollowers.Views.Views
 open UIKit
 
 [<AutoOpen>]

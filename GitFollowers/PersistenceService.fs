@@ -2,8 +2,6 @@ namespace GitFollowers
 
 open Foundation
 open FSharp.Json
-open GitFollowers.Models
-open GitFollowers.Helpers
 
 type UserDefaults private () as self =
     let favorites = "favorites"
@@ -38,7 +36,7 @@ type UserDefaults private () as self =
     member __.RetrieveFavorites(): Result<Follower list, string> =
         let favoritesResult =
             defaults.StringForKey(favorites)
-            |> Option.OfString
+            |> OfString
 
         match favoritesResult with
         | Some followers -> Ok(Json.deserialize<Follower list> followers)

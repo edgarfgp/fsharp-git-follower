@@ -1,20 +1,17 @@
-namespace GitFollowers.Views
+namespace GitFollowers
 
 open System
-open GitFollowers.Helpers
 open UIKit
 
-[<AutoOpen>]
-module ImageViews =
 
-    type FGAvatarImageView() as self =
-        inherit UIImageView()
+type FGAvatarImageView() as self =
+    inherit UIImageView()
 
-        let placeHolderImage =
-            UIImage.FromBundle(ImageNames.avatarPlaceHolder)
+    let placeHolderImage =
+        UIImage.FromBundle(avatarPlaceHolder)
 
-        do
-            self.Layer.CornerRadius <- nfloat 10.
-            self.ClipsToBounds <- true
-            self.Image <- placeHolderImage
-            self.TranslatesAutoresizingMaskIntoConstraints <- false
+    do
+        self.Layer.CornerRadius <- nfloat 10.
+        self.ClipsToBounds <- true
+        self.Image <- placeHolderImage
+        self.TranslatesAutoresizingMaskIntoConstraints <- false

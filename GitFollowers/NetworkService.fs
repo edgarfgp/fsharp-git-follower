@@ -3,7 +3,6 @@ namespace GitFollowers
 open System
 open System.Net.Http
 open FSharp.Json
-open GitFollowers.Models
 
 type IGitHubService =
     abstract GetFollowers: string * int -> Async<Result<Follower list, string>>
