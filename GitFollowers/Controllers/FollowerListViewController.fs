@@ -7,38 +7,20 @@ open GitFollowers
 open UIKit
 
 type FollowerListViewController(service: IGitHubService, userName: string) as self =
-    inherit UIViewController()
-
+    inherit UICollectionViewController(new UICollectionViewFlowLayout())
     let loadingView = LoadingView.Instance
     let userDefaults = UserDefaults.Instance
-
     let mainThread = SynchronizationContext.Current
+    let mutable page: int = 1 
 
-    let mutable page: int = 1
-
-    let collectionView =
-        lazy (new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.View)))
-
-    override __.ViewDidLoad() =
-        base.ViewDidLoad()
-
-        self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
+    let rec ConfigureCollectionView(followers: Follower list) =
+        self.CollectionView <- new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView))
+        self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        addRightNavigationItem
-            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> self.AddToFavorites(userName)))
+        self.CollectionView.TranslatesAutoresizingMaskIntoConstraints <- false
+        self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
 
-        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-        self.Title <- userName
-        self.GetFollowers(userName, page)
-
-        collectionView.Value.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
-
-    member private __.ConfigureCollectionView(followers: Follower list) =
-        collectionView.Value.TranslatesAutoresizingMaskIntoConstraints <- false
-        self.View.AddSubview collectionView.Value
-        collectionView.Value.BackgroundColor <- UIColor.SystemBackgroundColor
-
-        collectionView.Value.Delegate <-
+        self.CollectionView.Delegate <-
             { new UICollectionViewDelegate() with
                 member __.ItemSelected(_, indexPath) =
                     let index = int indexPath.Item
@@ -50,7 +32,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                     userInfoController.DidRequestFollowers.Add(fun (_, userName) ->
                         self.GetFollowers(userName, page)
                         self.Title <- userName
-                        collectionView.Value.ReloadData())
+                        self.CollectionView.ReloadData())
 
                     let navController =
                         new UINavigationController(rootViewController = userInfoController)
@@ -73,7 +55,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                                 if followers.Length > 0 then
                                     do! Async.SwitchToContext mainThread
                                     loadingView.Dismiss()
-                                    self.ConfigureCollectionView(followers)
+                                    ConfigureCollectionView(followers)
 
                                 do! Async.SwitchToContext mainThread
                                 loadingView.Dismiss()
@@ -85,7 +67,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                         }
                         |> Async.Start }
 
-        collectionView.Value.DataSource <-
+        self.CollectionView.DataSource <-
             { new UICollectionViewDataSource() with
                 member __.GetCell(collectionView, indexPath) =
                     let cell =
@@ -105,10 +87,20 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
             { new UISearchResultsUpdating() with
                 member __.UpdateSearchResultsForSearchController(searchController) = () }
 
+    override __.ViewDidLoad() =
+        base.ViewDidLoad()
+
+        self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
+        addRightNavigationItem
+            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> self.AddToFavorites(userName)))
+        self.Title <- userName
+        self.GetFollowers(userName, page)
+
     member __.ShowAlertAndGoBack() =
         let alertVC =
             new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok")
 
+        self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
         alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
         alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
         self.PresentViewController(alertVC, true, null)
@@ -127,12 +119,15 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
             | Ok followers ->
                 if followers.Length > 0 then
                     followers
-                    |> List.map(fun c -> Repository.insertFollower c |> Async.RunSynchronously |> ignore)
+                    |> List.map (fun c ->
+                        Repository.insertFollower c
+                        |> Async.RunSynchronously
+                        |> ignore)
                     |> ignore
 
                     do! Async.SwitchToContext mainThread
                     loadingView.Dismiss()
-                    self.ConfigureCollectionView(followers)
+                    ConfigureCollectionView(followers)
                 else
                     do! Async.SwitchToContext mainThread
                     loadingView.Dismiss()
