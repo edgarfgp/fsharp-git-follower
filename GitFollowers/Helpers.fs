@@ -1,5 +1,8 @@
 namespace GitFollowers
 
+open System.Text.Json
+open System.Text.Json.Serialization
+
 module ImageNames =
     let location = "mappin.and.ellipse"
     let avatarPlaceHolder = "avatar-placeholder"
@@ -16,3 +19,8 @@ module Option =
         if str |> System.String.IsNullOrWhiteSpace |> not
         then Some str
         else None
+        
+    let createJsonOption : JsonSerializerOptions =
+        let options = JsonSerializerOptions()
+        options.Converters.Add(JsonFSharpConverter())
+        options

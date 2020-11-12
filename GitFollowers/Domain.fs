@@ -1,7 +1,9 @@
 namespace GitFollowers
 
 open System
+open System.Text.Json.Serialization
 
+ [<JsonFSharpConverter>]
 type User =
     {
       id: int
@@ -17,6 +19,7 @@ type User =
       followers: int
       created_at: DateTime }
 
+ [<JsonFSharpConverter>]
 type Follower =
     { id: int
       login: string

@@ -1,7 +1,7 @@
 namespace GitFollowers
 
 open Foundation
-open FSharp.Json
+open System.Text.Json
 
 type UserDefaults private () as self =
     let favorites = "favorites"
@@ -11,7 +11,7 @@ type UserDefaults private () as self =
 
     member __.SaveFavorite(followers: Follower list) =
         followers
-        |> Json.serialize
+        |> JsonSerializer.Serialize
         |> fun c -> defaults.SetString(c, favorites)
 
     member __.Update(follower: Follower) =
@@ -39,5 +39,5 @@ type UserDefaults private () as self =
             |> OfString
 
         match favoritesResult with
-        | Some followers -> Ok(Json.deserialize<Follower list> followers)
+        | Some followers -> Ok(JsonSerializer.Deserialize<Follower list> followers)
         | _ -> Error "Error trying to deserialize the Follower list"
