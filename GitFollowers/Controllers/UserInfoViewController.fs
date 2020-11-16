@@ -24,7 +24,7 @@ type UserInfoController(service: IGitHubService, userName: string) as self =
         let mainThread = SynchronizationContext.Current
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetUserInfo userName
+            let! result = service.GetUserInfo userName |> Async.AwaitTask
 
             match result with
             | Ok value ->

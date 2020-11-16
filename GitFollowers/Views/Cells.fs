@@ -38,12 +38,12 @@ type FollowerCell(handle: IntPtr) as self =
         userNameLabel.Text <- follower.login
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.DownloadDataFromUrl(follower.avatar_url)
+            let! result = service.DownloadDataFromUrl(follower.avatar_url) |> Async.AwaitTask
             match result with
             | Ok data ->
-                    do! Async.SwitchToContext mainThread
-                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
+                do! Async.SwitchToContext mainThread
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
             | Error _ ->
                 do! Async.SwitchToContext mainThread
                 DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
@@ -84,7 +84,7 @@ type FavoriteCell(handle: IntPtr) as self =
         userNameLabel.Text <- follower.login
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.DownloadDataFromUrl(follower.avatar_url)
+            let! result = service.DownloadDataFromUrl(follower.avatar_url) |> Async.AwaitTask
             match result with
             | Ok data ->
                     do! Async.SwitchToContext mainThread

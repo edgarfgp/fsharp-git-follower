@@ -11,7 +11,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
     let loadingView = LoadingView.Instance
     let userDefaults = UserDefaults.Instance
     let mainThread = SynchronizationContext.Current
-    let mutable page: int = 1 
+    let mutable page: int = 1
 
     let rec ConfigureCollectionView(followers: Follower list) =
         self.CollectionView <- new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView))
@@ -48,8 +48,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                         loadingView.Show(self.View)
                         async {
                             do! Async.SwitchToThreadPool()
-                            let! result = service.GetFollowers(userName, page)
-
+                            let! result = service.GetFollowers(userName, page) |> Async.AwaitTask
                             match result with
                             | Ok followers ->
                                 if followers.Length > 0 then
@@ -59,7 +58,6 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
 
                                 do! Async.SwitchToContext mainThread
                                 loadingView.Dismiss()
-
                             | Error _ ->
                                 do! Async.SwitchToContext mainThread
                                 loadingView.Dismiss()
@@ -113,7 +111,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
         loadingView.Show(self.View)
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetFollowers(userName, page)
+            let! result = service.GetFollowers(userName, page) |> Async.AwaitTask
 
             match result with
             | Ok followers ->
@@ -142,7 +140,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
     member __.AddToFavorites(userName: string) =
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetUserInfo userName
+            let! result = service.GetUserInfo userName |> Async.AwaitTask
 
             match result with
             | Ok value ->

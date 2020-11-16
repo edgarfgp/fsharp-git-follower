@@ -39,5 +39,5 @@ type UserDefaults private () as self =
             |> OfString
 
         match favoritesResult with
-        | Some followers -> Ok(JsonSerializer.Deserialize<Follower list> followers)
+        | Some followers -> Ok(JsonSerializer.Deserialize<Follower list>(followers, createJsonOption))
         | _ -> Error "Error trying to deserialize the Follower list"
