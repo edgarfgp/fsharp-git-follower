@@ -48,7 +48,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                         loadingView.Show(self.View)
                         async {
                             do! Async.SwitchToThreadPool()
-                            let! result = service.GetFollowers(userName, page) |> Async.AwaitTask
+                            let! result = service.GetFollowers(userName, page)
                             match result with
                             | Ok followers ->
                                 if followers.Length > 0 then
@@ -111,7 +111,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
         loadingView.Show(self.View)
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetFollowers(userName, page) |> Async.AwaitTask
+            let! result = service.GetFollowers(userName, page)
 
             match result with
             | Ok followers ->
@@ -140,7 +140,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
     member __.AddToFavorites(userName: string) =
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetUserInfo userName |> Async.AwaitTask
+            let! result = service.GetUserInfo userName
 
             match result with
             | Ok value ->

@@ -38,7 +38,7 @@ type FollowerCell(handle: IntPtr) as self =
         userNameLabel.Text <- follower.login
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.DownloadDataFromUrl(follower.avatar_url) |> Async.AwaitTask
+            let! result = service.DownloadDataFromUrl(follower.avatar_url)
             match result with
             | Ok data ->
                 do! Async.SwitchToContext mainThread
@@ -84,7 +84,7 @@ type FavoriteCell(handle: IntPtr) as self =
         userNameLabel.Text <- follower.login
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.DownloadDataFromUrl(follower.avatar_url) |> Async.AwaitTask
+            let! result = service.DownloadDataFromUrl(follower.avatar_url)
             match result with
             | Ok data ->
                     do! Async.SwitchToContext mainThread
