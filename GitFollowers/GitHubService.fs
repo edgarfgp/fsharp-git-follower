@@ -1,31 +1,36 @@
 namespace GitFollowers
 
-open System.Net.Http
-open System.Text.Json
+
+open System.Threading.Tasks
 open FSharp.Control.Tasks
-open FSharp.Data
+open System.Net.Http
+open Microsoft.Extensions.DependencyInjection
 
-type FollowersError =
-    | NetworkError
-    | Non200Response
-    | ParseError of string
+type IGitHubService =
+    abstract GetFollowers: string * int -> Task<Result<Follower list, string>>
+    abstract GetUserInfo: string -> Task<Result<User, string>>
+    abstract DownloadDataFromUrl: string -> Task<Result<byte [], string>>
 
-module private Network =
-    let baseUrl = "https://api.github.com/users/"
+type GitHubService() =
+
+    let createHttpClientFactory () =
+        let services = ServiceCollection()
+        services.AddHttpClient() |> ignore
+
+        let serviceProvider = services.BuildServiceProvider()
+
+        serviceProvider.GetRequiredService<IHttpClientFactory>()
+
+    let httpClientFactory = createHttpClientFactory ()
 
     let fetch urlString =
-        task {
-            let! response =
-                Http.AsyncRequestString(urlString, headers = [ "User-Agent", "GitFollowers" ])
-                |> Async.Catch
+        let request =
+            Http.createRequest urlString Get
+            |> withHeader ("Accept", "application/json")
+            |> withHeader ("User-Agent", "GitFollowers")
+            |> withQueryParam ("print", "Url")
 
-            let result =
-                match response with
-                | Choice1Of2 data -> Ok data
-                | Choice2Of2 error -> Error error
-
-            return result
-        }
+        request |> Http.execute httpClientFactory
 
     let fetchDataFromUrl (urlString: string) =
         task {
@@ -36,63 +41,30 @@ module private Network =
             with :? HttpRequestException as ex -> return ex.Message |> Error
         }
 
-    let decode<'T> (json: string) =
-        try
-            let deserialized =
-                JsonSerializer.Deserialize<'T>(json, createJsonOption)
-
-            Ok deserialized
-        with ex -> ex.Message |> Error
-
-
-
-type IGitHubService =
-    abstract GetFollowers: string * int -> Async<Result<Follower list, FollowersError>>
-    abstract GetUserInfo: string -> Async<Result<User, FollowersError>>
-    abstract DownloadDataFromUrl: string -> Async<Result<byte [], string>>
-
-type GitHubService() =
-
     interface IGitHubService with
         member __.GetFollowers(searchTerm: string, page: int) =
             let urlString =
                 sprintf "https://api.github.com/users/%s/followers?per_page=100&page=%d" searchTerm page
 
-            async {
-                let! result = Network.fetch urlString |> Async.AwaitTask
-
-                let data =
-                    match result with
-                    | Ok response ->
-                        match Network.decode response with
-                        | Error error -> Error(ParseError error)
-                        | Ok data -> Ok data
-                    | Error _ -> Error NetworkError
-
-                return data
+            task {
+                let! response = fetch urlString
+                let result = decode response.Body
+                return result
             }
 
         member __.GetUserInfo(userName: string) =
             let urlString =
                 sprintf "https://api.github.com/users/%s" userName
 
-            async {
-                let! result = Network.fetch urlString |> Async.AwaitTask
-
-                let data =
-                    match result with
-                    | Ok response ->
-                        match Network.decode response with
-                        | Error error -> Error(ParseError error)
-                        | Ok data -> Ok data
-                    | Error _ -> Error NetworkError
-
-                return data
+            task {
+                let! response = fetch urlString
+                let result = decode response.Body
+                return result
             }
 
         member __.DownloadDataFromUrl(url: string) =
-            async {
-                let! result = Network.fetchDataFromUrl url |> Async.AwaitTask
+            task {
+                let! result = fetchDataFromUrl url |> Async.AwaitTask
 
                 let data =
                     match result with

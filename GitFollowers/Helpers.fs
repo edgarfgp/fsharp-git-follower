@@ -19,8 +19,18 @@ module Option =
         if str |> System.String.IsNullOrWhiteSpace |> not
         then Some str
         else None
-        
-    let createJsonOption : JsonSerializerOptions =
+
+    let createJsonOption: JsonSerializerOptions =
         let options = JsonSerializerOptions()
         options.Converters.Add(JsonFSharpConverter())
         options
+
+[<AutoOpen>]
+module JSON =
+    let decode<'T> (json: string) =
+        try
+            JsonSerializer.Deserialize<'T>(json, createJsonOption)
+            |> Ok
+
+        with ex -> ex.Message |> Error
+

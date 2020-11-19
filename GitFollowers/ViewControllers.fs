@@ -154,7 +154,7 @@ type FGUserInfoHeaderVC(user: User, service: IGitHubService) as self =
 
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.DownloadDataFromUrl(user.avatar_url)
+            let! result = service.DownloadDataFromUrl(user.avatar_url) |> Async.AwaitTask
 
             match result with
             | Ok data ->

@@ -39,31 +39,32 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
 
                     self.PresentViewController(navController, true, null)
 
-                member __.DraggingEnded(scrollView, willDecelerate) =
-                    let offsetY = scrollView.ContentOffset.Y
-                    let contentHeight = scrollView.ContentSize.Height
-                    let height = scrollView.Frame.Size.Height
-                    if offsetY > contentHeight - height then
-                        page <- page + 1
-                        loadingView.Show(self.View)
-                        async {
-                            do! Async.SwitchToThreadPool()
-                            let! result = service.GetFollowers(userName, page)
-                            match result with
-                            | Ok followers ->
-                                if followers.Length > 0 then
-                                    do! Async.SwitchToContext mainThread
-                                    loadingView.Dismiss()
-                                    ConfigureCollectionView(followers)
-
-                                do! Async.SwitchToContext mainThread
-                                loadingView.Dismiss()
-                            | Error _ ->
-                                do! Async.SwitchToContext mainThread
-                                loadingView.Dismiss()
-                                DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.ShowAlertAndGoBack())
+//                member __.DraggingEnded(scrollView, willDecelerate) =
+//                    let offsetY = scrollView.ContentOffset.Y
+//                    let contentHeight = scrollView.ContentSize.Height
+//                    let height = scrollView.Frame.Size.Height
+//                    if offsetY > contentHeight - height then
+//                        page <- page + 1
+//                        loadingView.Show(self.View)
+//                        async {
+//                            do! Async.SwitchToThreadPool()
+//                            let! result = service.GetFollowers(userName, page)
+//                            match result with
+//                            | Ok followers ->
+//                                if followers.Length > 0 then
+//                                    do! Async.SwitchToContext mainThread
+//                                    loadingView.Dismiss()
+//                                    ConfigureCollectionView(followers)
+//
+//                                do! Async.SwitchToContext mainThread
+//                                loadingView.Dismiss()
+//                            | Error _ ->
+//                                do! Async.SwitchToContext mainThread
+//                                loadingView.Dismiss()
+//                                DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.ShowAlertAndGoBack())
+//                        }
+//                        |> Async.Start
                         }
-                        |> Async.Start }
 
         self.CollectionView.DataSource <-
             { new UICollectionViewDataSource() with
@@ -111,7 +112,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
         loadingView.Show(self.View)
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetFollowers(userName, page)
+            let! result = service.GetFollowers(userName, page) |> Async.AwaitTask
 
             match result with
             | Ok followers ->
@@ -140,8 +141,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
     member __.AddToFavorites(userName: string) =
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetUserInfo userName
-
+            let! result = service.GetUserInfo userName |> Async.AwaitTask
             match result with
             | Ok value ->
                 let follower =
