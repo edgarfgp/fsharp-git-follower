@@ -4,13 +4,13 @@ open System.Threading.Tasks
 open FSharp.Control.Tasks
 open System.Net.Http
 
-type FollowersError =
+type GitHubError =
     | NetworkError
     | ParseError of string
 
 type IGitHubService =
-    abstract GetFollowers: string * int -> Task<Result<Follower list, FollowersError>>
-    abstract GetUserInfo: string -> Task<Result<User, FollowersError>>
+    abstract GetFollowers: string * int -> Task<Result<Follower list, GitHubError>>
+    abstract GetUserInfo: string -> Task<Result<User, GitHubError>>
     abstract DownloadDataFromUrl: string -> Task<Result<byte [], string>>
 
 type GitHubService() =
