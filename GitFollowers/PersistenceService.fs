@@ -36,8 +36,8 @@ type UserDefaults private () as self =
     member __.RetrieveFavorites(): Result<Follower list, string> =
         let favoritesResult =
             defaults.StringForKey(favorites)
-            |> OfString
+            |> Option.OfString
 
         match favoritesResult with
-        | Some followers -> Ok(JsonSerializer.Deserialize<Follower list>(followers, createJsonOption))
+        | Some followers -> Ok(JsonSerializer.Deserialize<Follower list>(followers, JSON.createJsonOption))
         | _ -> Error "Error trying to deserialize the Follower list"

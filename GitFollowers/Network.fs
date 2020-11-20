@@ -2,6 +2,7 @@ namespace GitFollowers
 
 open System
 open System.Net.Http
+open Microsoft.Extensions.DependencyInjection
 
 type HttpMethod = | Get
 
@@ -20,10 +21,6 @@ module HttpMethod =
     let value method =
         match method with
         | Get -> System.Net.Http.HttpMethod.Get
-
-type FollowersError =
-    | NetworkError
-    | ParseError of string
 
 module RequestBody =
     let value body =
@@ -49,8 +46,16 @@ type Response =
       Body: string
       Headers: (string * string) list }
 
-
 module Http =
+    
+    let createHttpClientFactory () =
+        let services = ServiceCollection()
+        services.AddHttpClient() |> ignore
+
+        let serviceProvider = services.BuildServiceProvider()
+
+        serviceProvider.GetRequiredService<IHttpClientFactory>()
+
     let createRequest url method =
         { Url = url
           Method = method

@@ -7,7 +7,7 @@ open GitFollowers
 open SafariServices
 open UIKit
 
-type UserInfoController(service: IGitHubService, userName: string) as self =
+type UserInfoController(user: User) as self =
     inherit UIViewController()
     let padding = nfloat 20.
     let contentView = new UIView()
@@ -20,26 +20,9 @@ type UserInfoController(service: IGitHubService, userName: string) as self =
     [<CLIEvent>]
     member this.DidRequestFollowers = didRequestFollowers.Publish
 
-    member __.GetUserInfo(userName: string) =
-        let mainThread = SynchronizationContext.Current
-        async {
-            do! Async.SwitchToThreadPool()
-            let! result = service.GetUserInfo userName |> Async.AwaitTask
-
-            match result with
-            | Ok value ->
-                do! Async.SwitchToContext mainThread
-                self.ConfigureElements value
-            | Error _ ->
-                do! Async.SwitchToContext mainThread
-                presentFGAlertOnMainThread
-                    ("Error", "Error while processing request. Please try again later.", self)
-        }
-        |> Async.Start
-
     override __.ViewDidLoad() =
         base.ViewDidLoad()
-        self.GetUserInfo userName
+        self.ConfigureElements user
         self.ConfigureViewController()
         self.ConfigureScrollView()
         self.ConfigureContentView()

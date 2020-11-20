@@ -1,27 +1,21 @@
 namespace GitFollowers
 
-
 open System.Threading.Tasks
 open FSharp.Control.Tasks
 open System.Net.Http
-open Microsoft.Extensions.DependencyInjection
+
+type FollowersError =
+    | NetworkError
+    | ParseError of string
 
 type IGitHubService =
-    abstract GetFollowers: string * int -> Task<Result<Follower list, string>>
-    abstract GetUserInfo: string -> Task<Result<User, string>>
+    abstract GetFollowers: string * int -> Task<Result<Follower list, FollowersError>>
+    abstract GetUserInfo: string -> Task<Result<User, FollowersError>>
     abstract DownloadDataFromUrl: string -> Task<Result<byte [], string>>
 
 type GitHubService() =
 
-    let createHttpClientFactory () =
-        let services = ServiceCollection()
-        services.AddHttpClient() |> ignore
-
-        let serviceProvider = services.BuildServiceProvider()
-
-        serviceProvider.GetRequiredService<IHttpClientFactory>()
-
-    let httpClientFactory = createHttpClientFactory ()
+    let httpClientFactory = Http.createHttpClientFactory ()
 
     let fetch urlString =
         let request =
@@ -48,8 +42,13 @@ type GitHubService() =
 
             task {
                 let! response = fetch urlString
-                let result = decode response.Body
-                return result
+                match response.StatusCode with
+                | 200 ->
+                    return response.Body
+                        |> JSON.decode
+                        |> Result.mapError ParseError
+                | _ ->
+                    return Error NetworkError
             }
 
         member __.GetUserInfo(userName: string) =
@@ -58,8 +57,13 @@ type GitHubService() =
 
             task {
                 let! response = fetch urlString
-                let result = decode response.Body
-                return result
+                match response.StatusCode with
+                | 200 ->
+                    return response.Body
+                        |> JSON.decode
+                        |> Result.mapError ParseError
+                | _ ->
+                    return Error NetworkError
             }
 
         member __.DownloadDataFromUrl(url: string) =

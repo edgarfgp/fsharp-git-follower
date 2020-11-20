@@ -6,14 +6,55 @@ open CoreFoundation
 open GitFollowers
 open UIKit
 
-type FollowerListViewController(service: IGitHubService, userName: string) as self =
-    inherit UICollectionViewController(new UICollectionViewFlowLayout())
+[<AutoOpen>]
+module FollowerListViewController =
     let loadingView = LoadingView.Instance
     let userDefaults = UserDefaults.Instance
     let mainThread = SynchronizationContext.Current
     let mutable page: int = 1
 
-    let rec ConfigureCollectionView(followers: Follower list) =
+type FollowerListViewController(service: IGitHubService, userName: string) as self =
+    inherit UICollectionViewController(new UICollectionViewFlowLayout())
+
+    let performUserAndNavigation follower =
+        let mainThread = SynchronizationContext.Current
+
+        async {
+            do! Async.SwitchToThreadPool()
+
+            let! result =
+                service.GetUserInfo follower.login
+                |> Async.AwaitTask
+
+            match result with
+            | Ok value ->
+                do! Async.SwitchToContext mainThread
+
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    loadingView.Dismiss()
+                    let userInfoController = new UserInfoController(value)
+
+                    userInfoController.DidRequestFollowers.Add(fun (_, userName) ->
+                        self.GetFollowers(userName, page)
+                        self.Title <- userName
+                        self.CollectionView.ReloadData())
+
+                    let navController =
+                        new UINavigationController(rootViewController = userInfoController)
+
+                    self.PresentViewController(navController, true, null))
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    loadingView.Dismiss()
+
+                    presentFGAlertOnMainThread
+                        ("Error", "Error while processing request. Please try again later.", self))
+        }
+        |> Async.Start
+
+    let rec ConfigureCollectionView (followers: Follower list) =
         self.CollectionView <- new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView))
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
@@ -25,46 +66,40 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                 member __.ItemSelected(_, indexPath) =
                     let index = int indexPath.Item
                     let follower = followers.[index]
+                    loadingView.Show(self.View)
+                    performUserAndNavigation follower
 
-                    let userInfoController =
-                        new UserInfoController(GitHubService(), follower.login)
+                member __.DraggingEnded(scrollView, willDecelerate) =
+                    let offsetY = scrollView.ContentOffset.Y
+                    let contentHeight = scrollView.ContentSize.Height
+                    let height = scrollView.Frame.Size.Height
 
-                    userInfoController.DidRequestFollowers.Add(fun (_, userName) ->
-                        self.GetFollowers(userName, page)
-                        self.Title <- userName
-                        self.CollectionView.ReloadData())
+                    if offsetY > contentHeight - height then
+                        page <- page + 1
+                        loadingView.Show(self.View)
 
-                    let navController =
-                        new UINavigationController(rootViewController = userInfoController)
+                        async {
+                            do! Async.SwitchToThreadPool()
 
-                    self.PresentViewController(navController, true, null)
+                            let! result =
+                                service.GetFollowers(userName, page)
+                                |> Async.AwaitTask
 
-//                member __.DraggingEnded(scrollView, willDecelerate) =
-//                    let offsetY = scrollView.ContentOffset.Y
-//                    let contentHeight = scrollView.ContentSize.Height
-//                    let height = scrollView.Frame.Size.Height
-//                    if offsetY > contentHeight - height then
-//                        page <- page + 1
-//                        loadingView.Show(self.View)
-//                        async {
-//                            do! Async.SwitchToThreadPool()
-//                            let! result = service.GetFollowers(userName, page)
-//                            match result with
-//                            | Ok followers ->
-//                                if followers.Length > 0 then
-//                                    do! Async.SwitchToContext mainThread
-//                                    loadingView.Dismiss()
-//                                    ConfigureCollectionView(followers)
-//
-//                                do! Async.SwitchToContext mainThread
-//                                loadingView.Dismiss()
-//                            | Error _ ->
-//                                do! Async.SwitchToContext mainThread
-//                                loadingView.Dismiss()
-//                                DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.ShowAlertAndGoBack())
-//                        }
-//                        |> Async.Start
+                            match result with
+                            | Ok followers ->
+                                if followers.Length > 0 then
+                                    do! Async.SwitchToContext mainThread
+                                    loadingView.Dismiss()
+                                    ConfigureCollectionView(followers)
+
+                                do! Async.SwitchToContext mainThread
+                                loadingView.Dismiss()
+                            | Error _ ->
+                                do! Async.SwitchToContext mainThread
+                                loadingView.Dismiss()
+                                DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.ShowAlertAndGoBack())
                         }
+                        |> Async.Start }
 
         self.CollectionView.DataSource <-
             { new UICollectionViewDataSource() with
@@ -90,8 +125,10 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
         base.ViewDidLoad()
 
         self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
+
         addRightNavigationItem
             (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> self.AddToFavorites(userName)))
+
         self.Title <- userName
         self.GetFollowers(userName, page)
 
@@ -103,27 +140,26 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
         alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
         alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
         self.PresentViewController(alertVC, true, null)
+
         alertVC.ActionButtonClicked(fun _ ->
             alertVC.DismissViewController(true, null)
+
             self.NavigationController.PopToRootViewController(true)
             |> ignore)
 
     member __.GetFollowers(userName: string, page: int) =
         loadingView.Show(self.View)
+
         async {
             do! Async.SwitchToThreadPool()
-            let! result = service.GetFollowers(userName, page) |> Async.AwaitTask
+
+            let! result =
+                service.GetFollowers(userName, page)
+                |> Async.AwaitTask
 
             match result with
             | Ok followers ->
                 if followers.Length > 0 then
-                    followers
-                    |> List.map (fun c ->
-                        Repository.insertFollower c
-                        |> Async.RunSynchronously
-                        |> ignore)
-                    |> ignore
-
                     do! Async.SwitchToContext mainThread
                     loadingView.Dismiss()
                     ConfigureCollectionView(followers)
@@ -142,6 +178,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
         async {
             do! Async.SwitchToThreadPool()
             let! result = service.GetUserInfo userName |> Async.AwaitTask
+
             match result with
             | Ok value ->
                 let follower =
@@ -150,6 +187,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                       avatar_url = value.avatar_url }
 
                 let defaults = userDefaults.Update follower
+
                 match defaults with
                 | Ok status ->
                     match status with

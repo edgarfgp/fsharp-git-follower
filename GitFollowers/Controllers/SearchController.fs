@@ -29,7 +29,7 @@ type SearchViewController() as self =
 
     member __.HandleNavigation() =
         let userName =
-            userNameTextField.Text |> OfString
+            userNameTextField.Text |> Option.OfString
 
         match userName with
         | Some text ->
