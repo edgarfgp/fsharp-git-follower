@@ -21,14 +21,23 @@ module FollowerListViewController =
 
 type FollowerSearchController() as self =
         inherit UISearchController()
+        
+        let didRequestFollowers = Event<_>()
+
         do
             self.ObscuresBackgroundDuringPresentation <- false
             self.SearchBar.Placeholder <- "Enter a valid  user"
             self.SearchResultsUpdater <-
             { new UISearchResultsUpdating() with
                 member __.UpdateSearchResultsForSearchController(searchController) =
-                    printfn "%A" searchController.SearchBar.Text
+                    let filter = searchController.SearchBar.Text
+                    if String.IsNullOrEmpty(filter) |> not then
+                        didRequestFollowers.Trigger(self, filter)
                     () }
+            
+        [<CLIEvent>]
+        member this.DidRequestFollowers = didRequestFollowers.Publish
+            
             
 type FollowerDataSource(followers: Follower list) =
         inherit UICollectionViewDataSource()
@@ -142,6 +151,8 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
     let collectionView =
         lazy new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView))
         
+    let mutable filteredFollowers : Follower list = []
+
     override __.ViewDidLoad() =
         base.ViewDidLoad()
 
@@ -158,8 +169,7 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
-
-        self.NavigationItem.SearchController <- new FollowerSearchController()
+        loadingView.Value.Show(self.View)
         
         async {
                 do! Async.SwitchToThreadPool()
@@ -169,7 +179,20 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
                 match result with
                 | Ok followers ->
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                        loadingView.Value.Dismiss()
+                        let searchController = new FollowerSearchController()
                         self.CollectionView.DataSource <- new FollowerDataSource(followers)
+                        self.NavigationItem.SearchController <- searchController
+                        searchController.DidRequestFollowers.Add(fun (_, userName) ->
+                            filteredFollowers <-
+                                followers
+                                |> List.filter(fun c -> c.login.ToLower().Contains(userName.ToLower()))
+                                
+                            printfn "%A" filteredFollowers
+                                
+                            self.CollectionView.DataSource <- new FollowerDataSource(filteredFollowers)
+                            self.CollectionView.ReloadData()
+                        )
                         self.CollectionView.Delegate <- new FollowersCollectionViewDelegate(
                             { followers = followers
                               username = userName
