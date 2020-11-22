@@ -37,8 +37,10 @@ type FavoriteListViewController() as self =
         base.ViewDidLoad()
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+        self.TableView.TranslatesAutoresizingMaskIntoConstraints <- false
         self.TableView <- tableView.Value
         self.TableView.RowHeight <- nfloat 100.
+        self.TableView.SeparatorStyle <- UITableViewCellSeparatorStyle.None
         self.TableView.RegisterClassForCellReuse(typeof<FavoriteCell>, FavoriteCell.CellId)
 
     override __.ViewWillAppear(_) =
@@ -48,5 +50,4 @@ type FavoriteListViewController() as self =
             self.TableView.Delegate <- new FavoritesTableViewDelegate(favorites, self)
             self.TableView.DataSource <- new FavoritesTableViewDataSource(favorites)
         | NotPresent -> showEmptyView ("No Favorites", self)
-        | Unknown -> presentFGAlertOnMainThread ("Error", "Error while trying to get your favorites", self)
         

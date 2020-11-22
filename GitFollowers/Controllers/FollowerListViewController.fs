@@ -17,9 +17,6 @@ module FollowerListViewController =
     let mainThread = SynchronizationContext.Current
     let mutable page: int = 1
 
-    let alertVC =
-        lazy (new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok"))
-
 type FollowerSearchController() as self =
     inherit UISearchController()
 
@@ -184,41 +181,53 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
 
             match result with
             | Ok followers ->
+                if followers.Length > 0 then
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                        loadingView.Value.Dismiss()
+                        let searchController = new FollowerSearchController()
+                        self.CollectionView.DataSource <- new FollowerDataSource(followers)
+                        self.NavigationItem.SearchController <- searchController
+
+                        searchController.DidSearchFollower.Add(fun (_, userName) ->
+                            let filteredFollowers =
+                                followers
+                                |> List.distinct
+                                |> List.filter (fun c -> c.login.ToLower().Contains(userName.ToLower()))
+
+                            printfn "%A" filteredFollowers
+
+                            DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                                self.CollectionView.DataSource <- new FollowerDataSource(filteredFollowers)
+                                self.CollectionView.ReloadData()))
+
+                        self.CollectionView.Delegate <-
+                            new FollowersCollectionViewDelegate(
+                                { followers = followers
+                                  username = userName
+                                  service = service
+                                  viewController = self }))
+                else
+                    do! Async.SwitchToContext mainThread
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                        loadingView.Value.Dismiss()
+                        showEmptyView("No Favorites", self)
+                    )
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Value.Dismiss()
-                    let searchController = new FollowerSearchController()
-                    self.CollectionView.DataSource <- new FollowerDataSource(followers)
-                    self.NavigationItem.SearchController <- searchController
-
-                    searchController.DidSearchFollower.Add(fun (_, userName) ->
-                        let filteredFollowers =
-                            followers
-                            |> List.distinct
-                            |> List.filter (fun c -> c.login.ToLower().Contains(userName.ToLower()))
-
-                        printfn "%A" filteredFollowers
-
-                        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                            self.CollectionView.DataSource <- new FollowerDataSource(filteredFollowers)
-                            self.CollectionView.ReloadData()))
-
-                    self.CollectionView.Delegate <-
-                        new FollowersCollectionViewDelegate({ followers = followers
-                                                              username = userName
-                                                              service = service
-                                                              viewController = self }))
-            | Error ex -> printf "%A" ex
+                    self.ShowAlertAndGoBack()
+                )
         }
         |> Async.Start
 
     member __.ShowAlertAndGoBack() =
-        alertVC.Value.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
-        alertVC.Value.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
-        self.PresentViewController(alertVC.Value, true, null)
-
-        alertVC.Value.ActionButtonClicked(fun _ ->
-            alertVC.Value.DismissViewController(true, null)
-
+        let alertVC = new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok")
+        alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
+        alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
+        self.PresentViewController(alertVC, true, null)
+        alertVC.ActionButtonClicked(fun _ ->
+            alertVC.DismissViewController(true, null)
             self.NavigationController.PopToRootViewController(true)
             |> ignore)
 

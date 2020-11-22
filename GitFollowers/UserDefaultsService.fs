@@ -11,7 +11,6 @@ type FavoriteStatus =
 type FavoritesResult =
     | Present of Follower list
     | NotPresent
-    | Unknown
 
 type UserDefaultsService private () =
     let favoritesKey = "favorites"
@@ -58,7 +57,5 @@ type UserDefaultsService private () =
         match favoritesString with
         | Some favoritesResult ->
             let favorites=  (JsonSerializer.Deserialize<Follower list>(favoritesResult, JSON.createJsonOption))
-            match favorites with
-            | [] -> NotPresent
-            | _ -> Present favorites
-        | _ -> Unknown
+            Present favorites
+        | _ -> NotPresent
