@@ -23,7 +23,3 @@ type Follower =
     { id: int
       login: string
       avatar_url: string }
-
-type UpdateResult =
-    | AlreadyExists
-    | FavouriteAdded

@@ -1,54 +1,52 @@
 namespace GitFollowers
 
 open System
+open Foundation
 open GitFollowers
 open UIKit
 
+type FavoritesTableViewDelegate(favorites: Follower List, viewController : UITableViewController) =
+    inherit UITableViewDelegate()
+    
+    override __.RowSelected(_, indexPath: NSIndexPath) =
+        let favorite = favorites.[int indexPath.Row]
+        let destinationVC =
+            new FollowerListViewController(GitHubService(), favorite.login)
+        viewController.NavigationController.PushViewController(destinationVC, true)
+
+type FavoritesTableViewDataSource(favorites: Follower List) =
+    inherit UITableViewDataSource()
+    
+    override __.GetCell(tableView: UITableView, indexPath) =
+        let cell =
+            tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
+        let follower = favorites.[int indexPath.Item]
+        cell.SetUp(follower, GitHubService())
+        upcast cell
+
+    override __.RowsInSection(_, _) = nint favorites.Length
+    
 type FavoriteListViewController() as self =
-    inherit UIViewController()
+    inherit UITableViewController()
 
-    let userDefaults = UserDefaults.Instance
-
-    let mutable followers: Follower list = []
+    let userDefaults = UserDefaultsService.Instance
+    
+    let tableView = lazy new UITableView(self.View.Bounds)
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
-
-    member __.ConfigureTableView(followers: Follower list) =
-        let tableView = new UITableView(self.View.Bounds)
-        tableView.TranslatesAutoresizingMaskIntoConstraints <- false
-        tableView.RowHeight <- nfloat 100.
-        self.View.AddSubview tableView
-        tableView.Delegate <-
-            { new UITableViewDelegate() with
-                member __.RowSelected(tableView, indexPath) =
-                    let favorite = followers.[int indexPath.Row]
-
-                    let destinationVC =
-                        new FollowerListViewController(GitHubService(), favorite.login)
-
-                    self.NavigationController.PushViewController(destinationVC, true) }
-
-        tableView.DataSource <-
-            { new UITableViewDataSource() with
-                member __.GetCell(tableView, indexPath) =
-                    let cell =
-                        tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
-                    let follower = followers.[int indexPath.Item]
-                    cell.SetUp(follower, GitHubService())
-                    upcast cell
-
-                member __.RowsInSection(tableView, section) = nint followers.Length }
-
-        tableView.RegisterClassForCellReuse(typeof<FavoriteCell>, FavoriteCell.CellId)
+        self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+        self.TableView <- tableView.Value
+        self.TableView.RowHeight <- nfloat 100.
+        self.TableView.RegisterClassForCellReuse(typeof<FavoriteCell>, FavoriteCell.CellId)
 
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
-        self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        let favorites = userDefaults.RetrieveFavorites()
-        match favorites with
-        | Ok fav ->
-            self.ConfigureTableView(fav)
-            followers <- fav
-        | Error _ -> showEmptyView ("No Favorites", self)
+        match userDefaults.GetFavorites() with
+        | Present favorites ->
+            self.TableView.Delegate <- new FavoritesTableViewDelegate(favorites, self)
+            self.TableView.DataSource <- new FavoritesTableViewDataSource(favorites)
+        | NotPresent -> showEmptyView ("No Favorites", self)
+        | Unknown -> presentFGAlertOnMainThread ("Error", "Error while trying to get your favorites", self)
+        
