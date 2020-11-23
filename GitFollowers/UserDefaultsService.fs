@@ -58,4 +58,4 @@ type UserDefaultsService private () =
         | Some favoritesResult ->
             let favorites=  (JsonSerializer.Deserialize<Follower list>(favoritesResult, JSON.createJsonOption))
             Present favorites
-        | _ -> NotPresent
+        | None -> NotPresent

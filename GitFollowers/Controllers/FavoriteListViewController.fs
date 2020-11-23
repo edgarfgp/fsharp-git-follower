@@ -30,15 +30,13 @@ type FavoriteListViewController() as self =
     inherit UITableViewController()
 
     let userDefaults = UserDefaultsService.Instance
-    
-    let tableView = lazy new UITableView(self.View.Bounds)
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        self.TableView.TranslatesAutoresizingMaskIntoConstraints <- false
-        self.TableView <- tableView.Value
+        
+        self.TableView <- new UITableView(self.View.Bounds)
         self.TableView.RowHeight <- nfloat 100.
         self.TableView.SeparatorStyle <- UITableViewCellSeparatorStyle.None
         self.TableView.RegisterClassForCellReuse(typeof<FavoriteCell>, FavoriteCell.CellId)
@@ -49,5 +47,6 @@ type FavoriteListViewController() as self =
         | Present favorites ->
             self.TableView.Delegate <- new FavoritesTableViewDelegate(favorites, self)
             self.TableView.DataSource <- new FavoritesTableViewDataSource(favorites)
-        | NotPresent -> showEmptyView ("No Favorites", self)
-        
+            self.TableView.ReloadData()
+        | NotPresent ->
+            showEmptyView ("No Favorites", self)

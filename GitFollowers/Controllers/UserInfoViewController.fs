@@ -1,7 +1,6 @@
 namespace GitFollowers
 
 open System
-open System.Threading
 open Foundation
 open GitFollowers
 open SafariServices

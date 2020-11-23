@@ -10,12 +10,35 @@ open UIKit
 
 [<AutoOpen>]
 module FollowerListViewController =
-    let loadingView = lazy (LoadingView.Instance)
-
     let userDefaults = UserDefaultsService.Instance
 
     let mainThread = SynchronizationContext.Current
+
     let mutable page: int = 1
+    
+    let addToFavorites(viewController: UIViewController, service: IGitHubService,  userName: string) =
+        async {
+            do! Async.SwitchToThreadPool()
+            let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
+            match userInfo with
+            | Ok user ->
+                let defaults = userDefaults.Save { id = 0 ; login = user.login ; avatar_url = user.avatar_url }
+                match defaults with
+                | Saved ->
+                    do! Async.SwitchToContext mainThread
+                    presentFGAlertOnMainThread ("Favorites", "Favorite Added", viewController)
+                | NoFavorites _ ->
+                    do! Async.SwitchToContext mainThread
+                    presentFGAlertOnMainThread ("Favorites", "You have added your first favorite", viewController)
+                | AlreadySaved ->
+                    do! Async.SwitchToContext mainThread
+                    presentFGAlertOnMainThread ("Favorites", "This user is already in your favorites ", viewController)
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+                presentFGAlertOnMainThread ("Error", "We can not get the user info now. Please try again later.", viewController)
+        }
+        |> Async.Start
+
 
 type FollowerSearchController() as self =
     inherit UISearchController()
@@ -51,69 +74,64 @@ type FollowerDataSource(followers: Follower list) =
 
     override __.GetItemsCount(_, _) = nint followers.Length
 
-type DelegateData =
-    { followers: Follower list
-      username: string
-      service: IGitHubService
-      viewController: UICollectionViewController }
-
-type FollowersCollectionViewDelegate(delegateData: DelegateData) =
+type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubService, viewController: UICollectionViewController, username: string) =
     inherit UICollectionViewDelegate()
 
+    let loadingView = LoadingView.Instance
+    
     override __.ItemSelected(_, indexPath) =
         let index = int indexPath.Item
-        let follower = delegateData.followers.[index]
-        loadingView.Value.Show(delegateData.viewController.View)
+        let follower = followers.[index]
+        loadingView.Show(viewController.View)
 
         async {
             do! Async.SwitchToThreadPool()
 
             let! result =
-                delegateData.service.GetUserInfo follower.login
+                service.GetUserInfo follower.login
                 |> Async.AwaitTask
 
             match result with
             | Ok value ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    loadingView.Value.Dismiss()
+                    loadingView.Dismiss()
                     let userInfoController = new UserInfoController(value)
-
-                    userInfoController.DidRequestFollowers.Add(fun (_, userName) ->
-                        loadingView.Value.Show(delegateData.viewController.View)
-
+                    userInfoController.DidRequestFollowers.Add(fun (_, username) ->
+                        loadingView.Show(viewController.View)
                         async {
                             do! Async.SwitchToThreadPool()
 
                             let! result =
-                                delegateData.service.GetFollowers(userName, 0)
+                                service.GetFollowers(username, 0)
                                 |> Async.AwaitTask
-
                             match result with
                             | Ok followers ->
                                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                    loadingView.Value.Dismiss()
-                                    delegateData.viewController.Title <- userName
-
-                                    delegateData.viewController.CollectionView.DataSource <-
+                                    loadingView.Dismiss()
+                                    viewController.Title <- username
+                                    viewController.CollectionView.DataSource <-
                                         new FollowerDataSource(followers)
+                                        
+                                    addRightNavigationItem(viewController.NavigationItem, UIBarButtonSystemItem.Add,
+                                        (fun _ -> addToFavorites(viewController, GitHubService(), username)))
 
-                                    delegateData.viewController.CollectionView.ReloadData())
+                                    viewController.CollectionView.ReloadData())
                             | Error _ ->
-                                loadingView.Value.Dismiss()
-                                failwith ""
+                                loadingView.Dismiss()
+                                presentFGAlertOnMainThread("Error", "Error while processing request. Please try again later.", viewController)
                         }
                         |> Async.Start)
 
                     let navController =
                         new UINavigationController(rootViewController = userInfoController)
 
-                    delegateData.viewController.PresentViewController(navController, true, null))
+                    viewController.PresentViewController(navController, true, null))
             | Error _ ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    loadingView.Value.Dismiss()
+                    loadingView.Dismiss()
 
                     presentFGAlertOnMainThread
-                        ("Error", "Error while processing request. Please try again later.", delegateData.viewController))
+                        ("Error", "Error while processing request. Please try again later.", viewController))
         }
         |> Async.Start
 
@@ -124,66 +142,62 @@ type FollowersCollectionViewDelegate(delegateData: DelegateData) =
 
         if offsetY > contentHeight - height then
             page <- page + 1
-            loadingView.Value.Show(delegateData.viewController.View)
+            loadingView.Show(viewController.View)
 
             async {
                 do! Async.SwitchToThreadPool()
 
                 let! result =
-                    delegateData.service.GetFollowers(delegateData.username, page)
+                    service.GetFollowers(username, page)
                     |> Async.AwaitTask
 
                 match result with
                 | Ok followers ->
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                        loadingView.Value.Dismiss()
-                        delegateData.viewController.Title <- delegateData.username
-                        delegateData.viewController.CollectionView.DataSource <- new FollowerDataSource(followers)
-                        delegateData.viewController.CollectionView.ReloadData())
+                        loadingView.Dismiss()
+                        viewController.Title <- username
+                        viewController.CollectionView.DataSource <- new FollowerDataSource(followers)
+                        viewController.CollectionView.ReloadData())
                 | Error _ ->
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                        loadingView.Value.Dismiss()
+                        loadingView.Dismiss()
                         failwith "")
 
             }
             |> Async.Start
 
-type FollowerListViewController(service: IGitHubService, userName: string) as self =
+type FollowerListViewController(service: IGitHubService, username: string) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
-    let collectionView =
-        lazy (new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView)))
+    let loadingView = LoadingView.Instance
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
 
         addRightNavigationItem
-            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> self.AddToFavorites(userName)))
+            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> addToFavorites(self, GitHubService(), username)))
 
-        self.Title <- userName
+        self.Title <- username
 
         self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        self.CollectionView.TranslatesAutoresizingMaskIntoConstraints <- false
-
-        self.CollectionView <- collectionView.Value
-        self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
+        self.CollectionView <- new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView))
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
-        loadingView.Value.Show(self.View)
+        loadingView.Show(self.View)
 
         async {
             do! Async.SwitchToThreadPool()
 
             let! result =
-                service.GetFollowers(userName, page)
+                service.GetFollowers(username, page)
                 |> Async.AwaitTask
 
             match result with
             | Ok followers ->
                 if followers.Length > 0 then
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                        loadingView.Value.Dismiss()
+                        loadingView.Dismiss()
                         let searchController = new FollowerSearchController()
                         self.CollectionView.DataSource <- new FollowerDataSource(followers)
                         self.NavigationItem.SearchController <- searchController
@@ -198,24 +212,19 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
 
                             DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                                 self.CollectionView.DataSource <- new FollowerDataSource(filteredFollowers)
-                                self.CollectionView.ReloadData()))
-
-                        self.CollectionView.Delegate <-
-                            new FollowersCollectionViewDelegate(
-                                { followers = followers
-                                  username = userName
-                                  service = service
-                                  viewController = self }))
+                                self.CollectionView.ReloadData()))                            
+                        self.CollectionView.Delegate <- new FollowersCollectionViewDelegate(followers, GitHubService(), self, username)
+                    )
                 else
                     do! Async.SwitchToContext mainThread
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                        loadingView.Value.Dismiss()
+                        loadingView.Dismiss()
                         showEmptyView("No Favorites", self)
                     )
             | Error _ ->
                 do! Async.SwitchToContext mainThread
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    loadingView.Value.Dismiss()
+                    loadingView.Dismiss()
                     self.ShowAlertAndGoBack()
                 )
         }
@@ -230,26 +239,3 @@ type FollowerListViewController(service: IGitHubService, userName: string) as se
             alertVC.DismissViewController(true, null)
             self.NavigationController.PopToRootViewController(true)
             |> ignore)
-
-    member __.AddToFavorites(userName: string) =
-        async {
-            do! Async.SwitchToThreadPool()
-            let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
-            match userInfo with
-            | Ok user ->
-                let defaults = userDefaults.Save { id = 0 ; login = user.login ; avatar_url = user.avatar_url }
-                match defaults with
-                | Saved ->
-                    do! Async.SwitchToContext mainThread
-                    presentFGAlertOnMainThread ("Favorites", "Favorite Added", self)
-                | NoFavorites _ ->
-                    do! Async.SwitchToContext mainThread
-                    presentFGAlertOnMainThread ("Favorites", "You have added your first favorite", self)
-                | AlreadySaved ->
-                    do! Async.SwitchToContext mainThread
-                    presentFGAlertOnMainThread ("Favorites", "This user is already in your favorites ", self)
-            | Error _ ->
-                do! Async.SwitchToContext mainThread
-                presentFGAlertOnMainThread ("Error", "We can not get the user info now. Please try again later.", self)
-        }
-        |> Async.Start
