@@ -10,19 +10,18 @@ open UIKit
 
 [<AutoOpen>]
 module FollowerListViewController =
-    let userDefaults = UserDefaultsService.Instance
 
     let mainThread = SynchronizationContext.Current
 
     let mutable page: int = 1
     
-    let addToFavorites(viewController: UIViewController, service: IGitHubService,  userName: string) =
+    let addToFavorites(viewController: UIViewController, service: IGitHubService, userDefaults : IUserDefaultsService,  userName: string) =
         async {
             do! Async.SwitchToThreadPool()
             let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
             match userInfo with
             | Ok user ->
-                let defaults = userDefaults.Save { id = 0 ; login = user.login ; avatar_url = user.avatar_url }
+                let defaults = userDefaults.SaveFavorite { id = 0 ; login = user.login ; avatar_url = user.avatar_url }
                 match defaults with
                 | Added ->
                     do! Async.SwitchToContext mainThread
@@ -74,7 +73,7 @@ type FollowerDataSource(followers: Follower list) =
 
     override __.GetItemsCount(_, _) = nint followers.Length
 
-type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubService, viewController: UICollectionViewController, username: string) =
+type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubService, userDefaults: IUserDefaultsService, viewController: UICollectionViewController, username: string) =
     inherit UICollectionViewDelegate()
 
     let loadingView = LoadingView.Instance
@@ -113,7 +112,7 @@ type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubS
                                         new FollowerDataSource(followers)
                                         
                                     addRightNavigationItem(viewController.NavigationItem, UIBarButtonSystemItem.Add,
-                                        (fun _ -> addToFavorites(viewController, GitHubService(), username)))
+                                        (fun _ -> addToFavorites(viewController, GitHubService(), userDefaults, username)))
 
                                     viewController.CollectionView.ReloadData())
                             | Error _ ->
@@ -166,7 +165,7 @@ type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubS
             }
             |> Async.Start
 
-type FollowerListViewController(service: IGitHubService, username: string) as self =
+type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefaultsService, username: string) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
     let loadingView = LoadingView.Instance
@@ -175,7 +174,7 @@ type FollowerListViewController(service: IGitHubService, username: string) as se
         base.ViewDidLoad()
 
         addRightNavigationItem
-            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> addToFavorites(self, GitHubService(), username)))
+            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> addToFavorites(self, GitHubService(), userDefaults, username)))
 
         self.Title <- username
 
@@ -213,7 +212,8 @@ type FollowerListViewController(service: IGitHubService, username: string) as se
                             DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                                 self.CollectionView.DataSource <- new FollowerDataSource(filteredFollowers)
                                 self.CollectionView.ReloadData()))                            
-                        self.CollectionView.Delegate <- new FollowersCollectionViewDelegate(followers, GitHubService(), self, username)
+                        self.CollectionView.Delegate <-
+                            new FollowersCollectionViewDelegate(followers, GitHubService(), userDefaults, self, username)
                     )
                 else
                     do! Async.SwitchToContext mainThread

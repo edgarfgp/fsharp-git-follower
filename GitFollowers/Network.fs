@@ -4,6 +4,10 @@ open System
 open System.Net.Http
 open Microsoft.Extensions.DependencyInjection
 
+type GitHubError =
+    | NetworkError
+    | ParseError of string
+
 type HttpMethod = | Get
 
 [<RequireQualifiedAccess>]

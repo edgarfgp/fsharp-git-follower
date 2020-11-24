@@ -1,60 +1,26 @@
 namespace GitFollowers
 
-open Foundation
+open GitFollowers
+open Persistence
 open System.Text.Json
 
-type FavoriteStatus =
-    | Added
-    | AlreadyAdded
-    | FirstTimeAdded
-
-[<AutoOpen>]
-module UserDefaultsService =
+type IUserDefaultsService =
+    abstract GetFavorites: unit -> Follower list option
+    abstract SaveFavorite: Follower -> FavoriteStatus
     
-    let defaults = NSUserDefaults.StandardUserDefaults
-    
-    let favoritesKey = "favorites"
+type UserDefaultsService () =
+    interface IUserDefaultsService with
+        member __.SaveFavorite follower =
+             match follower with
+             | NotSaved reason -> reason
+             | Saved status -> status
 
-    let storedFavorites =
-            defaults.StringForKey(favoritesKey)
-            |> Option.OfString
-    
-    let (|Saved|NotSaved|)(follower : Follower) =
-        match storedFavorites with
-        | Some favoritesString ->
-            let favorites =
-                JsonSerializer.Deserialize<Follower list>(favoritesString, JSON.createJsonOption)
-            let favoriteLookup =
-                favorites
-                |> List.tryFind (fun f -> f.login = follower.login)
-                |> Option.isSome
-            if favoriteLookup then
-                NotSaved AlreadyAdded
-            else
-                let favoritesToSave =
-                    favorites
-                    |> List.append[follower]
-                let favoriteString = JsonSerializer.Serialize favoritesToSave
-                defaults.SetString(favoriteString, favoritesKey)
-                Saved Added
-        | None ->
-            let favoritesToSave = [] |> List.append[follower]
-            let favoriteString = JsonSerializer.Serialize favoritesToSave
-            defaults.SetString(favoriteString, favoritesKey)
-            Saved FirstTimeAdded
-
-type UserDefaultsService private () =
-    static let instance = UserDefaultsService()
-    static member Instance = instance
-
-    member __.Save follower =
-         match follower with
-         | NotSaved reason -> reason
-         | Saved status -> status
-
-    member __.GetFavorites() =
-        match storedFavorites with
-        | Some favoritesResult ->
-            let favorites=  (JsonSerializer.Deserialize<Follower list>(favoritesResult, JSON.createJsonOption))
-            Some favorites
-        | None -> None
+        member __.GetFavorites() =
+            let storedFavorites =
+                defaults.StringForKey(favoritesKey)
+                |> Option.OfString
+            match storedFavorites with
+            | Some favoritesResult ->
+                let favorites=  (JsonSerializer.Deserialize<Follower list>(favoritesResult, JSON.createJsonOption))
+                Some favorites
+            | None -> None

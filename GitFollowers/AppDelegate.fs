@@ -17,7 +17,7 @@ type AppDelegate() =
         new UINavigationController(searchVC)
 
     let createFavouriteViewController: UINavigationController =
-        let favouriteVC = new FavoriteListViewController()
+        let favouriteVC = new FavoriteListViewController(UserDefaultsService())
         favouriteVC.Title <- "Favourites"
         favouriteVC.TabBarItem <- new UITabBarItem(UITabBarSystemItem.Favorites, nint 1)
 

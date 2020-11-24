@@ -11,7 +11,7 @@ type FavoritesTableViewDelegate(favorites: Follower List, viewController : UITab
     override __.RowSelected(_, indexPath: NSIndexPath) =
         let favorite = favorites.[int indexPath.Row]
         let destinationVC =
-            new FollowerListViewController(GitHubService(), favorite.login)
+            new FollowerListViewController(GitHubService(), UserDefaultsService(), favorite.login)
         viewController.NavigationController.PushViewController(destinationVC, true)
 
 type FavoritesTableViewDataSource(favorites: Follower List) =
@@ -26,10 +26,8 @@ type FavoritesTableViewDataSource(favorites: Follower List) =
 
     override __.RowsInSection(_, _) = nint favorites.Length
     
-type FavoriteListViewController() as self =
+type FavoriteListViewController(userDefaults  : IUserDefaultsService) as self =
     inherit UITableViewController()
-
-    let userDefaults = UserDefaultsService.Instance
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
@@ -41,7 +39,7 @@ type FavoriteListViewController() as self =
         self.TableView.SeparatorStyle <- UITableViewCellSeparatorStyle.None
         self.TableView.RegisterClassForCellReuse(typeof<FavoriteCell>, FavoriteCell.CellId)
 
-    override __.ViewWillAppear(_) =
+    override __.ViewWillAppear _ =
         base.ViewWillAppear(true)
         match userDefaults.GetFavorites() with
         | Some favorites ->
