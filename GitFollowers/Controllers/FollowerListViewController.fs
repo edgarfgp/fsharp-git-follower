@@ -24,13 +24,13 @@ module FollowerListViewController =
             | Ok user ->
                 let defaults = userDefaults.Save { id = 0 ; login = user.login ; avatar_url = user.avatar_url }
                 match defaults with
-                | Saved ->
+                | Added ->
                     do! Async.SwitchToContext mainThread
                     presentFGAlertOnMainThread ("Favorites", "Favorite Added", viewController)
-                | NoFavorites _ ->
+                | FirstTimeAdded _ ->
                     do! Async.SwitchToContext mainThread
                     presentFGAlertOnMainThread ("Favorites", "You have added your first favorite", viewController)
-                | AlreadySaved ->
+                | AlreadyAdded ->
                     do! Async.SwitchToContext mainThread
                     presentFGAlertOnMainThread ("Favorites", "This user is already in your favorites ", viewController)
             | Error _ ->

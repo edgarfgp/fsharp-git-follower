@@ -44,9 +44,9 @@ type FavoriteListViewController() as self =
     override __.ViewWillAppear(_) =
         base.ViewWillAppear(true)
         match userDefaults.GetFavorites() with
-        | Present favorites ->
+        | Some favorites ->
             self.TableView.Delegate <- new FavoritesTableViewDelegate(favorites, self)
             self.TableView.DataSource <- new FavoritesTableViewDataSource(favorites)
             self.TableView.ReloadData()
-        | NotPresent ->
+        | None ->
             showEmptyView ("No Favorites", self)
