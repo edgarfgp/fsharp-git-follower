@@ -17,7 +17,7 @@ type UserInfoController(user: User) as self =
     let didRequestFollowers = Event<_>()
 
     [<CLIEvent>]
-    member this.DidRequestFollowers = didRequestFollowers.Publish
+    member __.DidRequestFollowers = didRequestFollowers.Publish
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()

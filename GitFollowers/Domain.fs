@@ -2,6 +2,7 @@ namespace GitFollowers
 
 open System
 open System.Text.Json.Serialization
+open SQLite
 
 [<JsonFSharpConverter>]
 type User =
@@ -23,3 +24,10 @@ type Follower =
     { id: int
       login: string
       avatar_url: string }
+
+type FollowerObject() =
+    [<PrimaryKey; AutoIncrement>]
+    member val Id = 0 with get, set
+
+    member val Login = "" with get, set
+    member val AvatarUrl = "" with get, set

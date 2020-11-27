@@ -34,3 +34,10 @@ module JSON =
             |> Ok
 
         with ex -> ex.Message |> Error
+ 
+module List =
+    let rec removeItem predicate list =
+        match list with
+        | h::t when predicate h -> t
+        | h::t -> h::removeItem predicate t
+        | _ -> []

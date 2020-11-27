@@ -14,19 +14,31 @@ type FavoritesTableViewDelegate(favorites: Follower List, viewController : UITab
             new FollowerListViewController(GitHubService(), UserDefaultsService(), favorite.login)
         viewController.NavigationController.PushViewController(destinationVC, true)
 
-type FavoritesTableViewDataSource(favorites: Follower List) =
+type FavoritesTableViewDataSource(favorites: Follower list, service: IGitHubService, userDefaults: IUserDefaultsService) =
     inherit UITableViewDataSource()
+
+    let mutable storedFavorites = favorites
+    
+    override __.CommitEditingStyle(tableView, editingStyle, indexPath) =
+        match editingStyle with
+        | UITableViewCellEditingStyle.Delete ->
+            let favoriteToDelete = storedFavorites.[indexPath.Row]
+            userDefaults.RemoveFavorite favoriteToDelete
+            let updatedFavorites = storedFavorites |> List.removeItem (fun f -> f.login = favoriteToDelete.login)
+            storedFavorites <- updatedFavorites
+            tableView.DeleteRows([|indexPath|], UITableViewRowAnimation.Left)
+        | _ -> failwith ""
     
     override __.GetCell(tableView: UITableView, indexPath) =
         let cell =
             tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
-        let follower = favorites.[int indexPath.Item]
-        cell.SetUp(follower, GitHubService())
+        let follower = storedFavorites.[int indexPath.Item]
+        cell.SetUp(follower, service)
         upcast cell
 
-    override __.RowsInSection(_, _) = nint favorites.Length
+    override __.RowsInSection(_, _) = nint storedFavorites.Length
     
-type FavoriteListViewController(userDefaults  : IUserDefaultsService) as self =
+type FavoriteListViewController(service: IGitHubService, userDefaults  : IUserDefaultsService) as self =
     inherit UITableViewController()
 
     override __.ViewDidLoad() =
@@ -44,7 +56,7 @@ type FavoriteListViewController(userDefaults  : IUserDefaultsService) as self =
         match userDefaults.GetFavorites() with
         | Some favorites ->
             self.TableView.Delegate <- new FavoritesTableViewDelegate(favorites, self)
-            self.TableView.DataSource <- new FavoritesTableViewDataSource(favorites)
+            self.TableView.DataSource <- new FavoritesTableViewDataSource(favorites, service, userDefaults)
             self.TableView.ReloadData()
         | None ->
             showEmptyView ("No Favorites", self)

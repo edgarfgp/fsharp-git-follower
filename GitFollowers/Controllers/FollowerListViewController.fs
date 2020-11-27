@@ -47,15 +47,13 @@ type FollowerSearchController() as self =
     do
         self.ObscuresBackgroundDuringPresentation <- false
         self.SearchBar.Placeholder <- "Enter a valid  user"
+
         self.SearchBar.TextChanged
-            |> Observable.delay(TimeSpan.FromMilliseconds(350.))
-            |> Observable.subscribe(
-                fun args ->
-                    let filter = args.SearchText
-                    if String.IsNullOrEmpty(filter) |> not then
-                        didSearchFollower.Trigger(self, filter)
-                )
-            |> ignore
+        |> Observable.delay (TimeSpan.FromMilliseconds(350.))
+        |> Observable.subscribe (fun args ->
+            let filter = args.SearchText
+            if String.IsNullOrEmpty(filter) |> not then didSearchFollower.Trigger(self, filter))
+        |> ignore
 
     [<CLIEvent>]
     member this.DidSearchFollower = didSearchFollower.Publish
@@ -67,7 +65,7 @@ type FollowerDataSource(followers: Follower list) =
         let cell =
             collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
 
-        let follower = followers.[int indexPath.Item]
+        let follower = followers.[int indexPath.Row]
         cell.SetUp(follower, GitHubService())
         upcast cell
 
@@ -78,7 +76,7 @@ type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubS
 
     let loadingView = LoadingView.Instance
     
-    override __.ItemSelected(_, indexPath) =
+    override __.ItemSelected(collectionView, indexPath) =
         let index = int indexPath.Item
         let follower = followers.[index]
         loadingView.Show(viewController.View)
@@ -95,6 +93,7 @@ type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubS
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Dismiss()
                     let userInfoController = new UserInfoController(value)
+
                     userInfoController.DidRequestFollowers.Add(fun (_, username) ->
                         loadingView.Show(viewController.View)
                         async {
@@ -103,18 +102,19 @@ type FollowersCollectionViewDelegate(followers: Follower list, service: IGitHubS
                             let! result =
                                 service.GetFollowers(username, 0)
                                 |> Async.AwaitTask
+
                             match result with
                             | Ok followers ->
                                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                                     loadingView.Dismiss()
                                     viewController.Title <- username
-                                    viewController.CollectionView.DataSource <-
+                                    collectionView.DataSource <-
                                         new FollowerDataSource(followers)
                                         
                                     addRightNavigationItem(viewController.NavigationItem, UIBarButtonSystemItem.Add,
-                                        (fun _ -> addToFavorites(viewController, GitHubService(), userDefaults, username)))
+                                        (fun _ -> addToFavorites(viewController, service, userDefaults, username)))
 
-                                    viewController.CollectionView.ReloadData())
+                                    collectionView.ReloadData())
                             | Error _ ->
                                 loadingView.Dismiss()
                                 presentFGAlertOnMainThread("Error", "Error while processing request. Please try again later.", viewController)
@@ -174,7 +174,9 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
         base.ViewDidLoad()
 
         addRightNavigationItem
-            (self.NavigationItem, UIBarButtonSystemItem.Add, (fun _ -> addToFavorites(self, GitHubService(), userDefaults, username)))
+            (self.NavigationItem,
+             UIBarButtonSystemItem.Add,
+             (fun _ -> addToFavorites (self, service, userDefaults, username)))
 
         self.Title <- username
 
@@ -217,25 +219,29 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
                     )
                 else
                     do! Async.SwitchToContext mainThread
+
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                         loadingView.Dismiss()
-                        showEmptyView("No Favorites", self)
-                    )
+                        showEmptyView ("No Favorites", self))
             | Error _ ->
                 do! Async.SwitchToContext mainThread
+
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Dismiss()
-                    self.ShowAlertAndGoBack()
-                )
+                    self.ShowAlertAndGoBack())
         }
         |> Async.Start
 
     member __.ShowAlertAndGoBack() =
-        let alertVC = new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok")
+        let alertVC =
+            new FGAlertVC("Error", "Error while processing your request. Please try again later", "Ok")
+
         alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
         alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
         self.PresentViewController(alertVC, true, null)
+
         alertVC.ActionButtonClicked(fun _ ->
             alertVC.DismissViewController(true, null)
+
             self.NavigationController.PopToRootViewController(true)
             |> ignore)

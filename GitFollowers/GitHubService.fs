@@ -1,5 +1,6 @@
 namespace GitFollowers
 
+open System
 open System.Threading.Tasks
 open FSharp.Control.Tasks
 open System.Net.Http
@@ -16,6 +17,7 @@ type GitHubService() =
     let fetch urlString =
         let request =
             Http.createRequest urlString Get
+            |> withTimeout(TimeSpan.FromSeconds(10.))
             |> withHeader ("Accept", "application/json")
             |> withHeader ("User-Agent", "GitFollowers")
             |> withQueryParam ("print", "Url")

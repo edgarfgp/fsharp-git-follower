@@ -6,7 +6,9 @@ open System.Text.Json
 
 type IUserDefaultsService =
     abstract GetFavorites: unit -> Follower list option
-    abstract SaveFavorite: Follower -> FavoriteStatus
+    abstract SaveFavorite: Follower -> FavoriteResult
+    
+    abstract RemoveFavorite : Follower -> unit
     
 type UserDefaultsService () =
     interface IUserDefaultsService with
@@ -24,3 +26,6 @@ type UserDefaultsService () =
                 let favorites=  (JsonSerializer.Deserialize<Follower list>(favoritesResult, JSON.createJsonOption))
                 Some favorites
             | None -> None
+            
+        member __.RemoveFavorite(follower) =
+            removeFavorite(follower)

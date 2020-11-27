@@ -2,6 +2,7 @@ namespace GitFollowers
 
 open System
 open System.Net.Http
+open System.Threading
 open CoreFoundation
 open CoreGraphics
 open Foundation
@@ -53,3 +54,44 @@ module UICollectionView =
         flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
         flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
         flowLayout
+        
+[<AutoOpen>]
+module ViewControllerExtensions =
+
+    let mainThread = SynchronizationContext.Current
+    
+    let mutable page: int = 1
+
+    let addToFavorites (viewController: UIViewController,
+                        service: IGitHubService,
+                        userDefaults: IUserDefaultsService,
+                        userName: string) =
+        async {
+            do! Async.SwitchToThreadPool()
+            let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
+
+            match userInfo with
+            | Ok user ->
+                let defaults =
+                    userDefaults.SaveFavorite
+                        { id = 0
+                          login = user.login
+                          avatar_url = user.avatar_url }
+
+                match defaults with
+                | Added ->
+                    do! Async.SwitchToContext mainThread
+                    presentFGAlertOnMainThread ("Favorites", "Favorite Added", viewController)
+                | FirstTimeAdded _ ->
+                    do! Async.SwitchToContext mainThread
+                    presentFGAlertOnMainThread ("Favorites", "You have added your first favorite", viewController)
+                | AlreadyAdded ->
+                    do! Async.SwitchToContext mainThread
+                    presentFGAlertOnMainThread ("Favorites", "This user is already in your favorites ", viewController)
+            | Error _ ->
+                do! Async.SwitchToContext mainThread
+
+                presentFGAlertOnMainThread
+                    ("Error", "We can not get the user info now. Please try again later.", viewController)
+        }
+        |> Async.Start
