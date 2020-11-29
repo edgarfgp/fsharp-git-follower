@@ -65,7 +65,7 @@ type FGItemInfoView(itemInfoType: ItemInfoType, withCount: int) as self =
                 countLabel.HeightAnchor.ConstraintEqualTo(nfloat 18.) |])
 
 
-type FGEmptyView(message: string) as self =
+type FGEmptyView() as self =
     inherit UIView()
 
     let messageLabel =
@@ -78,7 +78,7 @@ type FGEmptyView(message: string) as self =
         messageLabel.TranslatesAutoresizingMaskIntoConstraints <- false
         self.AddSubview(messageLabel)
         self.AddSubview(logoImageView)
-        messageLabel.Text <- message
+        
         messageLabel.Lines <- nint 3
         messageLabel.TextColor <- UIColor.SecondaryLabelColor
         logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -93,6 +93,21 @@ type FGEmptyView(message: string) as self =
                 logoImageView.HeightAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
                 logoImageView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, constant = nfloat 170.)
                 logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.) |])
+            
+    member __.Show (parentView: UIView) (message : string) =
+        self.Frame <- parentView.Bounds
+        messageLabel.Text <- message
+        //self.TranslatesAutoresizingMaskIntoConstraints <- false
+        parentView.AddSubview self
+        NSLayoutConstraint.ActivateConstraints
+            ([| self.TopAnchor.ConstraintEqualTo(parentView.TopAnchor)
+                self.LeadingAnchor.ConstraintEqualTo(parentView.LeadingAnchor)
+                self.TrailingAnchor.ConstraintEqualTo(parentView.TrailingAnchor)
+                self.BottomAnchor.ConstraintEqualTo(parentView.BottomAnchor) |])
+
+    member __.Dismiss() = self.RemoveFromSuperview()
+    
+    static member Instance = new FGEmptyView()
 
 type LoadingView private () as view =
     inherit UIView()

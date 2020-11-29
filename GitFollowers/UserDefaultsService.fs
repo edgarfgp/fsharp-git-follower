@@ -2,7 +2,6 @@ namespace GitFollowers
 
 open GitFollowers
 open Persistence
-open System.Text.Json
 
 type IUserDefaultsService =
     abstract GetFavorites: unit -> Follower list option
@@ -25,7 +24,7 @@ type UserDefaultsService () =
             | Some favoritesResult ->
                 let result=  JSON.decode<Follower list>(favoritesResult)
                 match result with
-                | Ok favorites when favorites.Length > 0 -> Some favorites
+                | Ok favorites -> Some favorites
                 | _ -> None
             | None -> None
             

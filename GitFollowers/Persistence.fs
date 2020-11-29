@@ -50,11 +50,14 @@ module Persistence =
             match favorites with
             | Ok favorites -> 
                 let updatedFavorites = favorites |> List.removeItem(fun f -> f.login = follower.login)
-                let favoriteString = JSON.encode updatedFavorites
-                match favoriteString with
-                | Ok favorites when updatedFavorites.Length > 0 -> 
-                    defaults.SetString(favorites, favoritesKey)
-                    Removed RemovedOk
+                match updatedFavorites with
+                | favorites when favorites.Length >= 0 ->
+                    let encodedFavorites = JSON.encode updatedFavorites
+                    match encodedFavorites with
+                    | Ok result ->
+                        defaults.SetString(result, favoritesKey)
+                        Removed RemovedOk
+                    | _ -> NotRemoved RemovingError
                 | _ -> NotRemoved RemovingError
             | _ -> NotRemoved RemovingError
             

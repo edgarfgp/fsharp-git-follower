@@ -1,11 +1,8 @@
 namespace GitFollowers
 
 open System
-open System.Net.Http
-open System.Threading
 open CoreFoundation
 open CoreGraphics
-open Foundation
 open UIKit
 
 [<AutoOpen>]
@@ -23,19 +20,17 @@ module UIViewController =
             alertVC.ActionButtonClicked(fun _ -> self.DismissViewController(true, null))
             self.PresentViewController(alertVC, true, null))
 
-    let showEmptyView message (self: UIView) =
-        let emptyView = new FGEmptyView(message)
-        emptyView.Frame <- self.Bounds
-        emptyView.TranslatesAutoresizingMaskIntoConstraints <- false
-        self.AddSubview emptyView
+//    let showEmptyView message (self: UIView) =
+//        let emptyView = new FGEmptyView(message)
+//        emptyView.Frame <- self.Bounds
+//        self.AddSubview emptyView
+//
+//        NSLayoutConstraint.ActivateConstraints
+//            ([| emptyView.TopAnchor.ConstraintEqualTo(self.TopAnchor)
+//                emptyView.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor)
+//                emptyView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor)
+//                emptyView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor) |])
 
-        NSLayoutConstraint.ActivateConstraints
-            ([| emptyView.TopAnchor.ConstraintEqualTo(self.TopAnchor)
-                emptyView.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor)
-                emptyView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor)
-                emptyView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor) |])
-            
-            
 [<AutoOpen>]
 module UICollectionView =
 
@@ -57,16 +52,12 @@ module UICollectionView =
         
 [<AutoOpen>]
 module ViewControllerExtensions =
-
-    let mainThread = SynchronizationContext.Current
     
     let mutable page: int = 1
 
     let addToFavorites viewController (service: IGitHubService) (userDefaults: IUserDefaultsService) userName =
         async {
-            do! Async.SwitchToThreadPool()
             let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
-
             match userInfo with
             | Ok user ->
                 let defaults =
@@ -74,19 +65,14 @@ module ViewControllerExtensions =
                         { id = 0
                           login = user.login
                           avatar_url = user.avatar_url }
-
                 match defaults with
                 | Added ->
-                    do! Async.SwitchToContext mainThread
                     presentFGAlertOnMainThread "Favorites" "Favorite Added" viewController
                 | FirstTimeAdded _ ->
-                    do! Async.SwitchToContext mainThread
                     presentFGAlertOnMainThread "Favorites" "You have added your first favorite" viewController
                 | AlreadyAdded ->
-                    do! Async.SwitchToContext mainThread
                     presentFGAlertOnMainThread "Favorites" "This user is already in your favorites " viewController
             | Error _ ->
-                do! Async.SwitchToContext mainThread
                 presentFGAlertOnMainThread
                     "Error" "We can not get the user info now. Please try again later." viewController
         }

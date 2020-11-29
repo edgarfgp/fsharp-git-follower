@@ -1,10 +1,8 @@
 namespace GitFollowers
 
-open System.Net.Http
 open System.Text.Json
 open System.Text.Json.Serialization
 open CoreFoundation
-open Microsoft.Extensions.DependencyInjection
 
 module ImageNames =
     let location = "mappin.and.ellipse"

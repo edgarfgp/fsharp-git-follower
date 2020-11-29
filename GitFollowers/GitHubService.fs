@@ -1,6 +1,5 @@
 namespace GitFollowers
 
-open System
 open System.Threading.Tasks
 open FSharp.Control.Tasks
 open System.Net.Http
