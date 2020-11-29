@@ -14,6 +14,20 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
     let loadingView = LoadingView.Instance
     
     let emptyView = FGEmptyView.Instance
+    
+    let mutable disposable : IDisposable = null
+    
+    let performSearch (searchController: UISearchController) (self: UICollectionViewController) =
+        searchController.SearchBar.TextChanged
+        |> Observable.delay (TimeSpan.FromMilliseconds(350.))
+        |> Observable.subscribe (fun filter ->
+            let filteredFollowers =
+                followers
+                |> List.distinct
+                |> List.filter (fun c ->
+                    c.login.ToLower().Contains(filter.SearchText.ToLower()))
+            followers <- filteredFollowers
+            DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.CollectionView.ReloadData()))
 
     override self.ViewDidLoad() =
         base.ViewDidLoad()
@@ -46,6 +60,10 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
                     self.ShowAlertAndGoBack())
         }
         |> Async.Start
+        
+    override self.ViewWillDisappear(animated)=
+        base.ViewWillDisappear(animated)
+        disposable.Dispose()
 
     member self.FollowerCollectionViewDelegate =
         { new UICollectionViewDelegate() with
@@ -178,21 +196,7 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
                         member this.UpdateSearchResultsForSearchController(searchController) =
                             match searchController.SearchBar.Text with
                             | text when String.IsNullOrWhiteSpace(text) |> not ->
-                                searchController.SearchBar.TextChanged
-                                |> Observable.delay (TimeSpan.FromMilliseconds(350.))
-                                |> Observable.subscribe (fun filter ->
-                                    let filteredFollowers =
-                                        followers
-                                        |> List.distinct
-                                        |> List.filter (fun c ->
-                                            c
-                                                .login
-                                                .ToLower()
-                                                .Contains(filter.SearchText.ToLower()))
-
-                                    followers <- filteredFollowers
-                                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.CollectionView.ReloadData()))
-                                |> ignore
+                                disposable <- performSearch searchController self
                             | _ -> followers <- result }
 
                 self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate

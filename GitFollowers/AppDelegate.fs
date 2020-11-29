@@ -38,7 +38,9 @@ type AppDelegate() =
 
     override this.FinishedLaunching(_, _) =
         
-        Repository.connect |> Async.RunSynchronously |> ignore
+        Repository.connect
+        |> Async.RunSynchronously
+        |> ignore
 
         this.Window <- new UIWindow(UIScreen.MainScreen.Bounds)
         this.Window.RootViewController <- creteTabBar

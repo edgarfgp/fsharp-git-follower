@@ -5,10 +5,10 @@ open UIKit
 
 
 type ItemInfoType =
-| Repo
-| Gists
-| Followers
-| Following
+    | Repo
+    | Gists
+    | Followers
+    | Following
 
 [<AutoOpen>]
 type FGItemInfoView(itemInfoType: ItemInfoType, withCount: int) as self =
@@ -97,7 +97,6 @@ type FGEmptyView() as self =
     member __.Show (parentView: UIView) (message : string) =
         self.Frame <- parentView.Bounds
         messageLabel.Text <- message
-        //self.TranslatesAutoresizingMaskIntoConstraints <- false
         parentView.AddSubview self
         NSLayoutConstraint.ActivateConstraints
             ([| self.TopAnchor.ConstraintEqualTo(parentView.TopAnchor)
