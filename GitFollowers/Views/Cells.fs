@@ -13,8 +13,6 @@ type FollowerCell(handle: IntPtr) as self =
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Center, nfloat 16.)
-        
-    let mainThread = SynchronizationContext.Current
 
     do
         self.AddSubview avatarImageView
@@ -43,11 +41,9 @@ type FollowerCell(handle: IntPtr) as self =
                 |> Async.AwaitTask
             match result with
             | Ok data ->
-                do! Async.SwitchToContext mainThread
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                 avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
             | Error _ ->
-                do! Async.SwitchToContext mainThread
                 DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
         }
         |> Async.Start
@@ -60,8 +56,8 @@ type FavoriteCell(handle: IntPtr) as self =
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Left, nfloat 16.)
-        
-    let mainThread = SynchronizationContext.Current
+    
+    let githubService = GitHubService() :> IGitHubService
 
     do
         self.Accessory <- UITableViewCellAccessory.DisclosureIndicator
@@ -82,21 +78,18 @@ type FavoriteCell(handle: IntPtr) as self =
 
     static member val CellId = "FollowerTableCell"
 
-    member __.SetUp(follower: Follower, service : IGitHubService) =
+    member __.SetUp(follower: Follower) =
         userNameLabel.Text <- follower.login
         async {
-            do! Async.SwitchToThreadPool()
             let! result =
-                service.DownloadDataFromUrl(follower.avatar_url)
+                githubService.DownloadDataFromUrl(follower.avatar_url)
                 |> Async.AwaitTask
 
             match result with
             | Ok data ->
-                    do! Async.SwitchToContext mainThread
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
             | Error _ ->
-                do! Async.SwitchToContext mainThread
                 DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
         }
         |> Async.Start

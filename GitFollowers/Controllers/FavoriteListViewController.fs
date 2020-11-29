@@ -5,10 +5,14 @@ open Foundation
 open GitFollowers
 open UIKit
 
-type FavoriteListViewController(networkService: IGitHubService, persistenceService: IUserDefaultsService) =
+type FavoriteListViewController() =
     inherit UITableViewController()
 
     let mutable favorites = []
+    
+    let githubService = GitHubService() :> IGitHubService
+    
+    let persistenceService = UserDefaultsService() :> IUserDefaultsService
     
     let emptyView = FGEmptyView.Instance
 
@@ -42,7 +46,7 @@ type FavoriteListViewController(networkService: IGitHubService, persistenceServi
                 let favorite = favorites.[int indexPath.Row]
 
                 let destinationVC =
-                    new FollowerListViewController(networkService, persistenceService, favorite.login)
+                    new FollowerListViewController(favorite.login)
 
                 self.NavigationController.PushViewController(destinationVC, true) }
 
@@ -77,7 +81,7 @@ type FavoriteListViewController(networkService: IGitHubService, persistenceServi
                     tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
 
                 let follower = favorites.[int indexPath.Item]
-                cell.SetUp(follower, networkService)
+                cell.SetUp(follower)
                 upcast cell
 
             member this.RowsInSection(_, _) = nint favorites.Length }

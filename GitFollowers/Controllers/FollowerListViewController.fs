@@ -2,11 +2,13 @@ namespace GitFollowers
 
 open System
 open CoreFoundation
+open CoreGraphics
 open FSharp.Control.Reactive
+open Foundation
 open GitFollowers
 open UIKit
 
-type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefaultsService, username) =
+type FollowerListViewController(username) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
     let mutable followers = []
@@ -15,7 +17,34 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
     
     let emptyView = FGEmptyView.Instance
     
-    let mutable disposable : IDisposable = null
+    let githubService = GitHubService() :> IGitHubService
+    
+    let persistenceService = UserDefaultsService() :> IUserDefaultsService
+    
+    let mutable page: int = 1
+
+    let addToFavorites userName =
+        async {
+            let! userInfo = githubService.GetUserInfo userName |> Async.AwaitTask
+            match userInfo with
+            | Ok user ->
+                let defaults =
+                    persistenceService.SaveFavorite
+                        { id = 0
+                          login = user.login
+                          avatar_url = user.avatar_url }
+                match defaults with
+                | Added ->
+                    presentFGAlertOnMainThread "Favorites" "Favorite Added" self
+                | FirstTimeAdded _ ->
+                    presentFGAlertOnMainThread "Favorites" "You have added your first favorite" self
+                | AlreadyAdded ->
+                    presentFGAlertOnMainThread "Favorites" "This user is already in your favorites " self
+            | Error _ ->
+                presentFGAlertOnMainThread
+                    "Error" "We can not get the user info now. Please try again later." self
+        }
+        |> Async.Start
     
     let performSearch (searchController: UISearchController) (self: UICollectionViewController) =
         searchController.SearchBar.TextChanged
@@ -32,8 +61,7 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
     override self.ViewDidLoad() =
         base.ViewDidLoad()
 
-        addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ ->
-            addToFavorites self service userDefaults username)
+        addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ -> addToFavorites  username)
 
         self.Title <- username
 
@@ -47,7 +75,7 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
         
         async {
             let! result =
-                service.GetFollowers(username, page)
+                githubService.GetFollowers(username, page)
                 |> Async.AwaitTask
 
             match result with
@@ -60,10 +88,6 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
                     self.ShowAlertAndGoBack())
         }
         |> Async.Start
-        
-    override self.ViewWillDisappear(animated)=
-        base.ViewWillDisappear(animated)
-        disposable.Dispose()
 
     member self.FollowerCollectionViewDelegate =
         { new UICollectionViewDelegate() with
@@ -75,7 +99,7 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
 
                 async {
                     let! result =
-                        service.GetUserInfo follower.login
+                        githubService.GetUserInfo follower.login
                         |> Async.AwaitTask
 
                     match result with
@@ -89,7 +113,7 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
 
                                 async {
                                     let! result =
-                                        service.GetFollowers(username, page)
+                                        githubService.GetFollowers(username, page)
                                         |> Async.AwaitTask
 
                                     match result with
@@ -101,7 +125,7 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
                                             self.Title <- username
 
                                             addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ ->
-                                                addToFavorites self service userDefaults username)
+                                                addToFavorites username)
 
                                             collectionView.ReloadData())
                                     | Error _ ->
@@ -140,17 +164,19 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
 
                     async {
                         let! result =
-                            service.GetFollowers(username, page)
+                            githubService.GetFollowers(username, page)
                             |> Async.AwaitTask
 
                         match result with
                         | Ok result ->
-                            followers <- result
-
                             DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                                 loadingView.Dismiss()
-                                self.Title <- username
-                                self.CollectionView.ReloadData())
+                                if result.IsEmpty |> not then
+                                    followers <- result
+                                    self.CollectionView.ReloadData()
+                                    self.CollectionView.ScrollToItem(NSIndexPath.Create([| 0; 0 |]), UICollectionViewScrollPosition.Top, true)
+                                else
+                                    printfn "No more followers")
                         | Error _ -> DispatchQueue.MainQueue.DispatchAsync(fun _ -> loadingView.Dismiss())
 
                     }
@@ -196,7 +222,7 @@ type FollowerListViewController(service: IGitHubService, userDefaults: IUserDefa
                         member this.UpdateSearchResultsForSearchController(searchController) =
                             match searchController.SearchBar.Text with
                             | text when String.IsNullOrWhiteSpace(text) |> not ->
-                                disposable <- performSearch searchController self
+                                performSearch searchController self |> ignore
                             | _ -> followers <- result }
 
                 self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate

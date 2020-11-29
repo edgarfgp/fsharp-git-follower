@@ -49,31 +49,3 @@ module UICollectionView =
         flowLayout.SectionInset <- UIEdgeInsets(padding, padding, padding, padding)
         flowLayout.ItemSize <- CGSize(itemWidth, itemWidth + nfloat 40.)
         flowLayout
-        
-[<AutoOpen>]
-module ViewControllerExtensions =
-    
-    let mutable page: int = 1
-
-    let addToFavorites viewController (service: IGitHubService) (userDefaults: IUserDefaultsService) userName =
-        async {
-            let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
-            match userInfo with
-            | Ok user ->
-                let defaults =
-                    userDefaults.SaveFavorite
-                        { id = 0
-                          login = user.login
-                          avatar_url = user.avatar_url }
-                match defaults with
-                | Added ->
-                    presentFGAlertOnMainThread "Favorites" "Favorite Added" viewController
-                | FirstTimeAdded _ ->
-                    presentFGAlertOnMainThread "Favorites" "You have added your first favorite" viewController
-                | AlreadyAdded ->
-                    presentFGAlertOnMainThread "Favorites" "This user is already in your favorites " viewController
-            | Error _ ->
-                presentFGAlertOnMainThread
-                    "Error" "We can not get the user info now. Please try again later." viewController
-        }
-        |> Async.Start

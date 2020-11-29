@@ -33,7 +33,7 @@ type SearchViewController() as self =
 
         match userName with
         | Some text ->
-            let followerListVC = new FollowerListViewController(GitHubService(), UserDefaultsService(), text)
+            let followerListVC = new FollowerListViewController(text)
             self.NavigationController.PushViewController(followerListVC, animated = true)
             userNameTextField.ResignFirstResponder() |> ignore
         | _ ->
