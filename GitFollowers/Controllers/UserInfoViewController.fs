@@ -16,6 +16,19 @@ type UserInfoController(user: User) as self =
 
     let didRequestFollowers = Event<_>()
 
+    let performDidRequestFollowers = fun _ ->
+        if user.followers > 0 then
+            didRequestFollowers.Trigger(self, user.login)
+            self.DismissViewController(true, null)
+        else
+            presentFGAlertOnMainThread "Not followers" "This user does not have followers" self
+    let performUserProfile = fun _ ->
+        let safariVC =
+            new SFSafariViewController(url = new NSUrl(user.html_url))
+
+        safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
+        self.PresentViewController(safariVC, true, null)
+
     [<CLIEvent>]
     member __.DidRequestFollowers = didRequestFollowers.Publish
 
@@ -33,8 +46,7 @@ type UserInfoController(user: User) as self =
         childVC.DidMoveToParentViewController(self)
 
     member private __.ConfigureViewController() =
-        addRightNavigationItem
-            (self.NavigationItem, UIBarButtonSystemItem.Done, (fun _ -> self.DismissModalViewController(true)))
+        addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Done (fun _ -> self.DismissModalViewController(true))
 
     member private __.ConfigureContentView() =
         headerView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -97,8 +109,7 @@ type UserInfoController(user: User) as self =
                            user.public_gists)
 
         let itemInfoTwo =
-            new ItemInfoVC(UIColor.SystemGreenColor,
-                           "Get Followers",
+            new ItemInfoVC(UIColor.SystemGreenColor, "Get Followers",
                            ItemInfoType.Followers,
                            user.followers,
                            ItemInfoType.Following,
@@ -107,17 +118,5 @@ type UserInfoController(user: User) as self =
         self.AddChildViewController(new FGUserInfoHeaderVC(user, GitHubService()), headerView)
         self.AddChildViewController(itemInfoOne, itemViewOne)
         self.AddChildViewController(itemInfoTwo, itemViewTwo)
-
-        itemInfoOne.ActionButtonClicked(fun _ ->
-            let safariVC =
-                new SFSafariViewController(url = new NSUrl(user.html_url))
-
-            safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
-            self.PresentViewController(safariVC, true, null))
-
-        itemInfoTwo.ActionButtonClicked(fun _ ->
-            if user.followers > 0 then
-                didRequestFollowers.Trigger(self, user.login)
-                self.DismissViewController(true, null)
-            else
-                presentFGAlertOnMainThread ("Not followers", "This user does not have followers", self))
+        itemInfoOne.ActionButtonClicked(performUserProfile)
+        itemInfoTwo.ActionButtonClicked(performDidRequestFollowers)

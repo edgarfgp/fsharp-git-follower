@@ -20,7 +20,7 @@ type SearchViewController() as self =
         self.ConfigureUserNameTextField()
         self.ConfigureActionButton()
 
-    override __.ViewWillAppear(_) =
+    override __.ViewWillAppear _ =
         base.ViewWillAppear(true)
         self.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
         userNameTextField.Text <- String.Empty
@@ -38,7 +38,7 @@ type SearchViewController() as self =
             userNameTextField.ResignFirstResponder() |> ignore
         | _ ->
             presentFGAlertOnMainThread
-                ("Empty Username", "Please enter a username . We need to know who to look for 😀", self)
+                "Empty Username" "Please enter a username . We need to know who to look for 😀" self
 
     member __.ConfigureLogoImageView() =
         logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false

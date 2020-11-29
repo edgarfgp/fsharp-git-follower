@@ -6,9 +6,9 @@ open System.Text.Json
 
 type IUserDefaultsService =
     abstract GetFavorites: unit -> Follower list option
-    abstract SaveFavorite: Follower -> FavoriteResult
+    abstract SaveFavorite: Follower -> PersistenceAddActionType
     
-    abstract RemoveFavorite : Follower -> unit
+    abstract RemoveFavorite : Follower -> PersistenceRemoveActionType
     
 type UserDefaultsService () =
     interface IUserDefaultsService with
@@ -23,9 +23,13 @@ type UserDefaultsService () =
                 |> Option.OfString
             match storedFavorites with
             | Some favoritesResult ->
-                let favorites=  (JsonSerializer.Deserialize<Follower list>(favoritesResult, JSON.createJsonOption))
-                Some favorites
+                let result=  JSON.decode<Follower list>(favoritesResult)
+                match result with
+                | Ok favorites when favorites.Length > 0 -> Some favorites
+                | _ -> None
             | None -> None
             
         member __.RemoveFavorite(follower) =
-            removeFavorite(follower)
+            match follower with
+            | Removed reason -> reason
+            | NotRemoved reason -> reason

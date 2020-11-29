@@ -5,47 +5,16 @@ open Foundation
 open GitFollowers
 open UIKit
 
-type FavoritesTableViewDelegate(favorites: Follower List, viewController : UITableViewController) =
-    inherit UITableViewDelegate()
-    
-    override __.RowSelected(_, indexPath: NSIndexPath) =
-        let favorite = favorites.[int indexPath.Row]
-        let destinationVC =
-            new FollowerListViewController(GitHubService(), UserDefaultsService(), favorite.login)
-        viewController.NavigationController.PushViewController(destinationVC, true)
-
-type FavoritesTableViewDataSource(favorites: Follower list, service: IGitHubService, userDefaults: IUserDefaultsService) =
-    inherit UITableViewDataSource()
-
-    let mutable storedFavorites = favorites
-    
-    override __.CommitEditingStyle(tableView, editingStyle, indexPath) =
-        match editingStyle with
-        | UITableViewCellEditingStyle.Delete ->
-            let favoriteToDelete = storedFavorites.[indexPath.Row]
-            userDefaults.RemoveFavorite favoriteToDelete
-            let updatedFavorites = storedFavorites |> List.removeItem (fun f -> f.login = favoriteToDelete.login)
-            storedFavorites <- updatedFavorites
-            tableView.DeleteRows([|indexPath|], UITableViewRowAnimation.Left)
-        | _ -> failwith ""
-    
-    override __.GetCell(tableView: UITableView, indexPath) =
-        let cell =
-            tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
-        let follower = storedFavorites.[int indexPath.Item]
-        cell.SetUp(follower, service)
-        upcast cell
-
-    override __.RowsInSection(_, _) = nint storedFavorites.Length
-    
-type FavoriteListViewController(service: IGitHubService, userDefaults  : IUserDefaultsService) as self =
+type FavoriteListViewController(networkService: IGitHubService, persistenceService: IUserDefaultsService) as self =
     inherit UITableViewController()
+
+    let mutable favorites : Follower list = []
 
     override __.ViewDidLoad() =
         base.ViewDidLoad()
-        self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+        self.TableView.BackgroundColor <- UIColor.Green
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        
+
         self.TableView <- new UITableView(self.View.Bounds)
         self.TableView.RowHeight <- nfloat 100.
         self.TableView.SeparatorStyle <- UITableViewCellSeparatorStyle.None
@@ -53,10 +22,53 @@ type FavoriteListViewController(service: IGitHubService, userDefaults  : IUserDe
 
     override __.ViewWillAppear _ =
         base.ViewWillAppear(true)
-        match userDefaults.GetFavorites() with
-        | Some favorites ->
-            self.TableView.Delegate <- new FavoritesTableViewDelegate(favorites, self)
-            self.TableView.DataSource <- new FavoritesTableViewDataSource(favorites, service, userDefaults)
+
+        match persistenceService.GetFavorites() with
+        | Some result ->
+            favorites <- result
+            self.TableView.Delegate <- __.FavoritesTableViewDelegate
+            self.TableView.DataSource <- __.FavoritesTableViewDataSource
             self.TableView.ReloadData()
-        | None ->
-            showEmptyView ("No Favorites", self)
+        | None -> showEmptyView "No Favorites" self.View
+
+    member private __.FavoritesTableViewDelegate: UITableViewDelegate =
+        { new UITableViewDelegate() with
+            member __.RowSelected(_, indexPath: NSIndexPath) =
+                let favorite = favorites.[int indexPath.Row]
+
+                let destinationVC =
+                    new FollowerListViewController(networkService, persistenceService, favorite.login)
+
+                self.NavigationController.PushViewController(destinationVC, true) }
+
+    member __.FavoritesTableViewDataSource: UITableViewDataSource =
+        { new UITableViewDataSource() with
+            member __.CommitEditingStyle(tableView, editingStyle, indexPath) =
+                match editingStyle with
+                | UITableViewCellEditingStyle.Delete ->
+                    let favoriteToDelete = favorites.[indexPath.Row]
+                    let favoriteStatus = persistenceService.RemoveFavorite favoriteToDelete
+                    match favoriteStatus with
+                    | RemovedOk ->
+                        let updatedFavorites =
+                            favorites
+                            |> List.removeItem (fun f -> f.login = favoriteToDelete.login)
+
+                        favorites <- updatedFavorites
+                        tableView.DeleteRows([| indexPath |], UITableViewRowAnimation.Left)
+                        if updatedFavorites.IsEmpty then
+                            showEmptyView "No Favorites" self.View
+
+                    | _ -> presentFGAlertOnMainThread "Favorites" "Unable to delete" self
+
+                | _ -> failwith "Unrecognized UITableViewCellEditingStyle"
+
+            member __.GetCell(tableView: UITableView, indexPath) =
+                let cell =
+                    tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
+
+                let follower = favorites.[int indexPath.Item]
+                cell.SetUp(follower, networkService)
+                upcast cell
+
+            member __.RowsInSection(_, _) = nint favorites.Length }

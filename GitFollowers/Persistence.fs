@@ -3,10 +3,14 @@ namespace GitFollowers
 open System.Text.Json
 open Foundation
 
-type FavoriteResult =
+type PersistenceAddActionType =
     | Added
     | AlreadyAdded
     | FirstTimeAdded
+   
+type PersistenceRemoveActionType =
+    | RemovedOk
+    | RemovingError
 
 module Persistence =
     let defaults = NSUserDefaults.StandardUserDefaults
@@ -18,8 +22,7 @@ module Persistence =
             |> Option.OfString
         match storedFavorites with
         | Some favoritesString ->
-            let favorites =
-                JsonSerializer.Deserialize<Follower list>(favoritesString, JSON.createJsonOption)
+            let favorites = JsonSerializer.Deserialize<Follower list>(favoritesString, JSON.createJsonOption)
             let favoriteLookup =
                 favorites
                 |> List.tryFind (fun f -> f.login = follower.login)
@@ -37,18 +40,25 @@ module Persistence =
             defaults.SetString(favoriteString, favoritesKey)
             Saved FirstTimeAdded
             
-    let removeFavorite (follower: Follower) =
+    let (|Removed|NotRemoved|) (follower: Follower) =
         let storedFavorites =
             defaults.StringForKey(favoritesKey)
             |> Option.OfString
         match storedFavorites with
         | Some favoritesString ->
-            let favorites =
-                JsonSerializer.Deserialize<Follower list>(favoritesString, JSON.createJsonOption)
-            let updatedFavorites = favorites |> List.removeItem(fun f -> f.login = follower.login)
-            let favoriteString = JsonSerializer.Serialize updatedFavorites
-            defaults.SetString(favoriteString, favoritesKey)
-        | None -> failwith ""
+            let favorites = JSON.decode(favoritesString)
+            match favorites with
+            | Ok favorites -> 
+                let updatedFavorites = favorites |> List.removeItem(fun f -> f.login = follower.login)
+                let favoriteString = JSON.encode updatedFavorites
+                match favoriteString with
+                | Ok favorites when updatedFavorites.Length > 0 -> 
+                    defaults.SetString(favorites, favoritesKey)
+                    Removed RemovedOk
+                | _ -> NotRemoved RemovingError
+            | _ -> NotRemoved RemovingError
+            
+        | None -> NotRemoved RemovingError
         
         
 

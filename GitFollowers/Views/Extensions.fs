@@ -10,12 +10,12 @@ open UIKit
 
 [<AutoOpen>]
 module UIViewController =
-    let addRightNavigationItem(navigationItem : UINavigationItem, systemItem: UIBarButtonSystemItem,  action) =
+    let addRightNavigationItem (navigationItem: UINavigationItem)  systemItem  action =
         navigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = systemItem)
         navigationItem.RightBarButtonItem.Clicked
-            |> Event.add (action)
+            |> Event.add action
             
-    let presentFGAlertOnMainThread (title, message, self: UIViewController) =
+    let presentFGAlertOnMainThread title message (self: UIViewController) =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
             let alertVC = new FGAlertVC(title, message, "Ok")
             alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen
@@ -23,17 +23,17 @@ module UIViewController =
             alertVC.ActionButtonClicked(fun _ -> self.DismissViewController(true, null))
             self.PresentViewController(alertVC, true, null))
 
-    let showEmptyView (message: string, self: UIViewController) =
+    let showEmptyView message (self: UIView) =
         let emptyView = new FGEmptyView(message)
-        emptyView.Frame <- self.View.Bounds
+        emptyView.Frame <- self.Bounds
         emptyView.TranslatesAutoresizingMaskIntoConstraints <- false
-        self.View.AddSubview emptyView
+        self.AddSubview emptyView
 
         NSLayoutConstraint.ActivateConstraints
-            ([| emptyView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor)
-                emptyView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor)
-                emptyView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
-                emptyView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor) |])
+            ([| emptyView.TopAnchor.ConstraintEqualTo(self.TopAnchor)
+                emptyView.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor)
+                emptyView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor)
+                emptyView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor) |])
             
             
 [<AutoOpen>]
@@ -62,10 +62,7 @@ module ViewControllerExtensions =
     
     let mutable page: int = 1
 
-    let addToFavorites (viewController: UIViewController,
-                        service: IGitHubService,
-                        userDefaults: IUserDefaultsService,
-                        userName: string) =
+    let addToFavorites viewController (service: IGitHubService) (userDefaults: IUserDefaultsService) userName =
         async {
             do! Async.SwitchToThreadPool()
             let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
@@ -81,17 +78,16 @@ module ViewControllerExtensions =
                 match defaults with
                 | Added ->
                     do! Async.SwitchToContext mainThread
-                    presentFGAlertOnMainThread ("Favorites", "Favorite Added", viewController)
+                    presentFGAlertOnMainThread "Favorites" "Favorite Added" viewController
                 | FirstTimeAdded _ ->
                     do! Async.SwitchToContext mainThread
-                    presentFGAlertOnMainThread ("Favorites", "You have added your first favorite", viewController)
+                    presentFGAlertOnMainThread "Favorites" "You have added your first favorite" viewController
                 | AlreadyAdded ->
                     do! Async.SwitchToContext mainThread
-                    presentFGAlertOnMainThread ("Favorites", "This user is already in your favorites ", viewController)
+                    presentFGAlertOnMainThread "Favorites" "This user is already in your favorites " viewController
             | Error _ ->
                 do! Async.SwitchToContext mainThread
-
                 presentFGAlertOnMainThread
-                    ("Error", "We can not get the user info now. Please try again later.", viewController)
+                    "Error" "We can not get the user info now. Please try again later." viewController
         }
         |> Async.Start

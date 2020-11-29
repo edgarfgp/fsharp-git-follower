@@ -3,6 +3,7 @@ namespace GitFollowers
 open System.Net.Http
 open System.Text.Json
 open System.Text.Json.Serialization
+open CoreFoundation
 open Microsoft.Extensions.DependencyInjection
 
 module ImageNames =
@@ -34,6 +35,13 @@ module JSON =
             |> Ok
 
         with ex -> ex.Message |> Error
+        
+    let encode<'T> (json: 'T) =
+        try
+            JsonSerializer.Serialize<'T>(json)
+            |> Ok
+
+        with ex -> ex.Message |> Error
  
 module List =
     let rec removeItem predicate list =
@@ -41,3 +49,8 @@ module List =
         | h::t when predicate h -> t
         | h::t -> h::removeItem predicate t
         | _ -> []
+
+[<AutoOpen>]
+module Dispatcher =      
+    let invokeOnMainThread action =
+        DispatchQueue.MainQueue.DispatchAsync(fun _ -> action)
