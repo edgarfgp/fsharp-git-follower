@@ -9,9 +9,7 @@ type FavoriteListViewController() =
     inherit UITableViewController()
 
     let mutable favorites = []
-    
-    let githubService = GitHubService() :> IGitHubService
-    
+        
     let persistenceService = UserDefaultsService() :> IUserDefaultsService
     
     let emptyView = FGEmptyView.Instance

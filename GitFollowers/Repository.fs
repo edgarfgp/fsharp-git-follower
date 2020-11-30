@@ -1,12 +1,11 @@
 namespace GitFollowers
 
-module private Repository =
+module Repository =
     open System
     open System.IO
     open SQLite
-    open FSharp.Control.Tasks
 
-    let getDbPath =
+    let private getDbPath =
         let docFolder =
             Environment.GetFolderPath(Environment.SpecialFolder.Personal)
 
@@ -30,12 +29,4 @@ module private Repository =
 
             return db
         }
-
-    let convertToObject (item: Follower) =
-        let obj = FollowerObject()
-        obj.Id <- item.id
-        obj.Login <- item.login
-        obj.AvatarUrl <- item.avatar_url
-        obj
-
 

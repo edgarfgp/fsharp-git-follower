@@ -37,10 +37,10 @@ type AppDelegate() =
     override val Window = null with get, set
 
     override this.FinishedLaunching(_, _) =
-        
-        Repository.connect
-        |> Async.RunSynchronously
-        |> ignore
+        async {
+            let! _ = Repository.connect
+            ()
+        }|> Async.Start
 
         this.Window <- new UIWindow(UIScreen.MainScreen.Bounds)
         this.Window.RootViewController <- creteTabBar

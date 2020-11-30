@@ -133,7 +133,7 @@
         <Compile Include="Persistence.fs" />
         <Compile Include="GitHubService.fs" />
         <Compile Include="UserDefaultsService.fs" />
-        <Compile Include="SQLService.fs" />
+        <Compile Include="SQLiteService.fs" />
         <Compile Include="Views\Labels.fs" />
         <Compile Include="Views\Buttons.fs" />
         <Compile Include="Views\TextFields.fs" />

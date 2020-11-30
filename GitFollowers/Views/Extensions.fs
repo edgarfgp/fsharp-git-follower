@@ -20,17 +20,6 @@ module UIViewController =
             alertVC.ActionButtonClicked(fun _ -> self.DismissViewController(true, null))
             self.PresentViewController(alertVC, true, null))
 
-//    let showEmptyView message (self: UIView) =
-//        let emptyView = new FGEmptyView(message)
-//        emptyView.Frame <- self.Bounds
-//        self.AddSubview emptyView
-//
-//        NSLayoutConstraint.ActivateConstraints
-//            ([| emptyView.TopAnchor.ConstraintEqualTo(self.TopAnchor)
-//                emptyView.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor)
-//                emptyView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor)
-//                emptyView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor) |])
-
 [<AutoOpen>]
 module UICollectionView =
 

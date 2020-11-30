@@ -2,7 +2,6 @@ namespace GitFollowers
 
 open System
 open CoreFoundation
-open CoreGraphics
 open FSharp.Control.Reactive
 open Foundation
 open GitFollowers
@@ -14,54 +13,88 @@ type FollowerListViewController(username) as self =
     let mutable followers = []
 
     let loadingView = LoadingView.Instance
-    
+
     let emptyView = FGEmptyView.Instance
-    
+
     let githubService = GitHubService() :> IGitHubService
-    
-    let persistenceService = UserDefaultsService() :> IUserDefaultsService
-    
+
+    let persistenceService =
+        UserDefaultsService() :> IUserDefaultsService
+
+    let sqliteService = SQLiteService() :> ISQLiteService
+
     let mutable page: int = 1
 
     let addToFavorites userName =
         async {
-            let! userInfo = githubService.GetUserInfo userName |> Async.AwaitTask
+            let! userInfo =
+                githubService.GetUserInfo userName
+                |> Async.AwaitTask
+
             match userInfo with
             | Ok user ->
-                let defaults =
-                    persistenceService.SaveFavorite
-                        { id = 0
-                          login = user.login
-                          avatar_url = user.avatar_url }
+                let favorite =
+                    { id = 0
+                      login = user.login
+                      avatar_url = user.avatar_url }
+
+                let defaults = persistenceService.SaveFavorite favorite
+                //let! _ = sqliteService.InsertFavorite favorite
                 match defaults with
-                | Added ->
-                    presentFGAlertOnMainThread "Favorites" "Favorite Added" self
-                | FirstTimeAdded _ ->
-                    presentFGAlertOnMainThread "Favorites" "You have added your first favorite" self
-                | AlreadyAdded ->
-                    presentFGAlertOnMainThread "Favorites" "This user is already in your favorites " self
+                | Added -> presentFGAlertOnMainThread "Favorites" "Favorite Added" self
+                | FirstTimeAdded _ -> presentFGAlertOnMainThread "Favorites" "You have added your first favorite" self
+                | AlreadyAdded -> presentFGAlertOnMainThread "Favorites" "This user is already in your favorites " self
             | Error _ ->
-                presentFGAlertOnMainThread
-                    "Error" "We can not get the user info now. Please try again later." self
+                presentFGAlertOnMainThread "Error" "We can not get the user info now. Please try again later." self
         }
         |> Async.Start
-    
+
+    let performDiDRequestFollowers username (collectionView: UICollectionView) =
+        async {
+            let! result =
+                githubService.GetFollowers(username, page)
+                |> Async.AwaitTask
+
+            match result with
+            | Ok result ->
+                followers <- result
+
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    loadingView.Dismiss()
+                    self.Title <- username
+
+                    addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ ->
+                        addToFavorites username)
+
+                    collectionView.ReloadData())
+            | Error _ ->
+                loadingView.Dismiss()
+                presentFGAlertOnMainThread "Error" "Error while processing request. Please try again later." self
+        }
+        |> Async.Start
+
+
     let performSearch (searchController: UISearchController) (self: UICollectionViewController) =
         searchController.SearchBar.TextChanged
         |> Observable.delay (TimeSpan.FromMilliseconds(350.))
         |> Observable.subscribe (fun filter ->
-            let filteredFollowers =
+            let filteredResult =
                 followers
                 |> List.distinct
                 |> List.filter (fun c ->
-                    c.login.ToLower().Contains(filter.SearchText.ToLower()))
-            followers <- filteredFollowers
+                    c
+                        .login
+                        .ToLower()
+                        .Contains(filter.SearchText.ToLower()))
+
+            followers <- filteredResult
+
             DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.CollectionView.ReloadData()))
 
     override self.ViewDidLoad() =
         base.ViewDidLoad()
 
-        addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ -> addToFavorites  username)
+        addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ -> addToFavorites username)
 
         self.Title <- username
 
@@ -72,13 +105,13 @@ type FollowerListViewController(username) as self =
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
 
         loadingView.Show(self.View)
-        
+
         async {
-            let! result =
+            let! followersResult =
                 githubService.GetFollowers(username, page)
                 |> Async.AwaitTask
 
-            match result with
+            match followersResult with
             | Ok result ->
                 followers <- result
                 self.ConfigureCollectionView result
@@ -110,33 +143,7 @@ type FollowerListViewController(username) as self =
 
                             userInfoController.DidRequestFollowers.Add(fun (_, username) ->
                                 loadingView.Show(self.View)
-
-                                async {
-                                    let! result =
-                                        githubService.GetFollowers(username, page)
-                                        |> Async.AwaitTask
-
-                                    match result with
-                                    | Ok result ->
-                                        followers <- result
-
-                                        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                            loadingView.Dismiss()
-                                            self.Title <- username
-
-                                            addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ ->
-                                                addToFavorites username)
-
-                                            collectionView.ReloadData())
-                                    | Error _ ->
-                                        loadingView.Dismiss()
-
-                                        presentFGAlertOnMainThread
-                                            "Error"
-                                            "Error while processing request. Please try again later."
-                                            self
-                                }
-                                |> Async.Start)
+                                performDiDRequestFollowers username collectionView)
 
                             let navController =
                                 new UINavigationController(rootViewController = userInfoController)
@@ -171,10 +178,13 @@ type FollowerListViewController(username) as self =
                         | Ok result ->
                             DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                                 loadingView.Dismiss()
+
                                 if result.IsEmpty |> not then
                                     followers <- result
                                     self.CollectionView.ReloadData()
-                                    self.CollectionView.ScrollToItem(NSIndexPath.Create([| 0; 0 |]), UICollectionViewScrollPosition.Top, true)
+
+                                    self.CollectionView.ScrollToItem
+                                        (NSIndexPath.Create([| 0; 0 |]), UICollectionViewScrollPosition.Top, true)
                                 else
                                     printfn "No more followers")
                         | Error _ -> DispatchQueue.MainQueue.DispatchAsync(fun _ -> loadingView.Dismiss())
@@ -228,4 +238,4 @@ type FollowerListViewController(username) as self =
                 self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate
             else
                 loadingView.Dismiss()
-                emptyView.Show self.View "No Followers" )
+                emptyView.Show self.View "No Followers")
