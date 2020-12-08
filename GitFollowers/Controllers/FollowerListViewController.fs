@@ -15,33 +15,40 @@ type FollowerListViewController(username) as self =
 
     let emptyView = FGEmptyView.Instance
 
-    let githubService = GitHubService() :> IGitHubService
+    let service = GitHubService() :> IGitHubService
 
-    let persistenceService =
+    let userDefaults =
         UserDefaultsService() :> IUserDefaultsService
 
-    let sqliteService = SQLiteService() :> ISQLiteService
-
     let mutable page: int = 1
-    
-    let dataSource = lazy new UICollectionViewDiffableDataSource<Section, FollowerData>(self.CollectionView, UICollectionViewDiffableDataSourceCellProvider(fun collectionView indexPath follower ->
-        let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
-        let result = follower :?> FollowerData
-        cell.SetUp(result)
-        upcast cell))
+
+    let dataSource =
+        lazy
+            (new UICollectionViewDiffableDataSource<Section, FollowerData>
+                (self.CollectionView,
+                   UICollectionViewDiffableDataSourceCellProvider(fun collectionView indexPath follower ->
+                       let cell =
+                           collectionView.DequeueReusableCell
+                               (FollowerCell.CellId, indexPath) :?> FollowerCell
+
+                       let result = follower :?> FollowerData
+                       cell.SetUp(result)
+                       upcast cell)))
 
     let updateData followers =
-        let snapshot = new NSDiffableDataSourceSnapshot<Section, FollowerData>()
-        snapshot.AppendSections([|new Section()|])
+        let snapshot =
+            new NSDiffableDataSourceSnapshot<Section, FollowerData>()
+
+        snapshot.AppendSections([| new Section() |])
         snapshot.AppendItems(followers)
         DispatchQueue.MainQueue.DispatchAsync(fun _ -> dataSource.Value.ApplySnapshot(snapshot, true))
 
     let addToFavorites userName =
         async {
             let! userInfo =
-                githubService.GetUserInfo userName
+                service.GetUserInfo userName
                 |> Async.AwaitTask
-            
+
             match userInfo with
             | Ok user ->
                 let favorite =
@@ -49,8 +56,8 @@ type FollowerListViewController(username) as self =
                       login = user.login
                       avatar_url = user.avatar_url }
 
-                let defaults = persistenceService.SaveFavorite favorite
-                let! _ = sqliteService.InsertFavorite favorite
+                let defaults = userDefaults.SaveFavorite favorite
+
                 match defaults with
                 | Added -> presentFGAlertOnMainThread "Favorites" "Favorite Added" self
                 | FirstTimeAdded _ -> presentFGAlertOnMainThread "Favorites" "You have added your first favorite" self
@@ -63,7 +70,7 @@ type FollowerListViewController(username) as self =
     let performDiDRequestFollowers username (collectionView: UICollectionView) =
         async {
             let! result =
-                githubService.GetFollowers(username, page)
+                service.GetFollowers(username, page)
                 |> Async.AwaitTask
 
             match result with
@@ -96,18 +103,63 @@ type FollowerListViewController(username) as self =
         self.CollectionView <- new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView))
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
+        self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate
+        self.NavigationItem.SearchController <-
+            { new UISearchController() with
+                member this.ObscuresBackgroundDuringPresentation = false }
+
+        self.NavigationItem.SearchController.SearchResultsUpdater <-
+            { new UISearchResultsUpdating() with
+                member this.UpdateSearchResultsForSearchController(searchController) =
+                    if String.IsNullOrEmpty(searchController.SearchBar.Text)
+                       |> not then
+                        let filteredResult =
+                            followers
+                            |> List.distinct
+                            |> List.filter (fun c ->
+                                c
+                                    .login
+                                    .ToLower()
+                                    .Contains(searchController.SearchBar.Text.ToLower()))
+
+                        let data =
+                            filteredResult
+                            |> List.map (fun c -> c.ConvertToFollowerData)
+                            |> List.toArray
+
+                        DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
+                    else if String.IsNullOrEmpty(searchController.SearchBar.Text) then
+                        let data =
+                            followers
+                            |> List.map (fun c -> c.ConvertToFollowerData)
+                            |> List.toArray
+
+                        updateData data
+                }
 
         loadingView.Show(self.View)
 
         async {
             let! followersResult =
-                githubService.GetFollowers(username, page)
+                service.GetFollowers(username, page)
                 |> Async.AwaitTask
 
             match followersResult with
             | Ok result ->
                 followers <- result
-                self.ConfigureCollectionView result
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    if result.Length > 0 then
+                        let data =
+                            result
+                            |> List.map (fun c -> c.ConvertToFollowerData)
+                            |> List.toArray
+
+                        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                            loadingView.Dismiss()
+                            updateData data)
+                            else
+                                loadingView.Dismiss()
+                                emptyView.Show self.View "No Followers")
             | Error _ ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Dismiss()
@@ -121,11 +173,11 @@ type FollowerListViewController(username) as self =
             member this.ItemSelected(collectionView, indexPath) =
                 let index = int indexPath.Item
                 let follower = followers.[index]
-                loadingView.Show(self.CollectionView)
+                loadingView.Show(self.View)
 
                 async {
                     let! result =
-                        githubService.GetUserInfo follower.login
+                        service.GetUserInfo follower.login
                         |> Async.AwaitTask
 
                     match result with
@@ -164,7 +216,7 @@ type FollowerListViewController(username) as self =
 
                     async {
                         let! result =
-                            githubService.GetFollowers(username, page)
+                            service.GetFollowers(username, page)
                             |> Async.AwaitTask
 
                         match result with
@@ -198,45 +250,3 @@ type FollowerListViewController(username) as self =
 
             self.NavigationController.PopToRootViewController(true)
             |> ignore)
-
-    member self.ConfigureCollectionView result =
-        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-            if result.Length > 0 then
-                loadingView.Dismiss()
-
-                self.CollectionView.DataSource <-
-                    { new UICollectionViewDataSource() with
-                        member this.GetCell(collectionView, indexPath) =
-                            let cell =
-                                collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
-
-                            let follower = followers.[int indexPath.Item].ConvertToFollowerData
-                            cell.SetUp(follower)
-                            upcast cell
-
-                        member this.GetItemsCount(_, _) = nint followers.Length }
-
-                self.NavigationItem.SearchController <-
-                    { new UISearchController() with
-                        member this.ObscuresBackgroundDuringPresentation = false }
-
-                self.NavigationItem.SearchController.SearchResultsUpdater <-
-                    { new UISearchResultsUpdating() with
-                        member this.UpdateSearchResultsForSearchController(searchController) =
-                            if String.IsNullOrEmpty(searchController.SearchBar.Text) |> not then
-                                let filteredResult =
-                                    followers
-                                    |> List.distinct
-                                    |> List.filter (fun c ->c.login.ToLower().Contains(searchController.SearchBar.Text.ToLower()))
-                                let data = filteredResult |> List.map(fun c -> c.ConvertToFollowerData) |> List.toArray    
-                                DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
-                            else
-                                if String.IsNullOrEmpty(searchController.SearchBar.Text) then
-                                    let data = followers |> List.map(fun c -> c.ConvertToFollowerData) |> List.toArray    
-                                    updateData data
-                    }
-
-                self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate
-            else
-                loadingView.Dismiss()
-                emptyView.Show self.View "No Followers")
