@@ -148,6 +148,7 @@
         <Compile Include="Controllers\SearchController.fs" />
         <Compile Include="AppDelegate.fs" />
         <Compile Include="Main.fs" />
+        <None Include="script.fsx" />
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="FSharp.Control.Reactive" Version="4.4.2" />

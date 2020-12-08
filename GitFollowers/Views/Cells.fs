@@ -1,7 +1,6 @@
 namespace GitFollowers
 
 open System
-open System.Threading
 open CoreFoundation
 open Foundation
 open UIKit
@@ -13,6 +12,8 @@ type FollowerCell(handle: IntPtr) as self =
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Center, nfloat 16.)
+        
+    let service = GitHubService() :> IGitHubService
 
     do
         self.AddSubview avatarImageView
@@ -32,12 +33,12 @@ type FollowerCell(handle: IntPtr) as self =
 
     static member val CellId = "FollowerCell"
 
-    member __.SetUp(follower: Follower, service : IGitHubService) =
-        userNameLabel.Text <- follower.login
+    member __.SetUp(follower: FollowerData) =
+        userNameLabel.Text <- follower.Login
         async {
             do! Async.SwitchToThreadPool()
             let! result =
-                service.DownloadDataFromUrl(follower.avatar_url)
+                service.DownloadDataFromUrl(follower.AvatarUrl)
                 |> Async.AwaitTask
             match result with
             | Ok data ->

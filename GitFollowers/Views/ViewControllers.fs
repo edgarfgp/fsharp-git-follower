@@ -69,7 +69,7 @@ type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
     member __.ActionButtonClicked(handler) =
         actionButton.TouchUpInside |> Event.add handler
 
-type FGUserInfoHeaderVC(user: User, service: IGitHubService) as self =
+type FGUserInfoHeaderVC(user: User) as self =
     inherit UIViewController()
 
     let textImageViewPadding = nfloat 12.
@@ -82,8 +82,8 @@ type FGUserInfoHeaderVC(user: User, service: IGitHubService) as self =
     let locationImageView = new UIImageView()
     let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
     let bioLabel = new FGBodyLabel()
-
-    let mainThread = SynchronizationContext.Current
+    
+    let githubService = GitHubService() :> IGitHubService
 
     do
         avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -153,17 +153,15 @@ type FGUserInfoHeaderVC(user: User, service: IGitHubService) as self =
                 bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
         async {
-            do! Async.SwitchToThreadPool()
-            let! result = service.DownloadDataFromUrl(user.avatar_url) |> Async.AwaitTask
+            let! result = githubService.DownloadDataFromUrl(user.avatar_url) |> Async.AwaitTask
 
             match result with
             | Ok data ->
-                do! Async.SwitchToContext mainThread
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
             | Error _ ->
-                do! Async.SwitchToContext mainThread
-                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
+                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
+                    avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
         }
         |> Async.Start
 

@@ -115,7 +115,7 @@ type UserInfoController(user: User) as self =
                            ItemInfoType.Following,
                            user.following)
 
-        self.AddChildViewController(new FGUserInfoHeaderVC(user, GitHubService()), headerView)
+        self.AddChildViewController(new FGUserInfoHeaderVC(user), headerView)
         self.AddChildViewController(itemInfoOne, itemViewOne)
         self.AddChildViewController(itemInfoTwo, itemViewTwo)
         itemInfoOne.ActionButtonClicked(performUserProfile)

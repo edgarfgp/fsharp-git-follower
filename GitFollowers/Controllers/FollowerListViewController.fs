@@ -2,7 +2,6 @@ namespace GitFollowers
 
 open System
 open CoreFoundation
-open FSharp.Control.Reactive
 open Foundation
 open GitFollowers
 open UIKit
@@ -24,13 +23,25 @@ type FollowerListViewController(username) as self =
     let sqliteService = SQLiteService() :> ISQLiteService
 
     let mutable page: int = 1
+    
+    let dataSource = lazy new UICollectionViewDiffableDataSource<Section, FollowerData>(self.CollectionView, UICollectionViewDiffableDataSourceCellProvider(fun collectionView indexPath follower ->
+            let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
+            let result = follower :?> FollowerData
+            cell.SetUp(result)
+            upcast cell))
+    
+    let updateData followers =
+        let snapshot = new NSDiffableDataSourceSnapshot<Section, FollowerData>()
+        snapshot.AppendSections([|new Section()|])
+        snapshot.AppendItems(followers)
+        DispatchQueue.MainQueue.DispatchAsync(fun _ -> dataSource.Value.ApplySnapshot(snapshot, true))
 
     let addToFavorites userName =
         async {
             let! userInfo =
                 githubService.GetUserInfo userName
                 |> Async.AwaitTask
-
+            
             match userInfo with
             | Ok user ->
                 let favorite =
@@ -39,7 +50,7 @@ type FollowerListViewController(username) as self =
                       avatar_url = user.avatar_url }
 
                 let defaults = persistenceService.SaveFavorite favorite
-                //let! _ = sqliteService.InsertFavorite favorite
+                let! _ = sqliteService.InsertFavorite favorite
                 match defaults with
                 | Added -> presentFGAlertOnMainThread "Favorites" "Favorite Added" self
                 | FirstTimeAdded _ -> presentFGAlertOnMainThread "Favorites" "You have added your first favorite" self
@@ -73,24 +84,6 @@ type FollowerListViewController(username) as self =
         }
         |> Async.Start
 
-
-    let performSearch (searchController: UISearchController) (self: UICollectionViewController) =
-        searchController.SearchBar.TextChanged
-        |> Observable.delay (TimeSpan.FromMilliseconds(350.))
-        |> Observable.subscribe (fun filter ->
-            let filteredResult =
-                followers
-                |> List.distinct
-                |> List.filter (fun c ->
-                    c
-                        .login
-                        .ToLower()
-                        .Contains(filter.SearchText.ToLower()))
-
-            followers <- filteredResult
-
-            DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.CollectionView.ReloadData()))
-
     override self.ViewDidLoad() =
         base.ViewDidLoad()
 
@@ -115,6 +108,8 @@ type FollowerListViewController(username) as self =
             | Ok result ->
                 followers <- result
                 self.ConfigureCollectionView result
+                let data = result |> List.map(fun c -> c.ConvertToFollowerData) |> List.toArray    
+                updateData data
             | Error _ ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Dismiss()
@@ -208,7 +203,7 @@ type FollowerListViewController(username) as self =
 
     member self.ConfigureCollectionView result =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-            if followers.Length > 0 then
+            if result.Length > 0 then
                 loadingView.Dismiss()
 
                 self.CollectionView.DataSource <-
@@ -217,8 +212,8 @@ type FollowerListViewController(username) as self =
                             let cell =
                                 collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
 
-                            let follower = followers.[int indexPath.Item]
-                            cell.SetUp(follower, GitHubService())
+                            let follower = followers.[int indexPath.Item].ConvertToFollowerData
+                            cell.SetUp(follower)
                             upcast cell
 
                         member this.GetItemsCount(_, _) = nint followers.Length }
@@ -230,10 +225,18 @@ type FollowerListViewController(username) as self =
                 self.NavigationItem.SearchController.SearchResultsUpdater <-
                     { new UISearchResultsUpdating() with
                         member this.UpdateSearchResultsForSearchController(searchController) =
-                            match searchController.SearchBar.Text with
-                            | text when String.IsNullOrWhiteSpace(text) |> not ->
-                                performSearch searchController self |> ignore
-                            | _ -> followers <- result }
+                            if String.IsNullOrEmpty(searchController.SearchBar.Text) |> not then
+                                let filteredResult =
+                                    followers
+                                    |> List.distinct
+                                    |> List.filter (fun c ->c.login.ToLower().Contains(searchController.SearchBar.Text.ToLower()))
+                                let data = filteredResult |> List.map(fun c -> c.ConvertToFollowerData) |> List.toArray    
+                                DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
+                            else
+                                if String.IsNullOrEmpty(searchController.SearchBar.Text) then
+                                    let data = followers |> List.map(fun c -> c.ConvertToFollowerData) |> List.toArray    
+                                    updateData data
+                    }
 
                 self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate
             else
