@@ -25,11 +25,11 @@ type FollowerListViewController(username) as self =
     let mutable page: int = 1
     
     let dataSource = lazy new UICollectionViewDiffableDataSource<Section, FollowerData>(self.CollectionView, UICollectionViewDiffableDataSourceCellProvider(fun collectionView indexPath follower ->
-            let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
-            let result = follower :?> FollowerData
-            cell.SetUp(result)
-            upcast cell))
-    
+        let cell = collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
+        let result = follower :?> FollowerData
+        cell.SetUp(result)
+        upcast cell))
+
     let updateData followers =
         let snapshot = new NSDiffableDataSourceSnapshot<Section, FollowerData>()
         snapshot.AppendSections([|new Section()|])
@@ -108,8 +108,6 @@ type FollowerListViewController(username) as self =
             | Ok result ->
                 followers <- result
                 self.ConfigureCollectionView result
-                let data = result |> List.map(fun c -> c.ConvertToFollowerData) |> List.toArray    
-                updateData data
             | Error _ ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Dismiss()
