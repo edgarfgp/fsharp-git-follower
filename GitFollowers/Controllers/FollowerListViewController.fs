@@ -224,7 +224,12 @@ type FollowerListViewController(username) as self =
 
                                 if result.IsEmpty |> not then
                                     followers <- result
-                                    self.CollectionView.ReloadData()
+                                    let data =
+                                        followers
+                                        |> List.map (fun c -> c.ConvertToFollowerData)
+                                        |> List.toArray
+
+                                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
 
                                     self.CollectionView.ScrollToItem
                                         (NSIndexPath.Create([| 0; 0 |]), UICollectionViewScrollPosition.Top, true)

@@ -43,7 +43,7 @@ type FollowerCell(handle: IntPtr) as self =
             match result with
             | Ok data ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
+                avatarImageView.Image <- data)
             | Error _ ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
         }
@@ -89,7 +89,7 @@ type FavoriteCell(handle: IntPtr) as self =
             match result with
             | Ok data ->
                     DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    avatarImageView.Image <- UIImage.LoadFromData(NSData.FromArray(data)))
+                    avatarImageView.Image <- data)
             | Error _ ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
         }
