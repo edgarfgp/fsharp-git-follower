@@ -5,6 +5,7 @@ open CoreFoundation
 open Foundation
 open GitFollowers
 open UIKit
+open FSharp.Control.Reactive
 
 type FollowerListViewController(username) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
@@ -45,9 +46,7 @@ type FollowerListViewController(username) as self =
 
     let addToFavorites userName =
         async {
-            let! userInfo =
-                service.GetUserInfo userName
-                |> Async.AwaitTask
+            let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
 
             match userInfo with
             | Ok user ->
@@ -108,34 +107,32 @@ type FollowerListViewController(username) as self =
             { new UISearchController() with
                 member this.ObscuresBackgroundDuringPresentation = false }
 
-        self.NavigationItem.SearchController.SearchResultsUpdater <-
-            { new UISearchResultsUpdating() with
-                member this.UpdateSearchResultsForSearchController(searchController) =
-                    if String.IsNullOrEmpty(searchController.SearchBar.Text)
-                       |> not then
-                        let filteredResult =
-                            followers
-                            |> List.distinct
-                            |> List.filter (fun c ->
-                                c
-                                    .login
-                                    .ToLower()
-                                    .Contains(searchController.SearchBar.Text.ToLower()))
+        let _ =
+            self.NavigationItem.SearchController.SearchBar.TextChanged
+            |> Observable.delay (TimeSpan.FromMilliseconds(450.))
+            |> Observable.subscribe (fun filter ->
+                if String.IsNullOrEmpty(filter.SearchText) |> not then
+                    let filteredResult =
+                        followers
+                        |> List.distinct
+                        |> List.filter (fun c ->
+                            c.login.ToLower().Contains(filter.SearchText.ToLower()))
 
-                        let data =
-                            filteredResult
-                            |> List.map (fun c -> c.ConvertToFollowerData)
-                            |> List.toArray
+                    let data =
+                        filteredResult
+                        |> List.map (fun c -> c.ConvertToFollowerData)
+                        |> List.toArray
 
-                        DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
-                    else if String.IsNullOrEmpty(searchController.SearchBar.Text) then
-                        let data =
-                            followers
-                            |> List.map (fun c -> c.ConvertToFollowerData)
-                            |> List.toArray
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
 
-                        updateData data
-                }
+                else if String.IsNullOrEmpty(filter.SearchText) then
+                    let data =
+                        followers
+                        |> List.map (fun c -> c.ConvertToFollowerData)
+                        |> List.toArray
+
+                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
+                )
 
         loadingView.Show(self.View)
 
@@ -147,6 +144,7 @@ type FollowerListViewController(username) as self =
             match followersResult with
             | Ok result ->
                 followers <- result
+
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     if result.Length > 0 then
                         let data =
@@ -157,9 +155,9 @@ type FollowerListViewController(username) as self =
                         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                             loadingView.Dismiss()
                             updateData data)
-                            else
-                                loadingView.Dismiss()
-                                emptyView.Show self.View "No Followers")
+                    else
+                        loadingView.Dismiss()
+                        emptyView.Show self.View "No Followers")
             | Error _ ->
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Dismiss()
