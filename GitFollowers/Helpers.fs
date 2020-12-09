@@ -2,8 +2,8 @@ namespace GitFollowers
 
 open System.Text.Json
 open System.Text.Json.Serialization
-open CoreFoundation
 open System
+open CoreFoundation
 
 module ImageNames =
     let location = "mappin.and.ellipse"
@@ -17,7 +17,7 @@ module ImageNames =
 
 module Option =
     let OfString (str: string) =
-        if str |> String.IsNullOrWhiteSpace |> not
+        if str |> String.IsNullOrEmpty |> not
         then Some str
         else None
 

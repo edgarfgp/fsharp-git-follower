@@ -65,6 +65,26 @@ type FollowerListViewController(username) as self =
                 presentFGAlertOnMainThread "Error" "We can not get the user info now. Please try again later." self
         }
         |> Async.Start
+        
+    let performSearch (searchTextEvent : UISearchBarTextChangedEventArgs) = 
+        match searchTextEvent.SearchText |> Option.OfString with
+        | Some text -> 
+            let filteredResult =
+                followers
+                |> List.distinct
+                |> List.filter (fun c ->
+                   c.login.ToLower().Contains(text.ToLower()))
+                |> List.map (fun c -> c.ConvertToFollowerData)
+                |> List.toArray
+
+            if filteredResult |> Array.isEmpty |> not then
+                DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData filteredResult) 
+        | _ ->
+            let filteredResult =
+                followers
+                |> List.map (fun c -> c.ConvertToFollowerData)
+                |> List.toArray
+            DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData filteredResult)
 
     let performDiDRequestFollowers username (collectionView: UICollectionView) =
         async {
@@ -107,32 +127,10 @@ type FollowerListViewController(username) as self =
             { new UISearchController() with
                 member this.ObscuresBackgroundDuringPresentation = false }
 
-        let _ =
-            self.NavigationItem.SearchController.SearchBar.TextChanged
-            |> Observable.delay (TimeSpan.FromMilliseconds(450.))
-            |> Observable.subscribe (fun filter ->
-                if String.IsNullOrEmpty(filter.SearchText) |> not then
-                    let filteredResult =
-                        followers
-                        |> List.distinct
-                        |> List.filter (fun c ->
-                            c.login.ToLower().Contains(filter.SearchText.ToLower()))
-
-                    let data =
-                        filteredResult
-                        |> List.map (fun c -> c.ConvertToFollowerData)
-                        |> List.toArray
-
-                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
-
-                else if String.IsNullOrEmpty(filter.SearchText) then
-                    let data =
-                        followers
-                        |> List.map (fun c -> c.ConvertToFollowerData)
-                        |> List.toArray
-
-                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
-                )
+        self.NavigationItem.SearchController.SearchBar.TextChanged
+        |> Observable.delay (TimeSpan.FromMilliseconds(450.))
+        |> Observable.subscribe performSearch
+        |> ignore
 
         loadingView.Show(self.View)
 
