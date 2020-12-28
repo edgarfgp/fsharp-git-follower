@@ -1,6 +1,6 @@
 namespace GitFollowers
 
-module Repository =
+module private Repository =
     open System
     open System.IO
     open SQLite

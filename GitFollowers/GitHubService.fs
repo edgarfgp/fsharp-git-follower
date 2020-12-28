@@ -7,7 +7,7 @@ open Foundation
 open UIKit
 
 type IGitHubService =
-    abstract GetFollowers: string * int -> Task<Result<Follower list, GitHubError>>
+    abstract GetFollowers: string * int -> ValueTask<Result<Follower list, GitHubError>>
     abstract GetUserInfo: string -> Task<Result<User, GitHubError>>
     abstract DownloadDataFromUrl: string -> Task<Result<UIImage, string>>
 
@@ -41,13 +41,13 @@ type GitHubService() =
             let urlString =
                 sprintf "https://api.github.com/users/%s/followers?per_page=100&page=%d" searchTerm page
 
-            task {
+            vtask {
                 let! response = fetch urlString
                 match response.StatusCode with
                 | 200 ->
                     return response.Body
-                        |> JSON.decode
-                        |> Result.mapError ParseError
+                 |> JSON.decode
+                 |> Result.mapError ParseError
                 | _ ->
                     return Error NetworkError
             }

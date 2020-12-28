@@ -46,9 +46,8 @@ type FollowerListViewController(username) as self =
 
     let addToFavorites userName =
         async {
-            let! userInfo = service.GetUserInfo userName |> Async.AwaitTask
-
-            match userInfo with
+            let userInfo = service.GetUserInfo userName |> Async.AwaitTask
+            match! userInfo with
             | Ok user ->
                 let favorite =
                     { id = 0
@@ -88,11 +87,9 @@ type FollowerListViewController(username) as self =
 
     let performDiDRequestFollowers username (collectionView: UICollectionView) =
         async {
-            let! result =
-                service.GetFollowers(username, page)
-                |> Async.AwaitTask
+            let! followersResult = service.GetFollowers(username, page).AsTask() |> Async.AwaitTask
 
-            match result with
+            match followersResult with
             | Ok result ->
                 followers <- result
 
@@ -135,10 +132,7 @@ type FollowerListViewController(username) as self =
         loadingView.Show(self.View)
 
         async {
-            let! followersResult =
-                service.GetFollowers(username, page)
-                |> Async.AwaitTask
-
+            let! followersResult = service.GetFollowers(username, page).AsTask() |> Async.AwaitTask
             match followersResult with
             | Ok result ->
                 followers <- result
@@ -211,11 +205,9 @@ type FollowerListViewController(username) as self =
                     loadingView.Show(self.View)
 
                     async {
-                        let! result =
-                            service.GetFollowers(username, page)
-                            |> Async.AwaitTask
+                        let! followersResult = service.GetFollowers(username, page).AsTask() |> Async.AwaitTask
 
-                        match result with
+                        match followersResult with
                         | Ok result ->
                             DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                                 loadingView.Dismiss()

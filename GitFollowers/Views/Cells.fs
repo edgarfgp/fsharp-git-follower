@@ -2,7 +2,6 @@ namespace GitFollowers
 
 open System
 open CoreFoundation
-open Foundation
 open UIKit
 
 type FollowerCell(handle: IntPtr) as self =
@@ -53,11 +52,12 @@ type FavoriteCell(handle: IntPtr) as self =
     inherit UITableViewCell(handle)
 
     let padding = nfloat 12.
+
     let avatarImageView = new FGAvatarImageView()
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Left, nfloat 16.)
-    
+
     let githubService = GitHubService() :> IGitHubService
 
     do

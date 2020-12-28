@@ -8,6 +8,7 @@ open UIKit
 
 type UserInfoController(user: User) as self =
     inherit UIViewController()
+
     let padding = nfloat 20.
     let contentView = new UIView()
     let headerView = new UIView()

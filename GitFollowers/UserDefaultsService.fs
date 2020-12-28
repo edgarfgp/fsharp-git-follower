@@ -6,9 +6,8 @@ open Persistence
 type IUserDefaultsService =
     abstract GetFavorites: unit -> Follower list option
     abstract SaveFavorite: Follower -> PersistenceAddActionType
-    
     abstract RemoveFavorite : Follower -> PersistenceRemoveActionType
-    
+
 type UserDefaultsService () =
     interface IUserDefaultsService with
         member __.SaveFavorite follower =
