@@ -8,8 +8,8 @@ open UIKit
 
 type IGitHubService =
     abstract GetFollowers: string * int -> ValueTask<Result<Follower list, GitHubError>>
-    abstract GetUserInfo: string -> Task<Result<User, GitHubError>>
-    abstract DownloadDataFromUrl: string -> Task<Result<UIImage, string>>
+    abstract GetUserInfo: string -> ValueTask<Result<User, GitHubError>>
+    abstract DownloadDataFromUrl: string -> ValueTask<Result<UIImage, string>>
 
 type GitHubService() =
 
@@ -56,7 +56,7 @@ type GitHubService() =
             let urlString =
                 sprintf "https://api.github.com/users/%s" userName
 
-            task {
+            vtask {
                 let! response = fetch urlString
                 match response.StatusCode with
                 | 200 ->
@@ -68,7 +68,7 @@ type GitHubService() =
             }
 
         member __.DownloadDataFromUrl(url: string) =
-            task {
+            vtask {
                 let cacheKey = new NSString(url)
                 let image = cache.ObjectForKey(cacheKey) :?> UIImage
                 if image <> null then

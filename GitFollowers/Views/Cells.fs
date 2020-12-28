@@ -37,7 +37,7 @@ type FollowerCell(handle: IntPtr) as self =
         async {
             do! Async.SwitchToThreadPool()
             let! result =
-                service.DownloadDataFromUrl(follower.AvatarUrl)
+                service.DownloadDataFromUrl(follower.AvatarUrl).AsTask()
                 |> Async.AwaitTask
             match result with
             | Ok data ->
@@ -83,7 +83,7 @@ type FavoriteCell(handle: IntPtr) as self =
         userNameLabel.Text <- follower.login
         async {
             let! result =
-                githubService.DownloadDataFromUrl(follower.avatar_url)
+                githubService.DownloadDataFromUrl(follower.avatar_url).AsTask()
                 |> Async.AwaitTask
 
             match result with

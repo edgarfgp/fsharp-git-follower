@@ -1,6 +1,7 @@
 namespace GitFollowers
 
 open System
+open GitFollowers
 open UIKit
 
 type SearchViewController() as self =

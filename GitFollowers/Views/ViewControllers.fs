@@ -153,7 +153,7 @@ type FGUserInfoHeaderVC(user: User) as self =
                 bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
         async {
-            let! result = githubService.DownloadDataFromUrl(user.avatar_url) |> Async.AwaitTask
+            let! result = githubService.DownloadDataFromUrl(user.avatar_url).AsTask() |> Async.AwaitTask
 
             match result with
             | Ok data ->

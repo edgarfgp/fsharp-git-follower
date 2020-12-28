@@ -46,7 +46,7 @@ type FollowerListViewController(username) as self =
 
     let addToFavorites userName =
         async {
-            let userInfo = service.GetUserInfo userName |> Async.AwaitTask
+            let userInfo = service.GetUserInfo(userName).AsTask() |> Async.AwaitTask
             match! userInfo with
             | Ok user ->
                 let favorite =
@@ -167,7 +167,7 @@ type FollowerListViewController(username) as self =
 
                 async {
                     let! result =
-                        service.GetUserInfo follower.login
+                        service.GetUserInfo(follower.login).AsTask()
                         |> Async.AwaitTask
 
                     match result with
