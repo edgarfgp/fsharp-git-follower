@@ -14,7 +14,6 @@ type UserInfoController(user: User) as self =
     let headerView = new UIView()
     let itemViewOne = new UIView()
     let itemViewTwo = new UIView()
-
     let didRequestFollowers = Event<_>()
 
     let performDidRequestFollowers = fun _ ->

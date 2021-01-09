@@ -3,19 +3,13 @@ namespace GitFollowers
 open GitFollowers
 open Persistence
 
-type IUserDefaultsService =
-    abstract GetFavorites: unit -> Follower list option
-    abstract SaveFavorite: Follower -> PersistenceAddActionType
-    abstract RemoveFavorite : Follower -> PersistenceRemoveActionType
-
-type UserDefaultsService () =
-    interface IUserDefaultsService with
-        member __.SaveFavorite follower =
+module private UserDefaultsService =
+    let saveFavorite follower =
              match follower with
              | NotSaved reason -> reason
              | Saved status -> status
 
-        member __.GetFavorites() =
+    let getFavorites =
             let storedFavorites =
                 defaults.StringForKey(favoritesKey)
                 |> Option.OfString
@@ -26,8 +20,8 @@ type UserDefaultsService () =
                 | Ok favorites -> Some favorites
                 | _ -> None
             | None -> None
-            
-        member __.RemoveFavorite(follower) =
+
+    let removeFavorite(follower) =
             match follower with
             | Removed reason -> reason
             | NotRemoved reason -> reason

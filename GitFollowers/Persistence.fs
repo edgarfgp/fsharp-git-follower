@@ -82,4 +82,3 @@ module private Persistence =
             | _ -> NotRemoved RemovingError
 
         | None -> NotRemoved RemovingError
-

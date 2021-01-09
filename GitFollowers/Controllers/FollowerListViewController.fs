@@ -16,11 +16,6 @@ type FollowerListViewController(username) as self =
 
     let emptyView = FGEmptyView.Instance
 
-    let service = GitHubService() :> IGitHubService
-
-    let userDefaults =
-        UserDefaultsService() :> IUserDefaultsService
-
     let mutable page: int = 1
 
     let dataSource =
@@ -46,7 +41,7 @@ type FollowerListViewController(username) as self =
 
     let addToFavorites userName =
         async {
-            let userInfo = service.GetUserInfo(userName).AsTask() |> Async.AwaitTask
+            let userInfo = GitHubService.getUserInfo(userName).AsTask() |> Async.AwaitTask
             match! userInfo with
             | Ok user ->
                 let favorite =
@@ -54,7 +49,7 @@ type FollowerListViewController(username) as self =
                       login = user.login
                       avatar_url = user.avatar_url }
 
-                let defaults = userDefaults.SaveFavorite favorite
+                let defaults = UserDefaultsService.saveFavorite favorite
 
                 match defaults with
                 | Added -> presentFGAlertOnMainThread "Favorites" "Favorite Added" self
@@ -87,12 +82,11 @@ type FollowerListViewController(username) as self =
 
     let performDiDRequestFollowers username (collectionView: UICollectionView) =
         async {
-            let! followersResult = service.GetFollowers(username, page).AsTask() |> Async.AwaitTask
+            let! followersResult = GitHubService.getFollowers(username, page).AsTask() |> Async.AwaitTask
 
             match followersResult with
             | Ok result ->
                 followers <- result
-
                 DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                     loadingView.Dismiss()
                     self.Title <- username
@@ -100,7 +94,12 @@ type FollowerListViewController(username) as self =
                     addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ ->
                         addToFavorites username)
 
-                    collectionView.ReloadData())
+                    let data =
+                        result
+                        |> List.map (fun c -> c.ConvertToFollowerData)
+                        |> List.toArray
+                    updateData data
+                )
             | Error _ ->
                 loadingView.Dismiss()
                 presentFGAlertOnMainThread "Error" "Error while processing request. Please try again later." self
@@ -132,7 +131,7 @@ type FollowerListViewController(username) as self =
         loadingView.Show(self.View)
 
         async {
-            let! followersResult = service.GetFollowers(username, page).AsTask() |> Async.AwaitTask
+            let! followersResult = GitHubService.getFollowers(username, page).AsTask() |> Async.AwaitTask
             match followersResult with
             | Ok result ->
                 followers <- result
@@ -167,7 +166,7 @@ type FollowerListViewController(username) as self =
 
                 async {
                     let! result =
-                        service.GetUserInfo(follower.login).AsTask()
+                        GitHubService.getUserInfo(follower.login).AsTask()
                         |> Async.AwaitTask
 
                     match result with
@@ -205,7 +204,7 @@ type FollowerListViewController(username) as self =
                     loadingView.Show(self.View)
 
                     async {
-                        let! followersResult = service.GetFollowers(username, page).AsTask() |> Async.AwaitTask
+                        let! followersResult = GitHubService.getFollowers(username, page).AsTask() |> Async.AwaitTask
 
                         match followersResult with
                         | Ok result ->
@@ -228,7 +227,8 @@ type FollowerListViewController(username) as self =
                         | Error _ -> DispatchQueue.MainQueue.DispatchAsync(fun _ -> loadingView.Dismiss())
 
                     }
-                    |> Async.Start }
+                    |> Async.Start
+                }
 
     member self.ShowAlertAndGoBack() =
         let alertVC =

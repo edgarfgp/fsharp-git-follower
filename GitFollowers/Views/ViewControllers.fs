@@ -1,9 +1,7 @@
 namespace GitFollowers
 
 open System
-open System.Threading
 open CoreFoundation
-open Foundation
 open UIKit
 
 type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
@@ -83,8 +81,6 @@ type FGUserInfoHeaderVC(user: User) as self =
     let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
     let bioLabel = new FGBodyLabel()
     
-    let githubService = GitHubService() :> IGitHubService
-
     do
         avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
         userNameLabel.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -153,7 +149,7 @@ type FGUserInfoHeaderVC(user: User) as self =
                 bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |])
 
         async {
-            let! result = githubService.DownloadDataFromUrl(user.avatar_url).AsTask() |> Async.AwaitTask
+            let! result = GitHubService.downloadDataFromUrl(user.avatar_url).AsTask() |> Async.AwaitTask
 
             match result with
             | Ok data ->

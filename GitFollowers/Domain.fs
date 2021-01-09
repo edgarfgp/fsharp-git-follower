@@ -5,11 +5,13 @@ open System.Text.Json.Serialization
 open Foundation
 open SQLite
 
+type Section() = inherit NSObject()
+
 type FollowerData(id : int, login: string, avatarUrl: string) = inherit NSObject()
     with 
-        member __.Id = id 
-        member __.Login = login 
-        member __.AvatarUrl = avatarUrl
+        member self.Id = id 
+        member self.Login = login 
+        member self.AvatarUrl = avatarUrl
 
 [<JsonFSharpConverter>]
 type User =
@@ -39,5 +41,3 @@ type FollowerObject() =
 
     member val Login = "" with get, set
     member val AvatarUrl = "" with get, set
-    
-type Section() = inherit NSObject()

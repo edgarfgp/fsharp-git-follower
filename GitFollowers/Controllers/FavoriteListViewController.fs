@@ -9,9 +9,7 @@ type FavoriteListViewController() =
     inherit UITableViewController()
 
     let mutable favorites = []
-        
-    let persistenceService = UserDefaultsService() :> IUserDefaultsService
-    
+
     let emptyView = FGEmptyView.Instance
 
     override self.ViewDidLoad() =
@@ -25,7 +23,7 @@ type FavoriteListViewController() =
     override self.ViewWillAppear _ =
         base.ViewWillAppear(true)
 
-        match persistenceService.GetFavorites() with
+        match UserDefaultsService.getFavorites with
         | Some result ->
             favorites <- result
             if favorites.IsEmpty then
@@ -54,7 +52,7 @@ type FavoriteListViewController() =
                 match editingStyle with
                 | UITableViewCellEditingStyle.Delete ->
                     let favoriteToDelete = favorites.[indexPath.Row]
-                    let favoriteStatus = persistenceService.RemoveFavorite favoriteToDelete
+                    let favoriteStatus = UserDefaultsService.removeFavorite favoriteToDelete
                     match favoriteStatus with
                     | RemovedOk ->
                         let updatedFavorites =

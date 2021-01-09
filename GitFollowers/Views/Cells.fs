@@ -11,8 +11,6 @@ type FollowerCell(handle: IntPtr) as self =
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Center, nfloat 16.)
-        
-    let service = GitHubService() :> IGitHubService
 
     do
         self.AddSubview avatarImageView
@@ -37,7 +35,7 @@ type FollowerCell(handle: IntPtr) as self =
         async {
             do! Async.SwitchToThreadPool()
             let! result =
-                service.DownloadDataFromUrl(follower.AvatarUrl).AsTask()
+                GitHubService.downloadDataFromUrl(follower.AvatarUrl).AsTask()
                 |> Async.AwaitTask
             match result with
             | Ok data ->
@@ -57,8 +55,6 @@ type FavoriteCell(handle: IntPtr) as self =
 
     let userNameLabel =
         new FGTitleLabel(UITextAlignment.Left, nfloat 16.)
-
-    let githubService = GitHubService() :> IGitHubService
 
     do
         self.Accessory <- UITableViewCellAccessory.DisclosureIndicator
@@ -83,7 +79,7 @@ type FavoriteCell(handle: IntPtr) as self =
         userNameLabel.Text <- follower.login
         async {
             let! result =
-                githubService.DownloadDataFromUrl(follower.avatar_url).AsTask()
+                GitHubService.downloadDataFromUrl(follower.avatar_url).AsTask()
                 |> Async.AwaitTask
 
             match result with
