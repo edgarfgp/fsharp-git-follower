@@ -80,7 +80,7 @@ type FollowerListViewController(username) as self =
                 |> List.toArray
             DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData filteredResult)
 
-    let performDiDRequestFollowers username (collectionView: UICollectionView) =
+    let performDiDRequestFollowers username =
         async {
             let! followersResult = GitHubService.getFollowers(username, page).AsTask() |> Async.AwaitTask
 
@@ -177,7 +177,7 @@ type FollowerListViewController(username) as self =
 
                             userInfoController.DidRequestFollowers.Add(fun (_, username) ->
                                 loadingView.Show(self.View)
-                                performDiDRequestFollowers username collectionView)
+                                performDiDRequestFollowers username)
 
                             let navController =
                                 new UINavigationController(rootViewController = userInfoController)

@@ -51,6 +51,7 @@ type Response =
       Headers: (string * string) list }
 
 module Http =
+    open FSharp.Control.Tasks
     
     let createHttpClientFactory () =
         let services = ServiceCollection()
@@ -112,5 +113,14 @@ module Http =
                 { StatusCode = int response.StatusCode
                   Body = body
                   Headers = [ for (KeyValue (k, v)) in response.Headers -> (k, String.concat "," v) ] }
+        }
+
+    let fetchDataFromUrl (httpClientFactory: IHttpClientFactory, urlString: string) =
+        vtask {
+            try
+                use httpClient = httpClientFactory.CreateClient()
+                let! response = httpClient.GetByteArrayAsync(urlString)|> Async.AwaitTask
+                return Ok response
+            with :? HttpRequestException as ex -> return ex.Message |> Error
         }
         

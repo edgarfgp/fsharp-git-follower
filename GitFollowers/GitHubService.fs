@@ -2,12 +2,11 @@ namespace GitFollowers
 
 open System.Threading.Tasks
 open FSharp.Control.Tasks
-open System.Net.Http
 open Foundation
 open UIKit
 
 module GitHubService =
-    let private httpClientFactory = Http.createHttpClientFactory ()
+    let private httpClientFactory = Http.createHttpClientFactory()
     let private cache = new NSCache()
 
     let private fetch urlString =
@@ -18,16 +17,6 @@ module GitHubService =
             |> withQueryParam ("print", "Url")
 
         request |> Http.execute httpClientFactory
-
-    let private fetchDataFromUrl (urlString: string) =
-        vtask {
-            try
-                let httpClient = new HttpClient()
-                let! response = httpClient.GetByteArrayAsync(urlString)
-                let image = UIImage.LoadFromData(NSData.FromArray(response))
-                return Ok image
-            with :? HttpRequestException as ex -> return ex.Message |> Error
-        }
 
     let getFollowers(searchTerm: string, page: int): ValueTask<Result<Follower list, GitHubError>> =
         let urlString =
@@ -66,13 +55,13 @@ module GitHubService =
             if image <> null then
                 return Ok image
             else
-                let! result = fetchDataFromUrl(url).AsTask() |> Async.AwaitTask
-                let data =
+                let! result = Http.fetchDataFromUrl(httpClientFactory, url).AsTask() |> Async.AwaitTask
+                return
                     match result with
-                    | Ok data ->
-                        cache.SetObjectforKey(data, cacheKey)
-                        Ok data
+                    | Ok response ->
+                        let data = NSData.FromArray(response)
+                        let image = UIImage.LoadFromData(data)
+                        cache.SetObjectforKey(image, cacheKey)
+                        Ok image
                     | Error error -> Error error
-
-                return data
         }
