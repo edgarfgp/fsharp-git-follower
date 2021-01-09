@@ -1,9 +1,16 @@
 namespace GitFollowers
 
+open SQLite
+
+type FollowerObject() =
+    [<PrimaryKey; AutoIncrement>]
+    member val Id = 0 with get, set
+    member val Login = "" with get, set
+    member val AvatarUrl = "" with get, set
+
 module private Repository =
     open System
     open System.IO
-    open SQLite
 
     let private getDbPath =
         let docFolder =

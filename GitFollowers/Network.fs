@@ -123,4 +123,3 @@ module Http =
                 return Ok response
             with :? HttpRequestException as ex -> return ex.Message |> Error
         }
-        

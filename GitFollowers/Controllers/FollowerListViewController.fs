@@ -7,6 +7,8 @@ open GitFollowers
 open UIKit
 open FSharp.Control.Reactive
 
+type Section() = inherit NSObject()
+
 type FollowerListViewController(username) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
@@ -60,6 +62,9 @@ type FollowerListViewController(username) as self =
         }
         |> Async.Start
         
+    let convertToData(follower: Follower) : FollowerData =
+        new FollowerData(follower.id, follower.login,  follower.avatar_url)
+        
     let performSearch (searchTextEvent : UISearchBarTextChangedEventArgs) = 
         match searchTextEvent.SearchText |> Option.OfString with
         | Some text -> 
@@ -68,7 +73,7 @@ type FollowerListViewController(username) as self =
                 |> List.distinct
                 |> List.filter (fun c ->
                    c.login.ToLower().Contains(text.ToLower()))
-                |> List.map (fun c -> c.ConvertToFollowerData)
+                |> List.map(fun follower -> new FollowerData(follower.id, follower.login,  follower.avatar_url))
                 |> List.toArray
 
             if filteredResult |> Array.isEmpty |> not then
@@ -76,7 +81,7 @@ type FollowerListViewController(username) as self =
         | _ ->
             let filteredResult =
                 followers
-                |> List.map (fun c -> c.ConvertToFollowerData)
+                |> List.map convertToData
                 |> List.toArray
             DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData filteredResult)
 
@@ -96,7 +101,7 @@ type FollowerListViewController(username) as self =
 
                     let data =
                         result
-                        |> List.map (fun c -> c.ConvertToFollowerData)
+                        |> List.map convertToData
                         |> List.toArray
                     updateData data
                 )
@@ -140,7 +145,7 @@ type FollowerListViewController(username) as self =
                     if result.Length > 0 then
                         let data =
                             result
-                            |> List.map (fun c -> c.ConvertToFollowerData)
+                            |> List.map convertToData
                             |> List.toArray
 
                         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
@@ -215,7 +220,7 @@ type FollowerListViewController(username) as self =
                                     followers <- result
                                     let data =
                                         followers
-                                        |> List.map (fun c -> c.ConvertToFollowerData)
+                                        |> List.map convertToData
                                         |> List.toArray
 
                                     DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)

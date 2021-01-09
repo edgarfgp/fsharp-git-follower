@@ -3,9 +3,6 @@ namespace GitFollowers
 open System
 open System.Text.Json.Serialization
 open Foundation
-open SQLite
-
-type Section() = inherit NSObject()
 
 type FollowerData(id : int, login: string, avatarUrl: string) = inherit NSObject()
     with 
@@ -33,11 +30,3 @@ type Follower =
     { id: int
       login: string
       avatar_url: string }
-    member this.ConvertToFollowerData = new FollowerData(this.id, this.login,  this.avatar_url)
-
-type FollowerObject() =
-    [<PrimaryKey; AutoIncrement>]
-    member val Id = 0 with get, set
-
-    member val Login = "" with get, set
-    member val AvatarUrl = "" with get, set
