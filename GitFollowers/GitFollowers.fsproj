@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <LangVersion>preview</LangVersion>
-    </PropertyGroup>
-    <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
         <ProjectGuid>{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}</ProjectGuid>
@@ -150,16 +147,16 @@
         <Compile Include="Main.fs" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FSharp.Control.Reactive" Version="4.5.0" />
-        <PackageReference Include="FSharp.Control.Reactive.Testing" Version="4.5.0" />
-        <PackageReference Include="FSharp.Core" Version="5.0.0" />
-        <PackageReference Include="FSharp.SystemTextJson" Version="0.15.14" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
-        <PackageReference Include="Ply" Version="0.3.1" />
-        <PackageReference Include="sqlite-net-pcl" Version="1.7.335" />
-        <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-        <PackageReference Include="System.Text.Json" Version="5.0.0" />
-        <PackageReference Include="Xamarin.Essentials" Version="1.6.0" />
+        <PackageReference Include="FSharp.Control.Reactive" />
+        <PackageReference Include="FSharp.Control.Reactive.Testing" />
+        <PackageReference Include="FSharp.Core" />
+        <PackageReference Include="FSharp.SystemTextJson" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+        <PackageReference Include="Ply" />
+        <PackageReference Include="sqlite-net-pcl" />
+        <PackageReference Include="System.Numerics.Vectors" />
+        <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="Xamarin.Essentials" />
     </ItemGroup>
     <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.FSharp.targets" />
 </Project>

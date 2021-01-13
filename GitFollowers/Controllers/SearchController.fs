@@ -38,7 +38,7 @@ type SearchViewController() as self =
             self.NavigationController.PushViewController(followerListVC, animated = true)
             userNameTextField.ResignFirstResponder() |> ignore
         | _ ->
-            presentFGAlertOnMainThread
+            presentAlert
                 "Empty Username" "Please enter a username . We need to know who to look for 😀" self
 
     member __.ConfigureLogoImageView() =

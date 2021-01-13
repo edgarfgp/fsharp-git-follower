@@ -12,7 +12,7 @@ module UIViewController =
         navigationItem.RightBarButtonItem.Clicked
             |> Event.add action
             
-    let presentFGAlertOnMainThread title message (self: UIViewController) =
+    let presentAlert title message (self: UIViewController) =
         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
             let alertVC = new FGAlertVC(title, message, "Ok")
             alertVC.ModalPresentationStyle <- UIModalPresentationStyle.OverFullScreen

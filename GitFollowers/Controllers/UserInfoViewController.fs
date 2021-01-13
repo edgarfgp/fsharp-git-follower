@@ -21,7 +21,7 @@ type UserInfoController(user: User) as self =
             didRequestFollowers.Trigger(self, user.login)
             self.DismissViewController(true, null)
         else
-            presentFGAlertOnMainThread "Not followers" "This user does not have followers" self
+            presentAlert "Not followers" "This user does not have followers" self
     let performUserProfile = fun _ ->
         let safariVC =
             new SFSafariViewController(url = new NSUrl(user.html_url))
