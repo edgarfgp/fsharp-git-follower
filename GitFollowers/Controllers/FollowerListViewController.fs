@@ -54,11 +54,11 @@ type FollowerListViewController(username) as self =
                 let defaults = UserDefaultsService.saveFavorite favorite
 
                 match defaults with
-                | Added -> presentFGAlertOnMainThread "Favorites" "Favorite Added" self
-                | FirstTimeAdded _ -> presentFGAlertOnMainThread "Favorites" "You have added your first favorite" self
-                | AlreadyAdded -> presentFGAlertOnMainThread "Favorites" "This user is already in your favorites " self
+                | Added -> presentAlert "Favorites" "Favorite Added" self
+                | FirstTimeAdded _ -> presentAlert "Favorites" "You have added your first favorite" self
+                | AlreadyAdded -> presentAlert "Favorites" "This user is already in your favorites " self
             | Error _ ->
-                presentFGAlertOnMainThread "Error" "We can not get the user info now. Please try again later." self
+                presentAlert "Error" "We can not get the user info now. Please try again later." self
         }
         |> Async.Start
         
@@ -107,7 +107,7 @@ type FollowerListViewController(username) as self =
                 )
             | Error _ ->
                 loadingView.Dismiss()
-                presentFGAlertOnMainThread "Error" "Error while processing request. Please try again later." self
+                presentAlert "Error" "Error while processing request. Please try again later." self
         }
         |> Async.Start
 
@@ -192,7 +192,7 @@ type FollowerListViewController(username) as self =
                         DispatchQueue.MainQueue.DispatchAsync(fun _ ->
                             loadingView.Dismiss()
 
-                            presentFGAlertOnMainThread
+                            presentAlert
                                 "Error"
                                 "Error while processing request. Please try again later."
                                 self)

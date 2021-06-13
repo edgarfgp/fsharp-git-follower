@@ -34,7 +34,7 @@ type FavoriteListViewController() =
                 self.TableView.DataSource <- self.FavoritesTableViewDataSource 
                 self.TableView.ReloadData()
         | None ->
-            presentFGAlertOnMainThread "Favorites" "Unable to load favorites" self
+            presentAlert "Favorites" "Unable to load favorites" self
 
     member private self.FavoritesTableViewDelegate: UITableViewDelegate =
         { new UITableViewDelegate() with
@@ -68,7 +68,7 @@ type FavoriteListViewController() =
 
                         self.TableView.ReloadData()
 
-                    | _ -> presentFGAlertOnMainThread "Favorites" "Unable to delete" self
+                    | _ -> presentAlert "Favorites" "Unable to delete" self
 
                 | _ -> failwith "Unrecognized UITableViewCellEditingStyle"
 
