@@ -10,8 +10,6 @@ type FavoriteListViewController() =
 
     let mutable favorites = []
 
-    let emptyView = FGEmptyView.Instance
-
     override self.ViewDidLoad() =
         base.ViewDidLoad()
         self.TableView.BackgroundColor <- UIColor.SystemBackgroundColor
@@ -27,14 +25,14 @@ type FavoriteListViewController() =
         | Some result ->
             favorites <- result
             if favorites.IsEmpty then
-                emptyView.Show self.View "No Favorites"
+                self.ShowEmptyView("No Favorites")
             else
-                emptyView.Dismiss()
+                self.DismissEmptyView()
                 self.TableView.Delegate <- self.FavoritesTableViewDelegate
                 self.TableView.DataSource <- self.FavoritesTableViewDataSource 
                 self.TableView.ReloadData()
         | None ->
-            presentAlert "Favorites" "Unable to load favorites" self
+            self.PresentAlert "Favorites" "Unable to load favorites"
 
     member private self.FavoritesTableViewDelegate: UITableViewDelegate =
         { new UITableViewDelegate() with
@@ -61,14 +59,14 @@ type FavoriteListViewController() =
 
                         favorites <- updatedFavorites
                         if updatedFavorites.IsEmpty then
-                            emptyView.Show self.View "No Favorites"
+                            self.ShowEmptyView("No Favorites")
                         else
-                            emptyView.Dismiss()
+                            self.DismissEmptyView()
                             tableView.DeleteRows([| indexPath |], UITableViewRowAnimation.Left)
 
                         self.TableView.ReloadData()
 
-                    | _ -> presentAlert "Favorites" "Unable to delete" self
+                    | _ -> self.PresentAlert "Favorites" "Unable to delete"
 
                 | _ -> failwith "Unrecognized UITableViewCellEditingStyle"
 

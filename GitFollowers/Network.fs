@@ -112,7 +112,7 @@ module Http =
             return
                 { StatusCode = int response.StatusCode
                   Body = body
-                  Headers = [ for (KeyValue (k, v)) in response.Headers -> (k, String.concat "," v) ] }
+                  Headers = [ for KeyValue (k, v) in response.Headers -> (k, String.concat "," v) ] }
         }
 
     let fetchDataFromUrl (httpClientFactory: IHttpClientFactory, urlString: string) =

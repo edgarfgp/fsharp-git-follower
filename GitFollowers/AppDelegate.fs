@@ -38,8 +38,7 @@ type AppDelegate() =
 
     override this.FinishedLaunching(_, _) =
         async {
-            let! _ = Repository.connect
-            ()
+            SqliteConnection.connection.CreateTableAsync<FollowerObject>() |> ignore
         }|> Async.Start
 
         this.Window <- new UIWindow(UIScreen.MainScreen.Bounds)

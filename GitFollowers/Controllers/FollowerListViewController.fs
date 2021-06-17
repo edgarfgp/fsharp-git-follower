@@ -7,31 +7,29 @@ open GitFollowers
 open UIKit
 open FSharp.Control.Reactive
 
-type Section() = inherit NSObject()
+type Section() =
+    inherit NSObject()
 
 type FollowerListViewController(username) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
     let mutable followers = []
 
-    let loadingView = LoadingView.Instance
-
-    let emptyView = FGEmptyView.Instance
-
-    let mutable page: int = 1
+    let mutable page : int = 1
 
     let dataSource =
         lazy
-            (new UICollectionViewDiffableDataSource<Section, FollowerData>
-                (self.CollectionView,
-                   UICollectionViewDiffableDataSourceCellProvider(fun collectionView indexPath follower ->
-                       let cell =
-                           collectionView.DequeueReusableCell
-                               (FollowerCell.CellId, indexPath) :?> FollowerCell
+            (new UICollectionViewDiffableDataSource<Section, FollowerData>(
+                self.CollectionView,
+                UICollectionViewDiffableDataSourceCellProvider
+                    (fun collectionView indexPath follower ->
+                        let cell =
+                            collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
 
-                       let result = follower :?> FollowerData
-                       cell.SetUp(result)
-                       upcast cell)))
+                        let result = follower :?> FollowerData
+                        cell.SetUp(result)
+                        upcast cell)
+            ))
 
     let updateData followers =
         let snapshot =
@@ -43,7 +41,10 @@ type FollowerListViewController(username) as self =
 
     let addToFavorites userName =
         async {
-            let userInfo = GitHubService.getUserInfo(userName).AsTask() |> Async.AwaitTask
+            let userInfo =
+                GitHubService.getUserInfo(userName).AsTask()
+                |> Async.AwaitTask
+
             match! userInfo with
             | Ok user ->
                 let favorite =
@@ -51,113 +52,127 @@ type FollowerListViewController(username) as self =
                       login = user.login
                       avatar_url = user.avatar_url }
 
-                let defaults = UserDefaultsService.saveFavorite favorite
+                let defaults =
+                    UserDefaultsService.saveFavorite favorite
 
                 match defaults with
-                | Added -> presentAlert "Favorites" "Favorite Added" self
-                | FirstTimeAdded _ -> presentAlert "Favorites" "You have added your first favorite" self
-                | AlreadyAdded -> presentAlert "Favorites" "This user is already in your favorites " self
-            | Error _ ->
-                presentAlert "Error" "We can not get the user info now. Please try again later." self
+                | Added -> self.PresentAlert "Favorites" "Favorite Added"
+                | FirstTimeAdded _ -> self.PresentAlert "Favorites" "You have added your first favorite"
+                | AlreadyAdded -> self.PresentAlert "Favorites" "This user is already in your favorites "
+            | Error _ -> self.PresentAlert "Error" "We can not get the user info now. Please try again later."
         }
         |> Async.Start
-        
-    let convertToData(follower: Follower) : FollowerData =
-        new FollowerData(follower.id, follower.login,  follower.avatar_url)
-        
-    let performSearch (searchTextEvent : UISearchBarTextChangedEventArgs) = 
+
+    let convertToData (follower: Follower) : FollowerData =
+        new FollowerData(follower.id, follower.login, follower.avatar_url)
+
+    let performSearch (searchTextEvent: UISearchBarTextChangedEventArgs) =
         match searchTextEvent.SearchText |> Option.OfString with
-        | Some text -> 
+        | Some text ->
             let filteredResult =
                 followers
                 |> List.distinct
-                |> List.filter (fun c ->
-                   c.login.ToLower().Contains(text.ToLower()))
-                |> List.map(fun follower -> new FollowerData(follower.id, follower.login,  follower.avatar_url))
+                |> List.filter (fun c -> c.login.ToLower().Contains(text.ToLower()))
+                |> List.map (fun follower -> new FollowerData(follower.id, follower.login, follower.avatar_url))
                 |> List.toArray
 
             if filteredResult |> Array.isEmpty |> not then
-                DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData filteredResult) 
+                DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData filteredResult)
         | _ ->
             let filteredResult =
                 followers
                 |> List.map convertToData
                 |> List.toArray
+
             DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData filteredResult)
 
     let performDiDRequestFollowers username =
         async {
-            let! followersResult = GitHubService.getFollowers(username, page).AsTask() |> Async.AwaitTask
+            let! followersResult =
+                GitHubService
+                    .getFollowers(username, page)
+                    .AsTask()
+                |> Async.AwaitTask
 
             match followersResult with
             | Ok result ->
                 followers <- result
-                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    loadingView.Dismiss()
-                    self.Title <- username
 
-                    addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ ->
-                        addToFavorites username)
+                DispatchQueue.MainQueue.DispatchAsync
+                    (fun _ ->
+                        self.DismissLoadingView()
+                        self.Title <- username
 
-                    let data =
-                        result
-                        |> List.map convertToData
-                        |> List.toArray
-                    updateData data
-                )
+                        self.AddRightNavigationItem UIBarButtonSystemItem.Add (fun _ -> addToFavorites username)
+
+                        let data =
+                            result |> List.map convertToData |> List.toArray
+
+                        updateData data)
             | Error _ ->
-                loadingView.Dismiss()
-                presentAlert "Error" "Error while processing request. Please try again later." self
+                self.DismissLoadingView()
+                self.PresentAlert "Error" "Error while processing request. Please try again later."
         }
         |> Async.Start
 
     override self.ViewDidLoad() =
         base.ViewDidLoad()
 
-        addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Add (fun _ -> addToFavorites username)
+        self.AddRightNavigationItem UIBarButtonSystemItem.Add (fun _ -> addToFavorites username)
 
         self.Title <- username
 
         self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-        self.CollectionView <- new UICollectionView(self.View.Bounds, CreateThreeColumnFlowLayout(self.CollectionView))
+
+        self.CollectionView <-
+            new UICollectionView(self.View.Bounds, self.CollectionView.CreateThreeColumnFlowLayout(self.CollectionView))
+
         self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
         self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
         self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate
+
         self.NavigationItem.SearchController <-
             { new UISearchController() with
-                member this.ObscuresBackgroundDuringPresentation = false }
+                override this.ObscuresBackgroundDuringPresentation = false }
 
         self.NavigationItem.SearchController.SearchBar.TextChanged
         |> Observable.delay (TimeSpan.FromMilliseconds(450.))
         |> Observable.subscribe performSearch
         |> ignore
 
-        loadingView.Show(self.View)
+        self.ShowLoadingView()
 
         async {
-            let! followersResult = GitHubService.getFollowers(username, page).AsTask() |> Async.AwaitTask
+            let! followersResult =
+                GitHubService
+                    .getFollowers(username, page)
+                    .AsTask()
+                |> Async.AwaitTask
+
             match followersResult with
             | Ok result ->
                 followers <- result
 
-                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    if result.Length > 0 then
-                        let data =
-                            result
-                            |> List.map convertToData
-                            |> List.toArray
+                DispatchQueue.MainQueue.DispatchAsync
+                    (fun _ ->
+                        if result.Length > 0 then
+                            let data =
+                                result |> List.map convertToData |> List.toArray
 
-                        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                            loadingView.Dismiss()
-                            updateData data)
-                    else
-                        loadingView.Dismiss()
-                        emptyView.Show self.View "No Followers")
+                            DispatchQueue.MainQueue.DispatchAsync
+                                (fun _ ->
+                                    self.DismissLoadingView()
+                                    updateData data)
+                        else
+                            self.DismissLoadingView()
+                            self.ShowEmptyView("No Followers"))
+                           
             | Error _ ->
-                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    loadingView.Dismiss()
-                    self.ShowAlertAndGoBack())
+                DispatchQueue.MainQueue.DispatchAsync
+                    (fun _ ->
+                        self.DismissLoadingView()
+                        self.ShowAlertAndGoBack())
         }
         |> Async.Start
 
@@ -167,7 +182,7 @@ type FollowerListViewController(username) as self =
             member this.ItemSelected(collectionView, indexPath) =
                 let index = int indexPath.Item
                 let follower = followers.[index]
-                loadingView.Show(self.View)
+                self.ShowLoadingView()
 
                 async {
                     let! result =
@@ -176,26 +191,26 @@ type FollowerListViewController(username) as self =
 
                     match result with
                     | Ok value ->
-                        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                            loadingView.Dismiss()
-                            let userInfoController = new UserInfoController(value)
+                        DispatchQueue.MainQueue.DispatchAsync
+                            (fun _ ->
+                                self.DismissLoadingView()
+                                let userInfoController = new UserInfoController(value)
 
-                            userInfoController.DidRequestFollowers.Add(fun (_, username) ->
-                                loadingView.Show(self.View)
-                                performDiDRequestFollowers username)
+                                userInfoController.DidRequestFollowers.Add
+                                    (fun (_, username) ->
+                                        self.ShowLoadingView()
+                                        performDiDRequestFollowers username)
 
-                            let navController =
-                                new UINavigationController(rootViewController = userInfoController)
+                                let navController =
+                                    new UINavigationController(rootViewController = userInfoController)
 
-                            self.PresentViewController(navController, true, null))
+                                self.PresentViewController(navController, true, null))
                     | Error _ ->
-                        DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                            loadingView.Dismiss()
+                        DispatchQueue.MainQueue.DispatchAsync
+                            (fun _ ->
+                                self.DismissLoadingView()
 
-                            presentAlert
-                                "Error"
-                                "Error while processing request. Please try again later."
-                                self)
+                                self.PresentAlert "Error" "Error while processing request. Please try again later.")
                 }
                 |> Async.Start
 
@@ -206,34 +221,42 @@ type FollowerListViewController(username) as self =
 
                 if offsetY > contentHeight - height then
                     page <- page + 1
-                    loadingView.Show(self.View)
+                    self.ShowLoadingView()
 
                     async {
-                        let! followersResult = GitHubService.getFollowers(username, page).AsTask() |> Async.AwaitTask
+                        let! followersResult =
+                            GitHubService
+                                .getFollowers(username, page)
+                                .AsTask()
+                            |> Async.AwaitTask
 
                         match followersResult with
                         | Ok result ->
-                            DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                                loadingView.Dismiss()
+                            DispatchQueue.MainQueue.DispatchAsync
+                                (fun _ ->
+                                    self.DismissLoadingView()
 
-                                if result.IsEmpty |> not then
-                                    followers <- result
-                                    let data =
-                                        followers
-                                        |> List.map convertToData
-                                        |> List.toArray
+                                    if result.IsEmpty |> not then
+                                        followers <- result
 
-                                    DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
+                                        let data =
+                                            followers
+                                            |> List.map convertToData
+                                            |> List.toArray
 
-                                    self.CollectionView.ScrollToItem
-                                        (NSIndexPath.Create([| 0; 0 |]), UICollectionViewScrollPosition.Top, true)
-                                else
-                                    printfn "No more followers")
-                        | Error _ -> DispatchQueue.MainQueue.DispatchAsync(fun _ -> loadingView.Dismiss())
+                                        DispatchQueue.MainQueue.DispatchAsync(fun _ -> updateData data)
+
+                                        self.CollectionView.ScrollToItem(
+                                            NSIndexPath.Create([| 0; 0 |]),
+                                            UICollectionViewScrollPosition.Top,
+                                            true
+                                        )
+                                    else
+                                        printfn "No more followers")
+                        | Error _ -> DispatchQueue.MainQueue.DispatchAsync(fun _ -> self.DismissLoadingView())
 
                     }
-                    |> Async.Start
-                }
+                    |> Async.Start }
 
     member self.ShowAlertAndGoBack() =
         let alertVC =
@@ -243,8 +266,9 @@ type FollowerListViewController(username) as self =
         alertVC.ModalTransitionStyle <- UIModalTransitionStyle.CrossDissolve
         self.PresentViewController(alertVC, true, null)
 
-        alertVC.ActionButtonClicked(fun _ ->
-            alertVC.DismissViewController(true, null)
+        alertVC.ActionButtonClicked
+            (fun _ ->
+                alertVC.DismissViewController(true, null)
 
-            self.NavigationController.PopToRootViewController(true)
-            |> ignore)
+                self.NavigationController.PopToRootViewController(true)
+                |> ignore)

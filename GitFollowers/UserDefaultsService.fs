@@ -21,7 +21,7 @@ module private UserDefaultsService =
                 | _ -> None
             | None -> None
 
-    let removeFavorite(follower) =
+    let removeFavorite follower =
             match follower with
             | Removed reason -> reason
             | NotRemoved reason -> reason

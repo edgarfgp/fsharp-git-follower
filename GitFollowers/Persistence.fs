@@ -1,6 +1,7 @@
 namespace GitFollowers
 
 open Foundation
+open GitFollowers
 
 type PersistenceAddActionType =
     | Added
@@ -23,7 +24,7 @@ module private Persistence =
         match storedFavorites with
         | Some favoritesString ->
             let decodedFavorites =
-                JSON.decode<Follower list> (favoritesString)
+                JSON.decode<Follower list> favoritesString
 
             match decodedFavorites with
             | Ok favorites ->
@@ -61,7 +62,7 @@ module private Persistence =
 
         match storedFavorites with
         | Some favoritesString ->
-            let favorites = JSON.decode (favoritesString)
+            let favorites = JSON.decode favoritesString
 
             match favorites with
             | Ok favorites ->

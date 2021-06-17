@@ -3,7 +3,6 @@ namespace GitFollowers
 open System
 open UIKit
 
-
 type ItemInfoType =
     | Repo
     | Gists
@@ -84,31 +83,20 @@ type FGEmptyView() as self =
         logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
 
         NSLayoutConstraint.ActivateConstraints
-            ([| messageLabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor, nfloat -150.0)
-                messageLabel.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, nfloat 40.)
-                messageLabel.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, nfloat -40.0)
-                messageLabel.HeightAnchor.ConstraintEqualTo(nfloat 200.)
+            [| messageLabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor, nfloat -150.0)
+               messageLabel.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, nfloat 40.)
+               messageLabel.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, nfloat -40.0)
+               messageLabel.HeightAnchor.ConstraintEqualTo(nfloat 200.)
 
-                logoImageView.WidthAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
-                logoImageView.HeightAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
-                logoImageView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, constant = nfloat 170.)
-                logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.) |])
+               logoImageView.WidthAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
+               logoImageView.HeightAnchor.ConstraintEqualTo(self.WidthAnchor, multiplier = nfloat 1.3)
+               logoImageView.TrailingAnchor.ConstraintEqualTo(self.TrailingAnchor, constant = nfloat 170.)
+               logoImageView.BottomAnchor.ConstraintEqualTo(self.BottomAnchor, constant = nfloat 40.) |]
             
-    member __.Show (parentView: UIView) (message : string) =
-        self.Frame <- parentView.Bounds
+    member _.SetMessage(message: string) =
         messageLabel.Text <- message
-        parentView.AddSubview self
-        NSLayoutConstraint.ActivateConstraints
-            ([| self.TopAnchor.ConstraintEqualTo(parentView.TopAnchor)
-                self.LeadingAnchor.ConstraintEqualTo(parentView.LeadingAnchor)
-                self.TrailingAnchor.ConstraintEqualTo(parentView.TrailingAnchor)
-                self.BottomAnchor.ConstraintEqualTo(parentView.BottomAnchor) |])
 
-    member __.Dismiss() = self.RemoveFromSuperview()
-    
-    static member Instance = new FGEmptyView()
-
-type LoadingView private () as view =
+type LoadingView() as view =
     inherit UIView()
 
     let activityIndicator =
@@ -125,17 +113,3 @@ type LoadingView private () as view =
                 activityIndicator.CenterYAnchor.ConstraintEqualTo(view.CenterYAnchor) |])
 
         activityIndicator.StartAnimating()
-
-    member __.Show(parentView: UIView) =
-        view.Frame <- parentView.Frame
-        view.TranslatesAutoresizingMaskIntoConstraints <- false
-        parentView.AddSubview view
-        NSLayoutConstraint.ActivateConstraints
-            ([| view.TopAnchor.ConstraintEqualTo(parentView.TopAnchor)
-                view.LeadingAnchor.ConstraintEqualTo(parentView.LeadingAnchor)
-                view.TrailingAnchor.ConstraintEqualTo(parentView.TrailingAnchor)
-                view.BottomAnchor.ConstraintEqualTo(parentView.BottomAnchor) |])
-
-    member __.Dismiss() = view.RemoveFromSuperview()
-
-    static member Instance = new LoadingView()

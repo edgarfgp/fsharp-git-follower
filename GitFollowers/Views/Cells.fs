@@ -17,20 +17,20 @@ type FollowerCell(handle: IntPtr) as self =
         self.AddSubview userNameLabel
 
         NSLayoutConstraint.ActivateConstraints
-            ([| avatarImageView.TopAnchor.ConstraintEqualTo(self.ContentView.TopAnchor, padding)
-                avatarImageView.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
-                avatarImageView.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
-                avatarImageView.HeightAnchor.ConstraintEqualTo(avatarImageView.WidthAnchor) |])
+            [| avatarImageView.TopAnchor.ConstraintEqualTo(self.ContentView.TopAnchor, padding)
+               avatarImageView.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
+               avatarImageView.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
+               avatarImageView.HeightAnchor.ConstraintEqualTo(avatarImageView.WidthAnchor) |]
 
         NSLayoutConstraint.ActivateConstraints
-            ([| userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor, nfloat 12.)
-                userNameLabel.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
-                userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
-                userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 20.) |])
+            [| userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor, nfloat 12.)
+               userNameLabel.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
+               userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
+               userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 20.) |]
 
     static member val CellId = "FollowerCell"
 
-    member __.SetUp(follower: FollowerData) =
+    member _.SetUp(follower: FollowerData) =
         userNameLabel.Text <- follower.Login
         async {
             do! Async.SwitchToThreadPool()
@@ -62,20 +62,20 @@ type FavoriteCell(handle: IntPtr) as self =
         self.AddSubview userNameLabel
 
         NSLayoutConstraint.ActivateConstraints
-            ([| avatarImageView.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
-                avatarImageView.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, padding)
-                avatarImageView.HeightAnchor.ConstraintEqualTo(constant = nfloat 60.)
-                avatarImageView.WidthAnchor.ConstraintEqualTo(constant = nfloat 60.) |])
+            [| avatarImageView.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
+               avatarImageView.LeadingAnchor.ConstraintEqualTo(self.LeadingAnchor, padding)
+               avatarImageView.HeightAnchor.ConstraintEqualTo(constant = nfloat 60.)
+               avatarImageView.WidthAnchor.ConstraintEqualTo(constant = nfloat 60.) |]
 
         NSLayoutConstraint.ActivateConstraints
-            ([| userNameLabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
-                userNameLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, padding * nfloat 2.)
-                userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
-                userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 40.) |])
+            [| userNameLabel.CenterYAnchor.ConstraintEqualTo(self.CenterYAnchor)
+               userNameLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.TrailingAnchor, padding * nfloat 2.)
+               userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
+               userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 40.) |]
 
     static member val CellId = "FollowerTableCell"
 
-    member __.SetUp(follower: Follower) =
+    member _.SetUp(follower: Follower) =
         userNameLabel.Text <- follower.login
         async {
             let! result =

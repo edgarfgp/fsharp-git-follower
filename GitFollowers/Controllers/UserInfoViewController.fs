@@ -16,39 +16,50 @@ type UserInfoController(user: User) as self =
     let itemViewTwo = new UIView()
     let didRequestFollowers = Event<_>()
 
-    let performDidRequestFollowers = fun _ ->
-        if user.followers > 0 then
-            didRequestFollowers.Trigger(self, user.login)
-            self.DismissViewController(true, null)
-        else
-            presentAlert "Not followers" "This user does not have followers" self
-    let performUserProfile = fun _ ->
-        let safariVC =
-            new SFSafariViewController(url = new NSUrl(user.html_url))
+    let itemInfoOne =
+        new ItemInfoVC(
+            UIColor.SystemPurpleColor,
+            "Github Profile",
+            ItemInfoType.Repo,
+            user.public_repos,
+            ItemInfoType.Gists,
+            user.public_gists)
 
-        safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
-        self.PresentViewController(safariVC, true, null)
+    let itemInfoTwo =
+        new ItemInfoVC(
+            UIColor.SystemGreenColor,
+            "Get Followers",
+            ItemInfoType.Followers,
+            user.followers,
+            ItemInfoType.Following,
+            user.following)
 
-    [<CLIEvent>]
-    member __.DidRequestFollowers = didRequestFollowers.Publish
+    let performDidRequestFollowers() =
+        fun _ ->
+            if user.followers > 0 then
+                didRequestFollowers.Trigger(self, user.login)
+                self.DismissViewController(true, null)
+            else
+                self.PresentAlert "Not followers" "This user does not have followers"
 
-    override __.ViewDidLoad() =
-        base.ViewDidLoad()
-        self.ConfigureElements user
-        self.ConfigureViewController()
-        self.ConfigureScrollView()
-        self.ConfigureContentView()
+    let performUserProfile() =
+        fun _ ->
+            let safariVC =
+                new SFSafariViewController(url = new NSUrl(user.html_url))
 
-    member private __.AddChildViewController(childVC: UIViewController, containerView: UIView) =
+            safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
+            self.PresentViewController(safariVC, true, null)
+
+    let addChildViewController (childVC: UIViewController, containerView: UIView) =
         self.AddChildViewController childVC
         containerView.AddSubview(childVC.View)
         childVC.View.Frame <- containerView.Bounds
         childVC.DidMoveToParentViewController(self)
 
-    member private __.ConfigureViewController() =
-        addRightNavigationItem self.NavigationItem UIBarButtonSystemItem.Done (fun _ -> self.DismissModalViewController(true))
+    let configureViewController() =
+        self.AddRightNavigationItem UIBarButtonSystemItem.Done (fun _ -> self.DismissModalViewController(true))
 
-    member private __.ConfigureContentView() =
+    let configureContentView() =
         headerView.TranslatesAutoresizingMaskIntoConstraints <- false
         itemViewOne.TranslatesAutoresizingMaskIntoConstraints <- false
         itemViewTwo.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -57,24 +68,50 @@ type UserInfoController(user: User) as self =
         contentView.AddSubviews itemViewOne
         contentView.AddSubviews itemViewTwo
 
-        NSLayoutConstraint.ActivateConstraints
-            ([| headerView.TopAnchor.ConstraintEqualTo(contentView.SafeAreaLayoutGuide.TopAnchor, padding)
-                headerView.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
-                headerView.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-                headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
+        NSLayoutConstraint.ActivateConstraints [| headerView.TopAnchor.ConstraintEqualTo(
+                                                      contentView.SafeAreaLayoutGuide.TopAnchor,
+                                                      padding
+                                                  )
+                                                  headerView.LeadingAnchor.ConstraintEqualTo(
+                                                      contentView.LeadingAnchor,
+                                                      padding
+                                                  )
+                                                  headerView.TrailingAnchor.ConstraintEqualTo(
+                                                      contentView.TrailingAnchor,
+                                                      -padding
+                                                  )
+                                                  headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
 
-                itemViewOne.TopAnchor.ConstraintEqualTo(headerView.BottomAnchor, padding)
-                itemViewOne.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
-                itemViewOne.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-                itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
+                                                  itemViewOne.TopAnchor.ConstraintEqualTo(
+                                                      headerView.BottomAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewOne.LeadingAnchor.ConstraintEqualTo(
+                                                      contentView.LeadingAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewOne.TrailingAnchor.ConstraintEqualTo(
+                                                      contentView.TrailingAnchor,
+                                                      -padding
+                                                  )
+                                                  itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
 
-                itemViewTwo.TopAnchor.ConstraintEqualTo(itemViewOne.BottomAnchor, padding)
-                itemViewTwo.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
-                itemViewTwo.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-                itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
-                itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor) |])
+                                                  itemViewTwo.TopAnchor.ConstraintEqualTo(
+                                                      itemViewOne.BottomAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewTwo.LeadingAnchor.ConstraintEqualTo(
+                                                      contentView.LeadingAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewTwo.TrailingAnchor.ConstraintEqualTo(
+                                                      contentView.TrailingAnchor,
+                                                      -padding
+                                                  )
+                                                  itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
+                                                  itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor) |]
 
-    member private __.ConfigureScrollView() =
+    let configureScrollView() =
         let scrollView =
             new UIScrollView(BackgroundColor = UIColor.SystemBackgroundColor)
 
@@ -84,39 +121,37 @@ type UserInfoController(user: User) as self =
         scrollView.TranslatesAutoresizingMaskIntoConstraints <- false
         contentView.TranslatesAutoresizingMaskIntoConstraints <- false
 
-        NSLayoutConstraint.ActivateConstraints
-            ([| scrollView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor)
-                scrollView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor)
-                scrollView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
-                scrollView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor) |])
+        NSLayoutConstraint.ActivateConstraints(
+            [| scrollView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor)
+               scrollView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor)
+               scrollView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
+               scrollView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor) |]
+        )
 
-        NSLayoutConstraint.ActivateConstraints
-            ([| contentView.TopAnchor.ConstraintEqualTo(scrollView.TopAnchor)
-                contentView.LeadingAnchor.ConstraintEqualTo(scrollView.LeadingAnchor)
-                contentView.TrailingAnchor.ConstraintEqualTo(scrollView.TrailingAnchor)
-                contentView.BottomAnchor.ConstraintEqualTo(scrollView.BottomAnchor) |])
+        NSLayoutConstraint.ActivateConstraints(
+            [| contentView.TopAnchor.ConstraintEqualTo(scrollView.TopAnchor)
+               contentView.LeadingAnchor.ConstraintEqualTo(scrollView.LeadingAnchor)
+               contentView.TrailingAnchor.ConstraintEqualTo(scrollView.TrailingAnchor)
+               contentView.BottomAnchor.ConstraintEqualTo(scrollView.BottomAnchor) |]
+        )
 
-        NSLayoutConstraint.ActivateConstraints
-            ([| contentView.WidthAnchor.ConstraintEqualTo(scrollView.WidthAnchor) |])
+        NSLayoutConstraint.ActivateConstraints([| contentView.WidthAnchor.ConstraintEqualTo(scrollView.WidthAnchor) |])
 
-    member private __.ConfigureElements user =
-        let itemInfoOne =
-            new ItemInfoVC(UIColor.SystemPurpleColor,
-                           "Github Profile",
-                           ItemInfoType.Repo,
-                           user.public_repos,
-                           ItemInfoType.Gists,
-                           user.public_gists)
 
-        let itemInfoTwo =
-            new ItemInfoVC(UIColor.SystemGreenColor, "Get Followers",
-                           ItemInfoType.Followers,
-                           user.followers,
-                           ItemInfoType.Following,
-                           user.following)
+    let configureElements user =
+        addChildViewController (new FGUserInfoHeaderVC(user), headerView)
+        addChildViewController (itemInfoOne, itemViewOne)
+        addChildViewController (itemInfoTwo, itemViewTwo)
+        itemInfoOne.ActionButtonClicked(performUserProfile())
+        itemInfoTwo.ActionButtonClicked(performDidRequestFollowers())
 
-        self.AddChildViewController(new FGUserInfoHeaderVC(user), headerView)
-        self.AddChildViewController(itemInfoOne, itemViewOne)
-        self.AddChildViewController(itemInfoTwo, itemViewTwo)
-        itemInfoOne.ActionButtonClicked(performUserProfile)
-        itemInfoTwo.ActionButtonClicked(performDidRequestFollowers)
+    [<CLIEvent>]
+    member _.DidRequestFollowers = didRequestFollowers.Publish
+
+    override _.ViewDidLoad() =
+        base.ViewDidLoad()
+
+        configureElements user
+        configureViewController()
+        configureScrollView()
+        configureContentView()

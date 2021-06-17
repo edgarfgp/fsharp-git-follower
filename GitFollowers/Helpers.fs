@@ -45,8 +45,3 @@ module List =
         | h::t when predicate h -> t
         | h::t -> h::removeItem predicate t
         | _ -> []
-
-[<AutoOpen>]
-module Dispatcher =      
-    let invokeOnMainThread action =
-        DispatchQueue.MainQueue.DispatchAsync(fun _ -> action)

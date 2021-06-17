@@ -1,8 +1,10 @@
 namespace GitFollowers
 
+open System.Net
 open System.Threading.Tasks
 open FSharp.Control.Tasks
 open Foundation
+open GitFollowers
 open UIKit
 
 module GitHubService =
@@ -20,7 +22,7 @@ module GitHubService =
 
     let getFollowers(searchTerm: string, page: int): ValueTask<Result<Follower list, GitHubError>> =
         let urlString =
-            sprintf "https://api.github.com/users/%s/followers?per_page=100&page=%d" searchTerm page
+            $"https://api.github.com/users/%s{searchTerm}/followers?per_page=100&page=%d{page}"
         vtask {
             let! response = fetch urlString
             match response.StatusCode with
@@ -35,7 +37,7 @@ module GitHubService =
 
     let getUserInfo(userName: string): ValueTask<Result<User, GitHubError>> =
         let urlString =
-            sprintf "https://api.github.com/users/%s" userName
+            $"https://api.github.com/users/%s{userName}"
 
         vtask {
             let! response = fetch urlString
