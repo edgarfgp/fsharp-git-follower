@@ -4,9 +4,9 @@ open System
 open System.Net.Http
 open Microsoft.Extensions.DependencyInjection
 
-type GitHubError =
+type GitHubResult =
     | NetworkError
-    | ParseError of string
+    | DeserializationError of exn
 
 type HttpMethod = | Get
 

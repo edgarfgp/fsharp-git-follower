@@ -4,12 +4,10 @@ open SQLite
 open System.Threading.Tasks
 open FSharp.Control.Tasks
 
-type ResizeArray<'T> = System.Collections.Generic.List<'T>
-
 [<Interface>]
 type IGitHubRepository =
     abstract Create : 'i -> ValueTask<bool>
-    abstract Read : ValueTask<FollowerData list>
+    abstract Read : ValueTask<FollowerObject list>
     abstract Update : 'i -> ValueTask<int>
     abstract Delete : 'i -> ValueTask<int>
 

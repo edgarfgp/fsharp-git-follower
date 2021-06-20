@@ -9,9 +9,16 @@ type FavoriteListViewController() =
     inherit UITableViewController()
 
     let mutable favorites = []
+    
+    let rec removeItem predicate list =
+        match list with
+        | h::t when predicate h -> t
+        | h::t -> h::removeItem predicate t
+        | _ -> []
 
     override self.ViewDidLoad() =
         base.ViewDidLoad()
+        
         self.TableView.BackgroundColor <- UIColor.SystemBackgroundColor
         self.NavigationController.NavigationBar.PrefersLargeTitles <- true
         self.TableView.RowHeight <- nfloat 100.
@@ -24,17 +31,17 @@ type FavoriteListViewController() =
         match UserDefaultsService.getFavorites with
         | Some result ->
             favorites <- result
+
             if favorites.IsEmpty then
                 self.ShowEmptyView("No Favorites")
             else
                 self.DismissEmptyView()
                 self.TableView.Delegate <- self.FavoritesTableViewDelegate
-                self.TableView.DataSource <- self.FavoritesTableViewDataSource 
+                self.TableView.DataSource <- self.FavoritesTableViewDataSource
                 self.TableView.ReloadData()
-        | None ->
-            self.PresentAlert "Favorites" "Unable to load favorites"
+        | None -> self.PresentAlert "Favorites" "Unable to load favorites"
 
-    member private self.FavoritesTableViewDelegate: UITableViewDelegate =
+    member private self.FavoritesTableViewDelegate : UITableViewDelegate =
         { new UITableViewDelegate() with
             member this.RowSelected(_, indexPath: NSIndexPath) =
                 let favorite = favorites.[int indexPath.Row]
@@ -44,20 +51,24 @@ type FavoriteListViewController() =
 
                 self.NavigationController.PushViewController(destinationVC, true) }
 
-    member self.FavoritesTableViewDataSource: UITableViewDataSource =
+    member self.FavoritesTableViewDataSource : UITableViewDataSource =
         { new UITableViewDataSource() with
             member this.CommitEditingStyle(tableView, editingStyle, indexPath) =
                 match editingStyle with
                 | UITableViewCellEditingStyle.Delete ->
                     let favoriteToDelete = favorites.[indexPath.Row]
-                    let favoriteStatus = UserDefaultsService.removeFavorite favoriteToDelete
+
+                    let favoriteStatus =
+                        UserDefaultsService.removeFavorite favoriteToDelete
+
                     match favoriteStatus with
                     | RemovedOk ->
                         let updatedFavorites =
                             favorites
-                            |> List.removeItem (fun f -> f.login = favoriteToDelete.login)
+                            |> removeItem (fun f -> f.login = favoriteToDelete.login)
 
                         favorites <- updatedFavorites
+
                         if updatedFavorites.IsEmpty then
                             self.ShowEmptyView("No Favorites")
                         else

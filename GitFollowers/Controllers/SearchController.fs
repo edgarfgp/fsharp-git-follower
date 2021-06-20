@@ -1,6 +1,7 @@
 namespace GitFollowers
 
 open System
+open System.Reactive.Disposables
 open GitFollowers
 open UIKit
 
@@ -8,6 +9,9 @@ type SearchViewController() as self =
     inherit UIViewController()
 
     let logoImageView = new UIImageView()
+    
+    let disposables = new CompositeDisposable()
+
 
     let actionButton =
         new FGButton(UIColor.SystemGrayColor, "Get followers")
@@ -40,7 +44,8 @@ type SearchViewController() as self =
             self.View.AddSubview(actionButton)
             actionButton.Enabled <- false
             actionButton.TouchUpInside
-            |> Event.add (fun _ -> handleNavigation())
+            |> Observable.subscribe(fun _ -> handleNavigation())
+            |> disposables.Add
 
             NSLayoutConstraint.ActivateConstraints
                 [| actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
@@ -59,7 +64,8 @@ type SearchViewController() as self =
                     true
                 }
         userNameTextField.EditingChanged
-        |> Event.add (fun _ -> userNameTextFieldDidChange())
+        |> Observable.subscribe (fun _ -> userNameTextFieldDidChange())
+        |> disposables.Add
 
         NSLayoutConstraint.ActivateConstraints
             [| userNameTextField.TopAnchor.ConstraintEqualTo(logoImageView.BottomAnchor, constant = nfloat 50.)
@@ -81,14 +87,17 @@ type SearchViewController() as self =
 
     override _.ViewDidLoad() =
         base.ViewDidLoad()
+        self.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
         self.View.BackgroundColor <- UIColor.SystemBackgroundColor
+        actionButton.Enabled <- false
+        actionButton.BackgroundColor <- UIColor.SystemGrayColor
         configureLogoImageView()
         configureUserNameTextField()
         configureActionButton()
 
     override _.ViewWillAppear _ =
         base.ViewWillAppear(true)
-        self.NavigationController.SetNavigationBarHidden(hidden = true, animated = true)
         userNameTextField.Text <- String.Empty
-        actionButton.Enabled <- false
-        actionButton.BackgroundColor <- UIColor.SystemGrayColor
+        
+    override self.Dispose(_) =
+        disposables.Dispose()

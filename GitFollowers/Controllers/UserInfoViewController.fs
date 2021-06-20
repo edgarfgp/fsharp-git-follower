@@ -1,6 +1,7 @@
 namespace GitFollowers
 
 open System
+open System.Reactive.Disposables
 open Foundation
 open GitFollowers
 open SafariServices
@@ -15,6 +16,8 @@ type UserInfoController(user: User) as self =
     let itemViewOne = new UIView()
     let itemViewTwo = new UIView()
     let didRequestFollowers = Event<_>()
+    
+    let disposables = new CompositeDisposable()
 
     let itemInfoOne =
         new ItemInfoVC(
@@ -35,20 +38,17 @@ type UserInfoController(user: User) as self =
             user.following)
 
     let performDidRequestFollowers() =
-        fun _ ->
-            if user.followers > 0 then
-                didRequestFollowers.Trigger(self, user.login)
-                self.DismissViewController(true, null)
-            else
-                self.PresentAlert "Not followers" "This user does not have followers"
+        if user.followers > 0 then
+            didRequestFollowers.Trigger(self, user.login)
+            self.DismissViewController(true, null)
+        else
+            self.PresentAlert "Not followers" "This user does not have followers"
 
     let performUserProfile() =
-        fun _ ->
-            let safariVC =
-                new SFSafariViewController(url = new NSUrl(user.html_url))
-
-            safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
-            self.PresentViewController(safariVC, true, null)
+        let safariVC =
+            new SFSafariViewController(url = new NSUrl(user.html_url))
+        safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
+        self.PresentViewController(safariVC, true, null)
 
     let addChildViewController (childVC: UIViewController, containerView: UIView) =
         self.AddChildViewController childVC
@@ -57,59 +57,29 @@ type UserInfoController(user: User) as self =
         childVC.DidMoveToParentViewController(self)
 
     let configureViewController() =
-        self.AddRightNavigationItem UIBarButtonSystemItem.Done (fun _ -> self.DismissModalViewController(true))
+        self.AddRightNavigationItem UIBarButtonSystemItem.Done
+        |> Observable.subscribe(fun _ -> self.DismissModalViewController(true))
+        |> disposables.Add
 
     let configureContentView() =
-        headerView.TranslatesAutoresizingMaskIntoConstraints <- false
-        itemViewOne.TranslatesAutoresizingMaskIntoConstraints <- false
-        itemViewTwo.TranslatesAutoresizingMaskIntoConstraints <- false
+        contentView.AddSubviewsX(headerView , itemViewOne ,itemViewTwo)
 
-        contentView.AddSubviews headerView
-        contentView.AddSubviews itemViewOne
-        contentView.AddSubviews itemViewTwo
+        NSLayoutConstraint.ActivateConstraints
+            [| headerView.TopAnchor.ConstraintEqualTo(contentView.SafeAreaLayoutGuide.TopAnchor, padding)
+               headerView.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
+               headerView.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
+               headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
 
-        NSLayoutConstraint.ActivateConstraints [| headerView.TopAnchor.ConstraintEqualTo(
-                                                      contentView.SafeAreaLayoutGuide.TopAnchor,
-                                                      padding
-                                                  )
-                                                  headerView.LeadingAnchor.ConstraintEqualTo(
-                                                      contentView.LeadingAnchor,
-                                                      padding
-                                                  )
-                                                  headerView.TrailingAnchor.ConstraintEqualTo(
-                                                      contentView.TrailingAnchor,
-                                                      -padding
-                                                  )
-                                                  headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
+               itemViewOne.TopAnchor.ConstraintEqualTo(headerView.BottomAnchor, padding)
+               itemViewOne.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
+               itemViewOne.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
+               itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
 
-                                                  itemViewOne.TopAnchor.ConstraintEqualTo(
-                                                      headerView.BottomAnchor,
-                                                      padding
-                                                  )
-                                                  itemViewOne.LeadingAnchor.ConstraintEqualTo(
-                                                      contentView.LeadingAnchor,
-                                                      padding
-                                                  )
-                                                  itemViewOne.TrailingAnchor.ConstraintEqualTo(
-                                                      contentView.TrailingAnchor,
-                                                      -padding
-                                                  )
-                                                  itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
-
-                                                  itemViewTwo.TopAnchor.ConstraintEqualTo(
-                                                      itemViewOne.BottomAnchor,
-                                                      padding
-                                                  )
-                                                  itemViewTwo.LeadingAnchor.ConstraintEqualTo(
-                                                      contentView.LeadingAnchor,
-                                                      padding
-                                                  )
-                                                  itemViewTwo.TrailingAnchor.ConstraintEqualTo(
-                                                      contentView.TrailingAnchor,
-                                                      -padding
-                                                  )
-                                                  itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
-                                                  itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor) |]
+               itemViewTwo.TopAnchor.ConstraintEqualTo(itemViewOne.BottomAnchor, padding)
+               itemViewTwo.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor,padding)
+               itemViewTwo.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
+               itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
+               itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor) |]
 
     let configureScrollView() =
         let scrollView =
@@ -120,30 +90,15 @@ type UserInfoController(user: User) as self =
 
         scrollView.TranslatesAutoresizingMaskIntoConstraints <- false
         contentView.TranslatesAutoresizingMaskIntoConstraints <- false
+        scrollView.ConstraintToParent(self.View)
+        contentView.ConstraintToParent(scrollView)
 
-        NSLayoutConstraint.ActivateConstraints(
-            [| scrollView.TopAnchor.ConstraintEqualTo(self.View.TopAnchor)
-               scrollView.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor)
-               scrollView.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
-               scrollView.BottomAnchor.ConstraintEqualTo(self.View.BottomAnchor) |]
-        )
-
-        NSLayoutConstraint.ActivateConstraints(
-            [| contentView.TopAnchor.ConstraintEqualTo(scrollView.TopAnchor)
-               contentView.LeadingAnchor.ConstraintEqualTo(scrollView.LeadingAnchor)
-               contentView.TrailingAnchor.ConstraintEqualTo(scrollView.TrailingAnchor)
-               contentView.BottomAnchor.ConstraintEqualTo(scrollView.BottomAnchor) |]
-        )
-
-        NSLayoutConstraint.ActivateConstraints([| contentView.WidthAnchor.ConstraintEqualTo(scrollView.WidthAnchor) |])
-
+        contentView.WidthAnchor.ConstraintEqualTo(scrollView.WidthAnchor).Active <- true
 
     let configureElements user =
         addChildViewController (new FGUserInfoHeaderVC(user), headerView)
         addChildViewController (itemInfoOne, itemViewOne)
         addChildViewController (itemInfoTwo, itemViewTwo)
-        itemInfoOne.ActionButtonClicked(performUserProfile())
-        itemInfoTwo.ActionButtonClicked(performDidRequestFollowers())
 
     [<CLIEvent>]
     member _.DidRequestFollowers = didRequestFollowers.Publish
@@ -155,3 +110,14 @@ type UserInfoController(user: User) as self =
         configureViewController()
         configureScrollView()
         configureContentView()
+        
+        itemInfoOne.ActionButtonClicked
+        |>Observable.subscribe(fun _ -> performUserProfile())
+        |> disposables.Add
+        
+        itemInfoTwo.ActionButtonClicked
+        |>Observable.subscribe(fun _ -> performDidRequestFollowers())
+        |> disposables.Add
+        
+    override self.Dispose _ =
+        disposables.Dispose()

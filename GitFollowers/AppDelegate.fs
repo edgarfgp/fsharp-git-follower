@@ -4,7 +4,6 @@ open System
 open UIKit
 open Foundation
 
-
 [<Register("AppDelegate")>]
 type AppDelegate() =
     inherit UIApplicationDelegate()

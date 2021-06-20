@@ -1,7 +1,6 @@
 namespace GitFollowers
 
 open System
-open CoreFoundation
 open UIKit
 
 type FollowerCell(handle: IntPtr) as self =
@@ -23,28 +22,25 @@ type FollowerCell(handle: IntPtr) as self =
                avatarImageView.HeightAnchor.ConstraintEqualTo(avatarImageView.WidthAnchor) |]
 
         NSLayoutConstraint.ActivateConstraints
-            [| userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor, nfloat 12.)
+            [| userNameLabel.TopAnchor.ConstraintEqualTo(avatarImageView.BottomAnchor,nfloat 12.)
                userNameLabel.LeadingAnchor.ConstraintEqualTo(self.ContentView.LeadingAnchor, padding)
-               userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor, -padding)
+               userNameLabel.TrailingAnchor.ConstraintEqualTo(self.ContentView.TrailingAnchor,-padding)
                userNameLabel.HeightAnchor.ConstraintEqualTo(nfloat 20.) |]
 
     static member val CellId = "FollowerCell"
 
-    member _.SetUp(follower: FollowerData) =
+    member _.SetUp(follower: FollowerObject) =
         userNameLabel.Text <- follower.Login
         async {
-            do! Async.SwitchToThreadPool()
-            let! result =
-                GitHubService.downloadDataFromUrl(follower.AvatarUrl).AsTask()
-                |> Async.AwaitTask
-            match result with
-            | Ok data ->
-                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                avatarImageView.Image <- data)
-            | Error _ ->
-                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
+            mainThread{
+                userNameLabel.Text <- follower.Login
+                avatarImageView
+                    .LoadImageFromUrl(follower.AvatarUrl)
+                    |> ignore
+            }
         }
         |> Async.Start
+
 
 type FavoriteCell(handle: IntPtr) as self =
     inherit UITableViewCell(handle)
@@ -76,18 +72,12 @@ type FavoriteCell(handle: IntPtr) as self =
     static member val CellId = "FollowerTableCell"
 
     member _.SetUp(follower: Follower) =
-        userNameLabel.Text <- follower.login
         async {
-            let! result =
-                GitHubService.downloadDataFromUrl(follower.avatar_url).AsTask()
-                |> Async.AwaitTask
-
-            match result with
-            | Ok data ->
-                    DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    avatarImageView.Image <- data)
-            | Error _ ->
-                DispatchQueue.MainQueue.DispatchAsync(fun _ -> avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
+            mainThread {
+                userNameLabel.Text <- follower.login
+                avatarImageView.LoadImageFromUrl(follower.avatar_url).AsTask()
+                    |> Async.AwaitTask
+                    |> ignore
+            }
         }
         |> Async.Start
-        

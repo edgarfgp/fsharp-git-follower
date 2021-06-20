@@ -1,7 +1,6 @@
 namespace GitFollowers
 
 open System
-open CoreFoundation
 open UIKit
 
 type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
@@ -64,8 +63,8 @@ type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
                actionButton.TrailingAnchor.ConstraintEqualTo(containerView.TrailingAnchor, constant = -padding)
                actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |]
 
-    member _.ActionButtonClicked(handler) =
-        actionButton.TouchUpInside |> Event.add handler
+    member _.ActionButtonClicked =
+        actionButton.TouchUpInside
 
 type FGUserInfoHeaderVC(user: User) as self =
     inherit UIViewController()
@@ -147,19 +146,13 @@ type FGUserInfoHeaderVC(user: User) as self =
                bioLabel.LeadingAnchor.ConstraintEqualTo(avatarImageView.LeadingAnchor)
                bioLabel.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor)
                bioLabel.HeightAnchor.ConstraintEqualTo(nfloat 90.) |]
-
+            
         async {
-            let! result = GitHubService.downloadDataFromUrl(user.avatar_url).AsTask() |> Async.AwaitTask
-
-            match result with
-            | Ok data ->
-                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    avatarImageView.Image <- data)
-            | Error _ ->
-                DispatchQueue.MainQueue.DispatchAsync(fun _ ->
-                    avatarImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo))
-        }
-        |> Async.Start
+            mainThread {
+                avatarImageView.LoadImageFromUrl(user.avatar_url)
+                |> ignore
+            }
+        }|> Async.Start
 
 type ItemInfoVC(backgroundColor: UIColor,
                 text: string,
@@ -204,5 +197,4 @@ type ItemInfoVC(backgroundColor: UIColor,
                actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
                actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |]
 
-    member _.ActionButtonClicked(handler) =
-        actionButton.TouchUpInside |> Event.add handler
+    member val ActionButtonClicked = actionButton.TouchUpInside with get

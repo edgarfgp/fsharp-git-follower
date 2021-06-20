@@ -46,7 +46,7 @@ type FGItemInfoView(itemInfoType: ItemInfoType, withCount: int) as self =
             symbolImageView.Image <- UIImage.GetSystemImage(ImageNames.person2)
             titleLabel.Text <- "Following"
 
-        countLabel.Text <- withCount.ToString()
+        countLabel.Text <- $"{withCount}"
 
         NSLayoutConstraint.ActivateConstraints
             ([| symbolImageView.TopAnchor.ConstraintEqualTo(self.TopAnchor)

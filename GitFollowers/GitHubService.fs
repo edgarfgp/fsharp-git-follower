@@ -20,7 +20,7 @@ module GitHubService =
 
         request |> Http.execute httpClientFactory
 
-    let getFollowers(searchTerm: string, page: int): ValueTask<Result<Follower list, GitHubError>> =
+    let getFollowers(searchTerm: string, page: int) =
         let urlString =
             $"https://api.github.com/users/%s{searchTerm}/followers?per_page=100&page=%d{page}"
         vtask {
@@ -29,13 +29,13 @@ module GitHubService =
             | 200 ->
                 return
                     response.Body
-                     |> JSON.decode
-                     |> Result.mapError ParseError
+                     |> deserialize
+                     |> Result.mapError DeserializationError
             | _ ->
                 return Error NetworkError
         }
 
-    let getUserInfo(userName: string): ValueTask<Result<User, GitHubError>> =
+    let getUserInfo(userName: string): ValueTask<Result<User, GitHubResult>> =
         let urlString =
             $"https://api.github.com/users/%s{userName}"
 
@@ -44,18 +44,18 @@ module GitHubService =
             match response.StatusCode with
             | 200 ->
                 return response.Body
-                    |> JSON.decode
-                    |> Result.mapError ParseError
+                    |> deserialize
+                    |> Result.mapError DeserializationError
             | _ ->
                 return Error NetworkError
         }
 
-    let downloadDataFromUrl(url: string) :ValueTask<Result<UIImage, string>> =
+    let downloadDataFromUrl(url: string) :ValueTask<UIImage option> =
         vtask {
             let cacheKey = new NSString(url)
             let image = cache.ObjectForKey(cacheKey) :?> UIImage
             if image <> null then
-                return Ok image
+                return Some image
             else
                 let! result = Http.fetchDataFromUrl(httpClientFactory, url).AsTask() |> Async.AwaitTask
                 return
@@ -64,6 +64,6 @@ module GitHubService =
                         let data = NSData.FromArray(response)
                         let image = UIImage.LoadFromData(data)
                         cache.SetObjectforKey(image, cacheKey)
-                        Ok image
-                    | Error error -> Error error
+                        Some image
+                    | Error _ -> None
         }

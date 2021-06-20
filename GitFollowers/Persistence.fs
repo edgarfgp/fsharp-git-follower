@@ -15,16 +15,22 @@ type PersistenceRemoveActionType =
 module private Persistence =
     let defaults = NSUserDefaults.StandardUserDefaults
     let favoritesKey = "favorites"
+    
+    let rec removeItem predicate list =
+        match list with
+        | h::t when predicate h -> t
+        | h::t -> h::removeItem predicate t
+        | _ -> []
 
     let (|Saved|NotSaved|) (follower: Follower) =
         let storedFavorites =
             defaults.StringForKey(favoritesKey)
-            |> Option.OfString
+            |> OfString
 
         match storedFavorites with
         | Some favoritesString ->
             let decodedFavorites =
-                JSON.decode<Follower list> favoritesString
+                deserialize<Follower list> favoritesString
 
             match decodedFavorites with
             | Ok favorites ->
@@ -37,7 +43,7 @@ module private Persistence =
                     NotSaved AlreadyAdded
                 else
                     let favoritesToSave = follower :: favorites
-                    let encodedFavorites = JSON.encode favoritesToSave
+                    let encodedFavorites = serialize favoritesToSave
 
                     match encodedFavorites with
                     | Ok favoriteString ->
@@ -47,7 +53,7 @@ module private Persistence =
             | _ -> failwith "Error while decoding favorites"
         | None ->
             let favoritesToSave = [] |> List.append [ follower ]
-            let encodedFavorites = JSON.encode favoritesToSave
+            let encodedFavorites = serialize favoritesToSave
 
             match encodedFavorites with
             | Ok favoriteString ->
@@ -58,21 +64,21 @@ module private Persistence =
     let (|Removed|NotRemoved|) (follower: Follower) =
         let storedFavorites =
             defaults.StringForKey(favoritesKey)
-            |> Option.OfString
+            |> OfString
 
         match storedFavorites with
         | Some favoritesString ->
-            let favorites = JSON.decode favoritesString
+            let favorites = deserialize favoritesString
 
             match favorites with
             | Ok favorites ->
                 let updatedFavorites =
                     favorites
-                    |> List.removeItem (fun f -> f.login = follower.login)
+                    |> removeItem (fun f -> f.login = follower.login)
 
                 match updatedFavorites with
                 | favorites when favorites.Length >= 0 ->
-                    let encodedFavorites = JSON.encode updatedFavorites
+                    let encodedFavorites = serialize updatedFavorites
 
                     match encodedFavorites with
                     | Ok result ->

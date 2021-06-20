@@ -12,10 +12,10 @@ module private UserDefaultsService =
     let getFavorites =
             let storedFavorites =
                 defaults.StringForKey(favoritesKey)
-                |> Option.OfString
+                |> OfString
             match storedFavorites with
             | Some favoritesResult ->
-                let result=  JSON.decode<Follower list>(favoritesResult)
+                let result=  deserialize<Follower list>(favoritesResult)
                 match result with
                 | Ok favorites -> Some favorites
                 | _ -> None
