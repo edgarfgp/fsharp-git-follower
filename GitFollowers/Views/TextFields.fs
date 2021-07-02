@@ -1,4 +1,4 @@
-namespace GitFollowers
+namespace GitFollowers.Views
 
 open System
 open UIKit

@@ -1,43 +1,45 @@
-namespace GitFollowers
+namespace GitFollowers.Controllers
 
+open System
 open System.Reactive.Disposables
 open FSharp.Control.Reactive
 open Foundation
 open GitFollowers
+open GitFollowers.DTOs
+open GitFollowers.Entities
+open GitFollowers.Persistence
+open GitFollowers.Services
+open GitFollowers.Views
 open UIKit
 
+[<Struct>]
 type Section =
-    | Main
-    with static member Value = new NSObject()
+    private Main of NSObject
+        member this.Value = this |> fun(Main m) -> m
 
 type FollowerListViewController(username) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
-    let mutable followers = ResizeArray()
-    
-    let disposables = new CompositeDisposable()
-
+    let followers = ResizeArray()
+    let persistence = FavoritesUserDefaults.Instance
+    let disposables = new CompositeDisposable()    
     let mutable page : int = 1
-
     let dataSource =
-        lazy
-            (new UICollectionViewDiffableDataSource<_, FollowerObject>(
+        lazy new UICollectionViewDiffableDataSource<_, _>(
                 self.CollectionView,
                 UICollectionViewDiffableDataSourceCellProvider
                     (fun collectionView indexPath follower ->
                         let cell =
                             collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
 
-                        let result = follower :?> FollowerObject
+                        let result = follower :?> Entities.Follower
                         cell.SetUp(result)
-                        upcast cell)
-            ))
+                        upcast cell))
 
     let updateData followers =
-        let snapshot =
-            new NSDiffableDataSourceSnapshot<_, FollowerObject>()
-
-        snapshot.AppendSections([| Section.Value |])
+        let snapshot = new NSDiffableDataSourceSnapshot<_, _>()
+        let main = Main(new NSObject()).Value
+        snapshot.AppendSections([| main |])
         snapshot.AppendItems(followers)
         mainThread { dataSource.Value.ApplySnapshot(snapshot, true) }
 
@@ -49,30 +51,29 @@ type FollowerListViewController(username) as self =
 
             match! userInfo with
             | Ok user ->
-                let favorite =
+                let follower =
                     { id = 0
                       login = user.login
                       avatar_url = user.avatar_url }
 
-                let defaults =
-                    UserDefaultsService.saveFavorite favorite
+                let defaults = persistence.Save follower
 
                 match defaults with
-                | Added -> self.PresentAlert "Favorites" "Favorite Added"
-                | FirstTimeAdded _ -> self.PresentAlert "Favorites" "You have added your first favorite"
-                | AlreadyAdded -> self.PresentAlert "Favorites" "This user is already in your favorites "
-            | Error _ -> self.PresentAlert "Error" "We can not get the user info now. Please try again later."
+                | Added -> self.PresentAlertOnMainThread "Favorites" "Favorite Added"
+                | FirstTimeAdded _ -> self.PresentAlertOnMainThread "Favorites" "You have added your first favorite"
+                | AlreadyAdded -> self.PresentAlertOnMainThread "Favorites" "This user is already in your favorites "
+            | Error _ -> self.PresentAlertOnMainThread "Error" "We can not get the user info now. Please try again later."
         }
         |> Async.Start
 
     let performSearch (searchTex:string) =
-        match searchTex |> OfString with
+        match searchTex |> Option.ofString with
         | Some text ->
             let filteredResult =
                 followers
                 |> Seq.distinct
                 |> Seq.filter (fun c -> c.login.ToLower().Contains(text.ToLower()))
-                |> Seq.map FollowerObject.Create
+                |> Seq.map Follower.toDomain
                 |> Seq.toArray
 
             if filteredResult |> Array.isEmpty |> not then
@@ -80,12 +81,11 @@ type FollowerListViewController(username) as self =
         | _ ->
             let filteredResult =
                 followers
-                |> Seq.map FollowerObject.Create
+                |> Seq.map Follower.toDomain
                 |> Seq.toArray
 
             mainThread { updateData filteredResult }
-            
-            
+
     let loadFollowers page = 
             async {
                 let! followersResult =
@@ -101,7 +101,7 @@ type FollowerListViewController(username) as self =
                         if result |> Seq.isEmpty |> not then
                             let data =
                                 result
-                                |> Seq.map FollowerObject.Create
+                                |> Seq.map Follower.toDomain
                                 |> Seq.toArray
                             self.DismissLoadingView()
                             updateData data
@@ -113,7 +113,7 @@ type FollowerListViewController(username) as self =
                 | Error _ ->
                     mainThread {
                         self.DismissLoadingView()
-                        self.PresentAlert "Error" "Error while processing your request. Please try again later"
+                        self.PresentAlertOnMainThread "Error" "Error while processing your request. Please try again later"
                     }
             }
             |> Async.Start
@@ -128,7 +128,7 @@ type FollowerListViewController(username) as self =
 
             match followersResult with
             | Ok result ->
-                followers <- result
+                followers.AddRange result
 
                 mainThread {
                     self.DismissLoadingView()
@@ -140,57 +140,19 @@ type FollowerListViewController(username) as self =
 
                     let data =
                         result
-                        |> Seq.map FollowerObject.Create
+                        |> Seq.map Follower.toDomain
                         |> Seq.toArray
 
                     updateData data
                 }
             | Error _ ->
                 self.DismissLoadingView()
-                self.PresentAlert "Error" "Error while processing request. Please try again later."
+                self.PresentAlertOnMainThread "Error" "Error while processing request. Please try again later."
 
         }
         |> Async.Start
-
-    override self.ViewDidLoad() =
-        base.ViewDidLoad()
-
-        self.AddRightNavigationItem UIBarButtonSystemItem.Add
-        |> Observable.subscribe(fun _ -> addToFavorites username)
-        |> disposables.Add
-
-        self.Title <- username
-
-        self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
-        self.NavigationController.NavigationBar.PrefersLargeTitles <- true
-
-        self.CollectionView <-
-            new UICollectionView(self.View.Bounds, self.CollectionView.CreateThreeColumnFlowLayout(self.CollectionView))
-
-        self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
-        self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
-        self.CollectionView.Delegate <- self.FollowerCollectionViewDelegate
-
-        self.NavigationItem.SearchController <-
-            { new UISearchController() with
-                override this.ObscuresBackgroundDuringPresentation = false }
-
-        self.NavigationItem.SearchController.SearchBar.TextChanged
-        |> Observable.delay (System.TimeSpan.FromMilliseconds(450.))
-        |> Observable.subscribe(fun args -> performSearch args.SearchText)
-        |> disposables.Add
-
-        self.ShowLoadingView()
         
-        loadFollowers 1
-        
-    override self.ViewWillDisappear _ =
-        disposables.Dispose()
-        
-    override self.Dispose _ =
-        disposables.Dispose()
-
-    member self.FollowerCollectionViewDelegate =
+    let followerViewDelegate =
         { new UICollectionViewDelegate() with
 
             member this.ItemSelected(collectionView, indexPath) =
@@ -210,7 +172,7 @@ type FollowerListViewController(username) as self =
                             let userInfoController = new UserInfoController(value)
 
                             userInfoController.DidRequestFollowers
-                            |> Observable.subscribe(fun (_, username) ->
+                            |> Observable.subscribe(fun username ->
                                     self.ShowLoadingView()
                                     performDiDRequestFollowers username)
                             |> disposables.Add
@@ -224,18 +186,55 @@ type FollowerListViewController(username) as self =
                     | Error _ ->
                         mainThread {
                             self.DismissLoadingView()
-                            self.PresentAlert "Error" "Error while processing request. Please try again later."
+                            self.PresentAlertOnMainThread "Error" "Error while processing request. Please try again later."
                         }
                 }
-                |> Async.Start
+                |> Async.Start }
 
-            member this.DraggingEnded(scrollView: UIScrollView, _) =
-                let offsetY = scrollView.ContentOffset.Y
-                let contentHeight = scrollView.ContentSize.Height
-                let height = scrollView.Frame.Size.Height
+    override self.ViewDidLoad() =
+        base.ViewDidLoad()
 
-                if offsetY > contentHeight - height then
-                    page <- page + 1
-                    self.ShowLoadingView()
-                    loadFollowers page
-            }
+        self.AddRightNavigationItem UIBarButtonSystemItem.Add
+        |> Observable.subscribe(fun _ -> addToFavorites username)
+        |> disposables.Add
+
+        self.Title <- username
+
+        self.NavigationController.SetNavigationBarHidden(hidden = false, animated = true)
+        self.NavigationController.NavigationBar.PrefersLargeTitles <- true
+
+        self.CollectionView <-
+            new UICollectionView(self.View.Bounds, self.CollectionView.CreateThreeColumnFlowLayout(self.CollectionView))
+
+        self.CollectionView.RegisterClassForCell(typeof<FollowerCell>, FollowerCell.CellId)
+        self.CollectionView.BackgroundColor <- UIColor.SystemBackgroundColor
+        self.CollectionView.Delegate <- followerViewDelegate
+
+        self.NavigationItem.SearchController <-
+            { new UISearchController() with
+                override this.ObscuresBackgroundDuringPresentation = false }
+
+        self.NavigationItem.SearchController.SearchBar.TextChanged
+        |> Observable.delay (TimeSpan.FromMilliseconds(450.))
+        |> Observable.subscribe(fun args -> performSearch args.SearchText)
+        |> disposables.Add
+
+        self.ShowLoadingView()
+        
+        loadFollowers 1
+        
+    override self.ViewWillDisappear _ =
+        disposables.Dispose()
+        
+    override self.Dispose _ =
+        disposables.Dispose()
+
+//            member this.DraggingEnded(scrollView: UIScrollView, _) =
+//                let offsetY = scrollView.ContentOffset.Y
+//                let contentHeight = scrollView.ContentSize.Height
+//                let height = scrollView.Frame.Size.Height
+//
+//                if offsetY > contentHeight - height then
+//                    page <- page + 1
+//                    self.ShowLoadingView()
+//                    loadFollowers page

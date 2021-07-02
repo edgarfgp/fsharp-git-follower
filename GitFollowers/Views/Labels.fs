@@ -1,4 +1,4 @@
-namespace GitFollowers
+namespace GitFollowers.Views
 
 open System
 open UIKit
@@ -25,15 +25,6 @@ type FGBodyLabel() as self =
         self.MinimumScaleFactor <- nfloat 0.75
         self.LineBreakMode <- UILineBreakMode.WordWrap
         self.TranslatesAutoresizingMaskIntoConstraints <- false
-
-    override self.Text
-        with set (value) = base.Text <- value
-
-    override self.TextAlignment
-        with set (value) = base.TextAlignment <- value
-
-    override self.Lines
-        with set (value) = base.Lines <- value
 
 type FGSecondaryTitleLabel(fontSize: nfloat) as self =
     inherit UILabel()

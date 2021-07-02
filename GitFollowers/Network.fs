@@ -2,11 +2,8 @@ namespace GitFollowers
 
 open System
 open System.Net.Http
+open System.Threading.Tasks
 open Microsoft.Extensions.DependencyInjection
-
-type GitHubResult =
-    | NetworkError
-    | DeserializationError of exn
 
 type HttpMethod = | Get
 
@@ -80,8 +77,8 @@ module Http =
                 + if url.Contains "?" then "&" else "?"
                 + String.concat "&" [ for k, v in List.rev query -> encodeUrlParam k + "=" + encodeUrlParam v ]
 
-    let execute (httpClientFactory: IHttpClientFactory) (request: Request): Async<Response> =
-        async {
+    let execute (httpClientFactory: IHttpClientFactory) (request: Request): ValueTask<Response> =
+        vtask {
             use httpClient = httpClientFactory.CreateClient()
 
             request.Timeout

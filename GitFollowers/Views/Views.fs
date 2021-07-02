@@ -1,6 +1,7 @@
-namespace GitFollowers
+namespace GitFollowers.Views
 
 open System
+open GitFollowers
 open UIKit
 
 type ItemInfoType =

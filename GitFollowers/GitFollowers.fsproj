@@ -120,20 +120,22 @@
         <ImageAsset Include="Assets.xcassets\gh-logo.imageset\Contents.json" />
         <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo-dark@2x.png" />
         <ImageAsset Include="Assets.xcassets\gh-logo.imageset\gh-logo-dark@3x.png" />
+        <ImageAsset Include="Assets.xcassets\icon_add.imageset\Contents.json" />
+        <ImageAsset Include="Assets.xcassets\icon_add.imageset\icon_add.pdf" />
         <InterfaceDefinition Include="LaunchScreen.storyboard" />
         <None Include="Info.plist" />
         <None Include="Entitlements.plist" />
         <Compile Include="Contants.fs" />
         <Compile Include="Option.fs" />
-        <Compile Include="Json.fs" />
         <Compile Include="Domain.fs" />
+        <Compile Include="Json.fs" />
         <Compile Include="Network.fs" />
-        <Compile Include="SqliteConnection.fs" />
-        <Compile Include="GitHubRepository.fs" />
-        <Compile Include="Persistence.fs" />
-        <Compile Include="GitHubService.fs" />
-        <Compile Include="UserDefaultsService.fs" />
         <Compile Include="Extensions.fs" />
+        <Compile Include="Persistence\GitHubRepository.fs" />
+        <Compile Include="Persistence\Persistence.fs" />
+        <Compile Include="Persistence\ExchangeRepository.fs" />
+        <Compile Include="Services\GitHubService.fs" />
+        <Compile Include="Services\ExchangeService.fs" />
         <Compile Include="Views\Labels.fs" />
         <Compile Include="Views\Buttons.fs" />
         <Compile Include="Views\TextFields.fs" />
@@ -143,24 +145,30 @@
         <Compile Include="Views\Cells.fs" />
         <Compile Include="Views\Common.fs" />
         <Compile Include="Controllers\UserInfoViewController.fs" />
+        <Compile Include="Controllers\ExchangeLoader.fs" />
+        <Compile Include="Controllers\CurrencySecondStepController.fs" />
+        <Compile Include="Controllers\CurrencyFirstStepController.fs" />
+        <Compile Include="Controllers\ExchangeOverviewController.fs" />
         <Compile Include="Controllers\FollowerListViewController.fs" />
         <Compile Include="Controllers\FavoriteListViewController.fs" />
         <Compile Include="Controllers\SearchController.fs" />
         <Compile Include="AppDelegate.fs" />
         <Compile Include="Main.fs" />
         <None Include="test.fsx" />
+        
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FSharp.Control.Reactive" />
-        <PackageReference Include="FSharp.Control.Reactive.Testing" />
-        <PackageReference Include="FSharp.Core" />
-        <PackageReference Include="FSharp.SystemTextJson" />
-        <PackageReference Include="Microsoft.Extensions.Http" />
-        <PackageReference Include="Ply" />
-        <PackageReference Include="sqlite-net-pcl" />
-        <PackageReference Include="System.Numerics.Vectors" />
-        <PackageReference Include="System.Text.Json" />
-        <PackageReference Include="Xamarin.Essentials" />
+        <PackageReference Include="FSharp.Control.Reactive" Version="5.0.2" />
+        <PackageReference Include="FSharp.Core" Version="5.0.1" />
+        <PackageReference Include="FSharp.SystemTextJson" Version="0.17.4" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
+        <PackageReference Include="Ply" Version="0.3.1" />
+        <PackageReference Include="sqlite-net-pcl" Version="1.7.335" />
+        <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+        <PackageReference Include="System.Text.Json" Version="4.7.2" />
+        <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+        <PackageReference Include="Xamarin.FFImageLoading" Version="2.4.11.982" />
+        <PackageReference Include="Xamarin.FFImageLoading.Svg" Version="2.4.11.982" />
     </ItemGroup>
     <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.FSharp.targets" />
 </Project>

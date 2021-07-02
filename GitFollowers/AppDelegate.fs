@@ -1,13 +1,15 @@
 namespace GitFollowers
 
 open System
+open GitFollowers.Controllers
+open GitFollowers.Persistence
 open UIKit
 open Foundation
 
 [<Register("AppDelegate")>]
 type AppDelegate() =
     inherit UIApplicationDelegate()
-
+        
     let createSearchViewController: UINavigationController =
         let searchVC = new SearchViewController()
         searchVC.Title <- "Search"
@@ -21,13 +23,23 @@ type AppDelegate() =
         favouriteVC.TabBarItem <- new UITabBarItem(UITabBarSystemItem.Favorites, nint 1)
 
         new UINavigationController(favouriteVC)
+        
+    let createExchangesViewController: UINavigationController =
+        let favouriteVC = new ExchangeOverviewController()
+        favouriteVC.Title <- "Exchanges"
+        let currenciesImage =  UIImage.GetSystemImage(ImageNames.currencies)
+
+        favouriteVC.TabBarItem <- new UITabBarItem("Exchanges", currenciesImage, nint 0)
+
+        new UINavigationController(favouriteVC)
 
     let creteTabBar: UITabBarController =
         let tabBar = new UITabBarController()
         UITabBar.Appearance.TintColor <- UIColor.SystemGreenColor
         tabBar.ViewControllers <-
             [| createSearchViewController
-               createFavouriteViewController |]
+               createFavouriteViewController
+               createExchangesViewController |]
         tabBar
 
     let configureNavigationBar =
@@ -37,9 +49,19 @@ type AppDelegate() =
 
     override this.FinishedLaunching(_, _) =
         async {
-            SqliteConnection.connection.CreateTableAsync<FollowerObject>() |> ignore
+            GitHubRepository.connect.AsTask()
+            |> Async.AwaitTask
+            |> ignore
+            
+            ExchangeRepository.connectExchange.AsTask()
+            |> Async.AwaitTask
+            |> ignore
+            
+            ExchangeRepository.connectCurrencies.AsTask()
+            |> Async.AwaitTask
+            |> ignore
         }|> Async.Start
-
+        
         this.Window <- new UIWindow(UIScreen.MainScreen.Bounds)
         this.Window.RootViewController <- creteTabBar
         this.Window.MakeKeyAndVisible()

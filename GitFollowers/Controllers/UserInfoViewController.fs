@@ -1,9 +1,11 @@
-namespace GitFollowers
+namespace GitFollowers.Controllers
 
 open System
 open System.Reactive.Disposables
 open Foundation
 open GitFollowers
+open GitFollowers.DTOs
+open GitFollowers.Views
 open SafariServices
 open UIKit
 
@@ -16,7 +18,7 @@ type UserInfoController(user: User) as self =
     let itemViewOne = new UIView()
     let itemViewTwo = new UIView()
     let didRequestFollowers = Event<_>()
-    
+
     let disposables = new CompositeDisposable()
 
     let itemInfoOne =
@@ -26,7 +28,8 @@ type UserInfoController(user: User) as self =
             ItemInfoType.Repo,
             user.public_repos,
             ItemInfoType.Gists,
-            user.public_gists)
+            user.public_gists
+        )
 
     let itemInfoTwo =
         new ItemInfoVC(
@@ -35,18 +38,20 @@ type UserInfoController(user: User) as self =
             ItemInfoType.Followers,
             user.followers,
             ItemInfoType.Following,
-            user.following)
+            user.following
+        )
 
-    let performDidRequestFollowers() =
+    let performDidRequestFollowers () =
         if user.followers > 0 then
-            didRequestFollowers.Trigger(self, user.login)
+            didRequestFollowers.Trigger(user.login)
             self.DismissViewController(true, null)
         else
-            self.PresentAlert "Not followers" "This user does not have followers"
+            self.PresentAlertOnMainThread "Not followers" "This user does not have followers"
 
-    let performUserProfile() =
+    let performUserProfile () =
         let safariVC =
             new SFSafariViewController(url = new NSUrl(user.html_url))
+
         safariVC.PreferredControlTintColor <- UIColor.SystemGreenColor
         self.PresentViewController(safariVC, true, null)
 
@@ -56,32 +61,58 @@ type UserInfoController(user: User) as self =
         childVC.View.Frame <- containerView.Bounds
         childVC.DidMoveToParentViewController(self)
 
-    let configureViewController() =
+    let configureViewController () =
         self.AddRightNavigationItem UIBarButtonSystemItem.Done
-        |> Observable.subscribe(fun _ -> self.DismissModalViewController(true))
+        |> Observable.subscribe (fun _ -> self.DismissModalViewController(true))
         |> disposables.Add
 
-    let configureContentView() =
-        contentView.AddSubviewsX(headerView , itemViewOne ,itemViewTwo)
+    let configureContentView () =
+        contentView.AddSubviewsX(headerView, itemViewOne, itemViewTwo)
 
-        NSLayoutConstraint.ActivateConstraints
-            [| headerView.TopAnchor.ConstraintEqualTo(contentView.SafeAreaLayoutGuide.TopAnchor, padding)
-               headerView.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
-               headerView.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-               headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
+        NSLayoutConstraint.ActivateConstraints [| headerView.TopAnchor.ConstraintEqualTo(
+                                                      contentView.SafeAreaLayoutGuide.TopAnchor,
+                                                      padding
+                                                  )
+                                                  headerView.LeadingAnchor.ConstraintEqualTo(
+                                                      contentView.LeadingAnchor,
+                                                      padding
+                                                  )
+                                                  headerView.TrailingAnchor.ConstraintEqualTo(
+                                                      contentView.TrailingAnchor,
+                                                      -padding
+                                                  )
+                                                  headerView.HeightAnchor.ConstraintEqualTo(nfloat 210.)
 
-               itemViewOne.TopAnchor.ConstraintEqualTo(headerView.BottomAnchor, padding)
-               itemViewOne.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor, padding)
-               itemViewOne.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-               itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
+                                                  itemViewOne.TopAnchor.ConstraintEqualTo(
+                                                      headerView.BottomAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewOne.LeadingAnchor.ConstraintEqualTo(
+                                                      contentView.LeadingAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewOne.TrailingAnchor.ConstraintEqualTo(
+                                                      contentView.TrailingAnchor,
+                                                      -padding
+                                                  )
+                                                  itemViewOne.HeightAnchor.ConstraintEqualTo(nfloat 140.)
 
-               itemViewTwo.TopAnchor.ConstraintEqualTo(itemViewOne.BottomAnchor, padding)
-               itemViewTwo.LeadingAnchor.ConstraintEqualTo(contentView.LeadingAnchor,padding)
-               itemViewTwo.TrailingAnchor.ConstraintEqualTo(contentView.TrailingAnchor, -padding)
-               itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
-               itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor) |]
+                                                  itemViewTwo.TopAnchor.ConstraintEqualTo(
+                                                      itemViewOne.BottomAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewTwo.LeadingAnchor.ConstraintEqualTo(
+                                                      contentView.LeadingAnchor,
+                                                      padding
+                                                  )
+                                                  itemViewTwo.TrailingAnchor.ConstraintEqualTo(
+                                                      contentView.TrailingAnchor,
+                                                      -padding
+                                                  )
+                                                  itemViewTwo.HeightAnchor.ConstraintEqualTo(nfloat 140.)
+                                                  itemViewTwo.BottomAnchor.ConstraintEqualTo(contentView.BottomAnchor) |]
 
-    let configureScrollView() =
+    let configureScrollView () =
         let scrollView =
             new UIScrollView(BackgroundColor = UIColor.SystemBackgroundColor)
 
@@ -92,7 +123,6 @@ type UserInfoController(user: User) as self =
         contentView.TranslatesAutoresizingMaskIntoConstraints <- false
         scrollView.ConstraintToParent(self.View)
         contentView.ConstraintToParent(scrollView)
-
         contentView.WidthAnchor.ConstraintEqualTo(scrollView.WidthAnchor).Active <- true
 
     let configureElements user =
@@ -107,17 +137,16 @@ type UserInfoController(user: User) as self =
         base.ViewDidLoad()
 
         configureElements user
-        configureViewController()
-        configureScrollView()
-        configureContentView()
-        
+        configureViewController ()
+        configureScrollView ()
+        configureContentView ()
+
         itemInfoOne.ActionButtonClicked
-        |>Observable.subscribe(fun _ -> performUserProfile())
+        |> Observable.subscribe (fun _ -> performUserProfile ())
         |> disposables.Add
-        
+
         itemInfoTwo.ActionButtonClicked
-        |>Observable.subscribe(fun _ -> performDidRequestFollowers())
+        |> Observable.subscribe (fun _ -> performDidRequestFollowers ())
         |> disposables.Add
-        
-    override self.Dispose _ =
-        disposables.Dispose()
+
+    override self.Dispose _ = disposables.Dispose()

@@ -1,19 +1,19 @@
-namespace GitFollowers
+namespace GitFollowers.Views
 
 open System
+open GitFollowers
+open GitFollowers.DTOs
 open UIKit
 
 type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
     inherit UIViewController()
     let containerView = new UIView()
 
-    let titleLabel =
-        new FGTitleLabel(UITextAlignment.Center, nfloat 20.)
+    let titleLabel = new FGTitleLabel(UITextAlignment.Center, nfloat 20.)
 
     let messageLabel = new FGBodyLabel()
 
-    let actionButton =
-        new FGButton(UIColor.SystemPinkColor, "Ok")
+    let actionButton = new FGButton(UIColor.SystemPinkColor, "Ok")
 
     let padding = nfloat 20.
 
@@ -26,9 +26,7 @@ type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
 
         titleLabel.Text <- title
         self.View.AddSubview containerView
-        containerView.AddSubview titleLabel
-        containerView.AddSubview actionButton
-        containerView.AddSubview messageLabel
+        containerView.AddSubviewsX(titleLabel, actionButton, messageLabel)
 
         messageLabel.Lines <- nint 4
         actionButton.SetTitle(buttonTitle, UIControlState.Normal)
@@ -63,8 +61,7 @@ type FGAlertVC(title: string, message: string, buttonTitle: string) as self =
                actionButton.TrailingAnchor.ConstraintEqualTo(containerView.TrailingAnchor, constant = -padding)
                actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |]
 
-    member _.ActionButtonClicked =
-        actionButton.TouchUpInside
+    member _.ActionButtonClicked = actionButton.TouchUpInside
 
 type FGUserInfoHeaderVC(user: User) as self =
     inherit UIViewController()
@@ -80,39 +77,21 @@ type FGUserInfoHeaderVC(user: User) as self =
     let locationLabel = new FGSecondaryTitleLabel(nfloat 18.)
     let bioLabel = new FGBodyLabel()
     
+    let unwrapValue value =
+        match value with
+        | Some value -> value
+        | None -> "N/A"
+    
     do
-        avatarImageView.TranslatesAutoresizingMaskIntoConstraints <- false
-        userNameLabel.TranslatesAutoresizingMaskIntoConstraints <- false
-        nameLabel.TranslatesAutoresizingMaskIntoConstraints <- false
-        locationImageView.TranslatesAutoresizingMaskIntoConstraints <- false
-        locationLabel.TranslatesAutoresizingMaskIntoConstraints <- false
-        bioLabel.TranslatesAutoresizingMaskIntoConstraints <- false
-
-        self.View.AddSubview avatarImageView
-        self.View.AddSubview userNameLabel
-        self.View.AddSubview nameLabel
-        self.View.AddSubview locationImageView
-        self.View.AddSubview locationLabel
-        self.View.AddSubview bioLabel
+        self.View.AddSubviewsX(avatarImageView, userNameLabel, nameLabel, locationImageView, locationLabel, bioLabel)
 
         userNameLabel.Text <- user.login
-        nameLabel.Text <-
-            match user.name with
-            | Some value -> value
-            | None -> "N/A"
-
-        locationLabel.Text <-
-            match user.location with
-            | Some value -> value
-            | None -> "N/A"
-
+        nameLabel.Text <- user.name |> unwrapValue
+        locationLabel.Text <- user.location |> unwrapValue
+        bioLabel.Text <- user.bio |> unwrapValue
+  
         bioLabel.TextAlignment <- UITextAlignment.Left
         bioLabel.Lines <- nint 3
-        bioLabel.Text <-
-            match user.bio with
-            | Some value -> value
-            | None -> "N/A"
-
         locationImageView.Image <- UIImage.GetSystemImage(ImageNames.location)
         locationImageView.TintColor <- UIColor.SecondaryLabelColor
 
@@ -175,11 +154,7 @@ type ItemInfoVC(backgroundColor: UIColor,
     do
         self.View.Layer.CornerRadius <- nfloat 18.
         self.View.BackgroundColor <- UIColor.SecondarySystemBackgroundColor
-
-        self.View.AddSubview stackView
-        self.View.AddSubview actionButton
-
-        stackView.TranslatesAutoresizingMaskIntoConstraints <- false
+        self.View.AddSubviewsX(stackView, actionButton)
 
         stackView.AddArrangedSubview itemInfoViewOne
         stackView.AddArrangedSubview itemInfoViewTwo
@@ -197,4 +172,4 @@ type ItemInfoVC(backgroundColor: UIColor,
                actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, -padding)
                actionButton.HeightAnchor.ConstraintEqualTo(nfloat 44.) |]
 
-    member val ActionButtonClicked = actionButton.TouchUpInside with get
+    member _.ActionButtonClicked = actionButton.TouchUpInside

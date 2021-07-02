@@ -20,4 +20,6 @@ Global
 		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Debug|iPhone.ActiveCfg = Debug|iPhone
 		{D04C2EDA-633F-49DA-A13E-5A64F898F7B8}.Debug|iPhone.Build.0 = Debug|iPhone
 	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
 EndGlobal
