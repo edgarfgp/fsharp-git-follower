@@ -38,7 +38,7 @@ type CurrencyCell(handle: IntPtr) as self =
         avatarImageView.Image <- UIImage.GetSystemImage(ImageNames.currencies)
         avatarImageView.ContentMode <- UIViewContentMode.ScaleAspectFit
         
-    member _.SetUp(country: CurrencyData) =
+    member _.SetUp(country : CurrencyData) =
         labelTitle.Text <- country.code
         labelBody.Text <- country.name
 

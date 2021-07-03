@@ -22,6 +22,7 @@ type CurrencyFirstStepView() as self =
                     tableView.DequeueReusableCell(CurrencyCell.CellId, indexPath) :?> CurrencyCell
 
                 let country = countriesData.[int indexPath.Item]
+                               
                 cell.SetUp(country)
                 upcast cell
 
@@ -31,7 +32,8 @@ type CurrencyFirstStepView() as self =
         { new UITableViewDelegate() with
             member this.RowSelected(tableView, indexPath: NSIndexPath) =
                 let country = countriesData.[int indexPath.Item]
-                self.NavigationController.PushViewController(new CurrencySecondStepView(country), true) }
+                self.NavigationController.PushViewController(new CurrencySecondStepView(country), true)
+        }
 
     let configureTableView () =
         tableView.Value.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -56,6 +58,7 @@ type CurrencyFirstStepView() as self =
         async {
             let! currencies = ExchangesController.loadCurrenciesFromRepo
             countriesData.AddRange currencies
+                    
 
             mainThread {
                 self.DismissLoadingView()

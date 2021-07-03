@@ -146,8 +146,9 @@
         <Compile Include="Controllers\ExchangesController.fs" />
         <Compile Include="Views\CurrencySecondStepView.fs" />
         <Compile Include="Views\CurrencyFirstStepView.fs" />
+        <Compile Include="Views\ExchangeDetailView.fs" />
         <Compile Include="Views\ExchangeListView.fs" />
-        <Compile Include="Views\UserInfoViewController.fs" />
+        <Compile Include="Views\UserInfoView.fs" />
         <Compile Include="Views\FollowerListView.fs" />
         <Compile Include="Views\FavoriteListView.fs" />
         <Compile Include="Views\SearchController.fs" />
