@@ -35,15 +35,15 @@ type ExchangeRepository() =
                 printfn $"Error while inserting {item}: {error.Message}"
         }
         
-    member _.InsertExchange(item: Exchange) =
+    member _.InsertExchange(exchange: Exchange) =
         vtask {
             do! connection.CreateTableAsync<Exchange>() |> Async.AwaitTask |> Async.Ignore
-            let result = connection.InsertOrReplaceAsync(item) |> Async.AwaitTask
+            let result = connection.InsertOrReplaceAsync(exchange) |> Async.AwaitTask
             match! Async.Catch(result) with
             | Choice1Of2 result ->
-                printfn $"{item} was inserted with result: {result}"
+                printfn $"{exchange.firstCode} {exchange.firstValue} {exchange.secondCode} {exchange.secondValue}"
             | Choice2Of2 error ->
-                printfn $"Error while inserting {item}: {error.Message}"
+                printfn $"Error while inserting {exchange}: {error.Message}"
         }
 
     member _.GetAllCurrencies =
@@ -53,10 +53,10 @@ type ExchangeRepository() =
             match! Async.Catch(result) with
             | Choice1Of2 result ->
                 printfn $"GetAllCurrencies with result: {result}"
-                return result |> Seq.toArray
+                return result |> Seq.map Currency.toDomain |> Seq.toArray |> Some
             | Choice2Of2 error ->
                 printfn $"Error while getAllCurrencies db: {error.Message}"
-                return Array.empty
+                return None
         }
         
     member _.GetAllExchanges =
@@ -66,10 +66,10 @@ type ExchangeRepository() =
             match! Async.Catch(result) with
             | Choice1Of2 result ->
                 printfn $"GetAllExchanges with result: {result}"
-                return result |> Seq.toArray
+                return result |> Seq.map Exchange.toDomain |> Seq.toArray |> Some
             | Choice2Of2 error ->
                 printfn $"Error while GetAllExchanges db: {error.Message}"
-                return Array.empty
+                return None
         }
 
     static member Instance = instance

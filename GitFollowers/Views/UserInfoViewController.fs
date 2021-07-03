@@ -1,15 +1,15 @@
-namespace GitFollowers.Controllers
+namespace GitFollowers.Views
 
 open System
 open System.Reactive.Disposables
 open Foundation
 open GitFollowers
 open GitFollowers.DTOs
-open GitFollowers.Views
+open GitFollowers.Elements
 open SafariServices
 open UIKit
 
-type UserInfoController(user: User) as self =
+type UserInfoView(user: User) as self =
     inherit UIViewController()
 
     let padding = nfloat 20.

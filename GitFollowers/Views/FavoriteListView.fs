@@ -1,14 +1,13 @@
-namespace GitFollowers.Controllers
+namespace GitFollowers.Views
 
 open System
 open Foundation
 open GitFollowers
-open GitFollowers
 open GitFollowers.Persistence
-open GitFollowers.Views
+open GitFollowers.Elements
 open UIKit
 
-type FavoriteListViewController() as self =
+type FavoriteListView() as self =
     inherit UITableViewController()
 
     let favoritesData = ResizeArray<DTOs.Follower>()
@@ -20,7 +19,7 @@ type FavoriteListViewController() as self =
                 let favorite = favoritesData.[int indexPath.Row]
 
                 let destinationVC =
-                    new FollowerListViewController(favorite.login)
+                    new FollowerListView(favorite.login)
 
                 self.NavigationController.PushViewController(destinationVC, true) }
         

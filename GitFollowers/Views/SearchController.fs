@@ -1,13 +1,13 @@
-namespace GitFollowers.Controllers
+namespace GitFollowers.Views
 
 open System
 open System.Reactive.Disposables
 open GitFollowers
 open GitFollowers.Services
-open GitFollowers.Views
+open GitFollowers.Elements
 open UIKit
 
-type SearchViewController() as self =
+type SearchView() as self =
     inherit UIViewController()
 
     let logoImageView = new UIImageView()
@@ -34,7 +34,7 @@ type SearchViewController() as self =
                     self.DismissLoadingView()
 
                     let followerListVC =
-                        new FollowerListViewController(user.login)
+                        new FollowerListView(user.login)
 
                     self.NavigationController.PushViewController(followerListVC, animated = true)
                     userNameTextField.ResignFirstResponder() |> ignore

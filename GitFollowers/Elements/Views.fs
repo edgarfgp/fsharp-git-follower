@@ -1,4 +1,4 @@
-namespace GitFollowers.Views
+namespace GitFollowers.Elements
 
 open System
 open GitFollowers

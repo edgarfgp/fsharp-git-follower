@@ -54,7 +54,7 @@ module ExchangeService =
                 })
         |> Observable.choose id
 
-    let getExchanges (first: string) (second: string) =
+    let getExchangeFor (first: string) (second: string) =
         let urlString =
             $"{URlConstants.exchangesBaseUrl}%s{first}%s{second}&pairs=%s{second}%s{first}"
 

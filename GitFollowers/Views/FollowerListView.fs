@@ -1,4 +1,4 @@
-namespace GitFollowers.Controllers
+namespace GitFollowers.Views
 
 open System
 open System.Reactive.Disposables
@@ -9,7 +9,7 @@ open GitFollowers.DTOs
 open GitFollowers.Entities
 open GitFollowers.Persistence
 open GitFollowers.Services
-open GitFollowers.Views
+open GitFollowers.Elements
 open UIKit
 
 [<Struct>]
@@ -17,7 +17,7 @@ type Section =
     private Main of NSObject
         member this.Value = this |> fun(Main m) -> m
 
-type FollowerListViewController(username) as self =
+type FollowerListView(username) as self =
     inherit UICollectionViewController(new UICollectionViewFlowLayout())
 
     let followers = ResizeArray()
@@ -32,7 +32,7 @@ type FollowerListViewController(username) as self =
                         let cell =
                             collectionView.DequeueReusableCell(FollowerCell.CellId, indexPath) :?> FollowerCell
 
-                        let result = follower :?> Entities.Follower
+                        let result = follower :?> Follower
                         cell.SetUp(result)
                         upcast cell))
 
@@ -169,7 +169,7 @@ type FollowerListViewController(username) as self =
                     | Ok value ->
                         mainThread {
                             self.DismissLoadingView()
-                            let userInfoController = new UserInfoController(value)
+                            let userInfoController = new UserInfoView(value)
 
                             userInfoController.DidRequestFollowers
                             |> Observable.subscribe(fun username ->

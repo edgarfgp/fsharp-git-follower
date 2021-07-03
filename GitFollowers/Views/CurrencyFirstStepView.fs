@@ -1,24 +1,20 @@
-namespace GitFollowers.Controllers
+namespace GitFollowers.Views
 
 open System
-open System.Reactive.Disposables
 open Foundation
 open GitFollowers
-open GitFollowers.Entities
-open GitFollowers.Persistence
-open GitFollowers.Views
+open GitFollowers.Controllers
 open GitFollowers.DTOs
+open GitFollowers.Elements
 open UIKit
 
-type CurrencySecondStepController(currencyData: CurrencyData) as self =
+type CurrencyFirstStepView() as self =
     inherit UIViewController()
 
     let tableView = lazy (new UITableView(self.View.Frame))
-    
+
     let countriesData = ResizeArray<CurrencyData>()
 
-    let disposables = new CompositeDisposable()
-    
     let dataSource =
         { new UITableViewDataSource() with
             member this.GetCell(tableView: UITableView, indexPath) =
@@ -30,15 +26,12 @@ type CurrencySecondStepController(currencyData: CurrencyData) as self =
                 upcast cell
 
             member this.RowsInSection(_, _) = nint countriesData.Count }
-        
+
     let tableViewDelegate =
         { new UITableViewDelegate() with
             member this.RowSelected(tableView, indexPath: NSIndexPath) =
                 let country = countriesData.[int indexPath.Item]
-                let selection: Selection = { first = currencyData ; second = country }
-                ExchangeLoader.didRequestFollowers.OnNext(selection)
-                self.DismissViewController(true, null)
-        }
+                self.NavigationController.PushViewController(new CurrencySecondStepView(country), true) }
 
     let configureTableView () =
         tableView.Value.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -56,27 +49,17 @@ type CurrencySecondStepController(currencyData: CurrencyData) as self =
         self.View.AddSubviewsX tableView.Value
         configureTableView ()
 
-        mainThread {
-            self.ShowLoadingView()
-        }
+        self.NavigationController.SetNavigationBarHidden(true, true)
+
+        mainThread { self.ShowLoadingView() }
 
         async {
-            let! result =
-                ExchangeRepository.Instance.getAllCurrencies.AsTask()
-                |> Async.AwaitTask
-
-            let currencies =
-                result
-                |> Seq.map Currency.toDomain |> Seq.toArray
-
+            let! currencies = ExchangesController.loadCurrenciesFromRepo
             countriesData.AddRange currencies
-            
-            mainThread { self.DismissLoadingView() }
+
+            mainThread {
+                self.DismissLoadingView()
+                tableView.Value.ReloadData()
+            }
         }
         |> Async.Start
-
-    override self.ViewWillDisappear _ =
-        disposables.Dispose()
-
-    override self.Dispose _ =
-        disposables.Dispose()

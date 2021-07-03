@@ -1,8 +1,7 @@
 namespace GitFollowers
 
 open System
-open GitFollowers.Controllers
-open GitFollowers.Persistence
+open GitFollowers.Views
 open UIKit
 open Foundation
 
@@ -11,21 +10,21 @@ type AppDelegate() =
     inherit UIApplicationDelegate()
         
     let createSearchViewController: UINavigationController =
-        let searchVC = new SearchViewController()
+        let searchVC = new SearchView()
         searchVC.Title <- "Search"
         searchVC.TabBarItem <- new UITabBarItem(UITabBarSystemItem.Search, nint 0)
 
         new UINavigationController(searchVC)
 
     let createFavouriteViewController: UINavigationController =
-        let favouriteVC = new FavoriteListViewController()
+        let favouriteVC = new FavoriteListView()
         favouriteVC.Title <- "Favourites"
         favouriteVC.TabBarItem <- new UITabBarItem(UITabBarSystemItem.Favorites, nint 1)
 
         new UINavigationController(favouriteVC)
         
     let createExchangesViewController: UINavigationController =
-        let favouriteVC = new ExchangeOverviewController()
+        let favouriteVC = new ExchangeListView()
         favouriteVC.Title <- "Exchanges"
         let currenciesImage =  UIImage.GetSystemImage(ImageNames.currencies)
 
