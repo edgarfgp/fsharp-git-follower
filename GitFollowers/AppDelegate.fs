@@ -48,20 +48,12 @@ type AppDelegate() =
     override val Window = null with get, set
 
     override this.FinishedLaunching(_, _) =
-        async {
-            GitHubRepository.connect.AsTask()
-            |> Async.AwaitTask
-            |> ignore
-            
-            ExchangeRepository.connectExchange.AsTask()
-            |> Async.AwaitTask
-            |> ignore
-            
-            ExchangeRepository.connectCurrencies.AsTask()
-            |> Async.AwaitTask
-            |> ignore
-        }|> Async.Start
-        
+//        async {
+//            let! result = ExchangeRepository.Instance.connect.AsTask() |> Async.AwaitTask
+//            result.TableMappings
+//            |> Seq.iter(fun table -> printfn $"{table.TableName} has been created" )
+//        }|> Async.Start
+//        
         this.Window <- new UIWindow(UIScreen.MainScreen.Bounds)
         this.Window.RootViewController <- creteTabBar
         this.Window.MakeKeyAndVisible()

@@ -82,28 +82,44 @@ module Entities =
               login = favorite.Login
               avatar_url = favorite.AvatarUrl }
 
-
     type Exchange() =
         [<PrimaryKey>]
-        member val FirstCurrency = "" with get, set
-        member val FirstCurrencyValue = 0. with get, set
-        member val SecondCurrency = "" with get, set
-        member val SecondCurrencyValue = 0. with get, set
+        member val firstCode = "" with get, set
 
-        static member fromDomain(exchange: DTOs.Exchange, firstCurrency: string, secondCurrency: string) =
+        member val firstName = "" with get, set
+        member val firstValue = 0. with get, set
+        member val secondCode = "" with get, set
+        member val secondName = "" with get, set
+        member val secondValue = 0. with get, set
+
+        static member fromDomain
+            (
+                exchange: DTOs.Exchange,
+                firstCode: string,
+                firstName: string,
+                secondCode: string,
+                secondName: string
+            ) =
             Exchange(
-                FirstCurrency = firstCurrency,
-                FirstCurrencyValue = exchange.first,
-                SecondCurrency = secondCurrency,
-                SecondCurrencyValue = exchange.second
+                firstCode = firstCode,
+                firstName = firstName,
+                firstValue = exchange.first,
+                secondCode = secondCode,
+                secondName = secondName,
+                secondValue = exchange.second
             )
 
         static member toDomain(exchange: Exchange) =
-            let result : DTOs.Exchange =
-                { first = exchange.FirstCurrencyValue
-                  second = exchange.SecondCurrencyValue }
-
-            result
+            { first =
+                  { code = exchange.firstCode
+                    name = exchange.firstName
+                    value = exchange.firstValue
+                    symbol = "" }
+              second =
+                  { code = exchange.secondCode
+                    name = exchange.secondName
+                    value = exchange.secondValue
+                    symbol = "" } }
 
     type Currency() =
         [<PrimaryKey>]

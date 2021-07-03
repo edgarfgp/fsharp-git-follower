@@ -4,12 +4,17 @@ open System
 open System.Diagnostics
 open FSharp.Control.Reactive
 open GitFollowers.DTOs
+open GitFollowers.Entities
+open GitFollowers.Persistence
 open GitFollowers.Services
 open GitFollowers.Views
 
 module ExchangeLoader =
 
     let didRequestFollowers = Subject<Selection>.broadcast
+    
+    let connectionChecker =
+        Xamarin.Essentials.Connectivity.ConnectivityChanged
 
     let loadCountriesInfo =
         ExchangeService.getSupportedCountriesInfo

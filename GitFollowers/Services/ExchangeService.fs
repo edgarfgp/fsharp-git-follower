@@ -1,7 +1,6 @@
 namespace GitFollowers.Services
 
 open System
-open System.Collections.Generic
 open FSharp.Control.Reactive
 open FSharp.Control.Tasks
 open GitFollowers

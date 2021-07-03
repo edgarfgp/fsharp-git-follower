@@ -59,15 +59,19 @@ type CurrencyFirstStepController() as self =
 
         async {
             let! result =
-                ExchangeRepository.getAllCurrencies.AsTask()
+                ExchangeRepository.Instance.getAllCurrencies.AsTask()
                 |> Async.AwaitTask
 
             let currencies =
-                result |> Seq.map Currency.toDomain |> Seq.toArray
+                result
+                |> Seq.map Currency.toDomain |> Seq.toArray
 
             countriesData.AddRange currencies
             
-            mainThread { self.DismissLoadingView() }
+            mainThread {
+                self.DismissLoadingView()
+                tableView.Value.ReloadData()
+            }
         }
         |> Async.Start
 

@@ -5,12 +5,16 @@ open System.Reactive.Disposables
 open CoreGraphics
 open GitFollowers
 open GitFollowers.Entities
+open GitFollowers.Entities
+open GitFollowers.Entities
+open GitFollowers.Entities
 open GitFollowers.Persistence
 open GitFollowers.Services
 open GitFollowers.Views
 open GitFollowers.DTOs
 open FSharp.Control.Reactive
 open UIKit
+open Xamarin.Essentials
 
 type ExchangeOverviewController() as self =
     inherit UIViewController()
@@ -20,7 +24,7 @@ type ExchangeOverviewController() as self =
     let headerContainerView = new UIStackView()
     let headerView = new UIView()
 
-    let exchanges = ResizeArray<Selection>()
+    let exchangesData = ResizeArray<Selection>()
 
     let collectionView =
         lazy (new UICollectionView(self.View.Frame, new UICollectionViewFlowLayout()))
@@ -46,7 +50,7 @@ type ExchangeOverviewController() as self =
                                         value = exchange.second } }
 
                         let result =
-                            exchanges
+                            exchangesData
                             |> Seq.tryFind
                                 (fun sel ->
                                     sel.first.code = data.first.code
@@ -54,19 +58,48 @@ type ExchangeOverviewController() as self =
 
                         if result.IsSome then
                             let index =
-                                exchanges
+                                exchangesData
                                 |> Seq.findIndex
                                     (fun sel ->
                                         sel.first.code = data.first.code
                                         && sel.second.code = data.second.code)
 
-                            exchanges.[index] <- data
+                            exchangesData.[index] <- data
+
+                            let exchange =
+                                Exchange.fromDomain (
+                                    exchange,
+                                    data.first.code,
+                                    data.first.name,
+                                    data.second.code,
+                                    data.second.name
+                                )
+
+                            ExchangeRepository.Instance
+                                .InsertExchange(exchange)
+                                .AsTask()
+                            |> Async.AwaitTask
+                            |> ignore
                         else
-                            exchanges.Add data
+                            exchangesData.Add data
+
+                            let exchange =
+                                Exchange.fromDomain (
+                                    exchange,
+                                    data.first.code,
+                                    data.first.name,
+                                    data.second.code,
+                                    data.second.name
+                                )
+
+                            ExchangeRepository.Instance
+                                .InsertExchange(exchange)
+                                .AsTask()
+                            |> Async.AwaitTask
+                            |> ignore
 
                         mainThread { collectionView.Value.ReloadData() }
-                    | Error error ->
-                        printfn $"ERROR ======> {error}"
+                    | Error error -> printfn $"ERROR ======> {error}"
                 })
 
     let overViewDelegate =
@@ -78,15 +111,49 @@ type ExchangeOverviewController() as self =
     let dataSource =
         { new UICollectionViewDataSource() with
 
-            override this.GetItemsCount(_, _) = nint exchanges.Count
+            override this.GetItemsCount(_, _) = nint exchangesData.Count
 
             override this.GetCell(collectionView: UICollectionView, indexPath) =
                 let cell =
                     collectionView.DequeueReusableCell(ExchangeCell.CellId, indexPath) :?> ExchangeCell
 
-                let exchange = exchanges.[int indexPath.Item]
+                let exchange = exchangesData.[int indexPath.Item]
                 cell.SetUp(exchange)
                 upcast cell }
+
+    let getExchangeFor selection =
+        (getExchanges selection).Subscribe(fun _ -> ())
+        |> disposables.Add
+
+    let initialize (state: ConnectivityChangedEventArgs) =
+        if state.NetworkAccess = NetworkAccess.None
+           || state.NetworkAccess = NetworkAccess.Unknown then
+            self.PresentAlertOnMainThread "No internet" "Check your internet connection."
+        else
+            async {
+                let! exchanges =
+                    ExchangeRepository.Instance.GetAllExchanges.AsTask()
+                    |> Async.AwaitTask
+
+                let result =
+                    exchanges
+                    |> Seq.map Exchange.toDomain
+
+                exchangesData.AddRange result
+
+                result
+                |> Observable.toObservable
+                |> Observable.subscribe getExchangeFor
+                |> disposables.Add
+
+            }
+            |> Async.Start
+            
+    let saveCurrenciesTRepository currency =
+        let data = Currency.fromDomain currency
+        ExchangeRepository.Instance.InsertCurrency(data).AsTask()
+        |> Async.AwaitTask
+        |> ignore
 
     override _.ViewDidLoad() =
         base.ViewDidLoad()
@@ -105,15 +172,12 @@ type ExchangeOverviewController() as self =
 
         self.View.AddSubviewsX collectionView.Value
         collectionView.Value.TopAnchor.ConstraintEqualTo(headerView.SafeAreaLayoutGuide.BottomAnchor).Active <- true
-
         collectionView.Value.LeadingAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.LeadingAnchor, nfloat 16.).Active <- true
-
         collectionView.Value.TrailingAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.TrailingAnchor, nfloat -16.).Active <- true
+
         collectionView.Value.BottomAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.BottomAnchor, nfloat -16.).Active <- true
         headerView.TopAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.TopAnchor, nfloat 16.).Active <- true
-
         headerView.LeadingAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.LeadingAnchor, nfloat 16.).Active <- true
-
         headerView.TrailingAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.TrailingAnchor, nfloat -16.).Active <- true
 
         headerContainerView.AddArrangedSubview messageLabel
@@ -135,34 +199,39 @@ type ExchangeOverviewController() as self =
                 ))
 
         addImage.UserInteractionEnabled <- true
-        addImage.AddGestureRecognizer(addImagesGesture)
+        addImage.AddGestureRecognizer addImagesGesture
 
         collectionView.Value.DataSource <- dataSource
         collectionView.Value.Delegate <- overViewDelegate
-        
-        mainThread {
-            self.ShowLoadingView()
-        }
 
-        ExchangeLoader.loadCountriesInfo
-        |> Observable.subscribe
-            (fun currency ->
-                let data = Currency.fromDomain currency
-                ExchangeRepository.insertCurrency(data).AsTask()
-                |> Async.AwaitTask
-                |> ignore)
-        |> disposables.Add
-        
-        mainThread {
-            self.DismissLoadingView()
-        }
+        mainThread { self.ShowLoadingView() }
+
+        mainThread { self.DismissLoadingView() }
 
         ExchangeLoader.didRequestFollowers
-        |> Observable.subscribe
-            (fun selection ->
-                (getExchanges selection)
-                    .Subscribe(fun _ -> printfn $"Loading data for {selection.first.code} and {selection.second.code}")
-                |> disposables.Add)
+        |> Observable.subscribe getExchangeFor
         |> disposables.Add
+
+        ExchangeLoader.connectionChecker
+        |> Observable.subscribe initialize
+        |> disposables.Add
+        
+        ExchangeLoader.loadCountriesInfo
+        |> Observable.subscribe saveCurrenciesTRepository
+        |> disposables.Add
+        
+//        async {
+//                let! exchanges =
+//                    ExchangeRepository.getAllExchanges().AsTask()
+//                    |> Async.AwaitTask
+//
+//                exchanges
+//                |> Seq.map Exchange.toDomain
+//                |> Observable.toObservable
+//                |> Observable.subscribe getExchangeFor
+//                |> disposables.Add
+//
+//            }
+//            |> Async.Start
 
     override self.Dispose _ = disposables.Dispose()

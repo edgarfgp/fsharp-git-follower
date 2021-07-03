@@ -11,13 +11,13 @@ open UIKit
 type FavoriteListViewController() as self =
     inherit UITableViewController()
 
-    let favorites = ResizeArray<DTOs.Follower>()
+    let favoritesData = ResizeArray<DTOs.Follower>()
     let persistence = FavoritesUserDefaults.Instance
     
     let favoritesDelegate =
         { new UITableViewDelegate() with
             member this.RowSelected(_, indexPath: NSIndexPath) =
-                let favorite = favorites.[int indexPath.Row]
+                let favorite = favoritesData.[int indexPath.Row]
 
                 let destinationVC =
                     new FollowerListViewController(favorite.login)
@@ -29,15 +29,15 @@ type FavoriteListViewController() as self =
             member this.CommitEditingStyle(tableView, editingStyle, indexPath) =
                 match editingStyle with
                 | UITableViewCellEditingStyle.Delete ->
-                    let favoriteToDelete = favorites.[indexPath.Row]
+                    let favoriteToDelete = favoritesData.[indexPath.Row]
                     let favoriteStatus =
                         persistence.Remove favoriteToDelete
 
                     match favoriteStatus with
                     | RemovedOk ->
-                        favorites.Remove(favoriteToDelete) |> ignore
+                        favoritesData.Remove(favoriteToDelete) |> ignore
 
-                        if favorites.Count = 0 then
+                        if favoritesData.Count = 0 then
                             self.ShowEmptyView("No Favorites")
                         else
                             self.DismissEmptyView()
@@ -53,11 +53,11 @@ type FavoriteListViewController() as self =
                 let cell =
                     tableView.DequeueReusableCell(FavoriteCell.CellId, indexPath) :?> FavoriteCell
 
-                let follower = favorites.[int indexPath.Item]
+                let follower = favoritesData.[int indexPath.Item]
                 cell.SetUp(follower)
                 upcast cell
 
-            member this.RowsInSection(_, _) = nint favorites.Count }
+            member this.RowsInSection(_, _) = nint favoritesData.Count }
     
     override self.ViewDidLoad() =
         base.ViewDidLoad()
@@ -78,12 +78,12 @@ type FavoriteListViewController() as self =
             if result.Length = 0 then
                 self.ShowEmptyView("No Favorites")
             else
-                for x in favorites.ToArray() do
-                    favorites.Remove(x) |> ignore
+                for x in favoritesData.ToArray() do
+                    favoritesData.Remove(x) |> ignore
 
-                favorites.AddRange result
+                favoritesData.AddRange result
                 mainThread {
                     self.DismissEmptyView()
                     self.TableView.ReloadData()
                 }
-        | None -> self.PresentAlertOnMainThread "Favorites" "Unable to load favorites"
+        | None -> self.ShowEmptyView("No Favorites")
