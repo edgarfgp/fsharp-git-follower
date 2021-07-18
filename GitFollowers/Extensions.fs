@@ -6,11 +6,22 @@ open CoreFoundation
 open FFImageLoading
 open FFImageLoading.Svg.Platform
 open Foundation
+open ImageIO
 open UIKit
 
 [<AutoOpen>]
 module Extensions =
-    
+
+    let get =
+        function
+        | Ok a -> a
+        | Error e -> invalidArg "result" $"The result value was Error '%A{e}'"
+        
+    let (|Success|Failure|) = 
+        function
+        | Choice1Of2 a -> Success a
+        | Choice2Of2 e -> Failure e
+        
     type MainThreadBuilder() =
         member this.Zero() =
             printf "Zero"
@@ -20,7 +31,7 @@ module Extensions =
             DispatchQueue.MainQueue.DispatchAsync(fun _ ->  f())
 
     let mainThread = MainThreadBuilder()
-    
+
     type MaybeBuilder() =
         member this.Bind(x, f) =
             match x with
@@ -31,10 +42,10 @@ module Extensions =
             Some x
 
     let maybe = MaybeBuilder()
-    
+
     open FSharp.Control.Tasks
-    
-    let private httpClientFactory = Http.createHttpClientFactory()
+
+    let private httpClientFactory = Http.createHttpClientFactory ()
     let private cache = new NSCache()
 
     let fetchWitHeader urlString =
@@ -44,23 +55,28 @@ module Extensions =
             |> withHeader ("User-Agent", "GitFollowers")
 
         request |> Http.execute httpClientFactory
-        
+
     let fetch urlString =
         let request =
             Http.createRequest urlString Get
             |> withHeader ("Accept", "application/json")
 
         request |> Http.execute httpClientFactory
-    
-    let downloadDataFromUrl(url: string) :ValueTask<UIImage option> =
+
+    let downloadDataFromUrl (url: string) : ValueTask<UIImage option> =
         vtask {
             let cacheKey = new NSString(url)
             let image = cache.ObjectForKey(cacheKey) :?> UIImage
+
             if image <> null then
                 return Some image
             else
-                let! result = Http.fetchDataFromUrl(httpClientFactory, url).AsTask()
-                              |> Async.AwaitTask
+                let! result =
+                    Http
+                        .fetchDataFromUrl(httpClientFactory, url)
+                        .AsTask()
+                    |> Async.AwaitTask
+
                 return
                     match result with
                     | Ok response ->
@@ -70,19 +86,23 @@ module Extensions =
                         Some image
                     | Error _ -> None
         }
+
     type UIImageView with
-    
-        member ui.RoundedCorners()=
+
+        member ui.RoundedCorners() =
             ui.Layer.CornerRadius <- nfloat 50.
             ui.ClipsToBounds <- true
             ui.Layer.BorderWidth <- nfloat 3.
+
             ui.Layer.BorderColor = UIColor.White.CGColor
             |> ignore
+
         member ui.LoadImageFromUrl(url: string) =
             vtask {
                 let! result =
                     downloadDataFromUrl(url).AsTask()
                     |> Async.AwaitTask
+
                 match result with
                 | Some image -> ui.Image <- image
                 | None -> ui.Image <- UIImage.FromBundle(ImageNames.ghLogo)
@@ -90,29 +110,40 @@ module Extensions =
 
         member ui.LoadImageFromSvg(url: string) =
             vtask {
-                    let result =
-                        ImageService.Instance.LoadString(url)
-                          .WithCustomDataResolver(SvgDataResolver(64, 0, true))
-                          .AsUIImageAsync()
-                          |> Async.AwaitTask
-                    match! Async.Catch(result) with
-                    | Choice1Of2 image ->
-                        ui.Image.ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal) |>ignore
-                        ui.Image <- image
-                    | Choice2Of2 _ ->
-                        ui.Image <- UIImage.FromBundle(ImageNames.currencies)
+                let result =
+                    ImageService
+                        .Instance
+                        .LoadString(url)
+                        .WithCustomDataResolver(SvgDataResolver(64, 0, true))
+                        .AsUIImageAsync()
+                    |> Async.AwaitTask
+
+                match! Async.Catch(result) with
+                | Choice1Of2 image ->
+                    ui.Image.ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal)
+                    |> ignore
+
+                    ui.Image <- image
+                | Choice2Of2 _ -> ui.Image <- UIImage.FromBundle(ImageNames.currencies)
             }
-            
+
     type UIView with
-        member uv.AddSubviewsX([<ParamArray>]views:UIView array) =
+        member uv.AddSubviewsX([<ParamArray>] views: UIView array) =
             views
-            |> Array.map(fun view ->
+            |> Array.map
+                (fun view ->
                     view.TranslatesAutoresizingMaskIntoConstraints <- false
                     uv.AddSubview view)
             |> ignore
-            
-        member uv.ConstraintToParent(parentView: UIView, ?leading: float, ?top: float,
-                                     ?trailing: float, ?bottom: float) =
+
+        member uv.ConstraintToParent
+            (
+                parentView: UIView,
+                ?leading: float,
+                ?top: float,
+                ?trailing: float,
+                ?bottom: float
+            ) =
             let leading = defaultArg leading (float 0)
             let top = defaultArg top (float 0)
             let trailing = defaultArg trailing (float 0)
@@ -132,4 +163,27 @@ module Extensions =
                    uv.TrailingAnchor.ConstraintEqualTo(parentView.TrailingAnchor, -all)
                    uv.BottomAnchor.ConstraintEqualTo(parentView.BottomAnchor, -all) |]
             )
- 
+
+        member uv.BlurViewIfPossible() =
+            let reduceBlur =
+                UIAccessibility.IsReduceTransparencyEnabled
+
+            let lowerPowerIsOn =
+                NSProcessInfo.ProcessInfo.LowPowerModeEnabled
+
+            if reduceBlur || lowerPowerIsOn then
+                uv.BackgroundColor <- UIColor.SystemFillColor
+            else
+                let blur =
+                    UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial)
+
+                let blurredEffectView = new UIVisualEffectView(blur)
+                blurredEffectView.Frame <- uv.Bounds
+                uv.AddSubviewsX(blurredEffectView)
+
+                DispatchQueue.MainQueue.DispatchAfter(
+                    DispatchTime(DispatchTime.Now, TimeSpan.FromSeconds(0.5)),
+                    fun _ ->
+                        UIView.AnimateAsync(500., (fun _ -> blurredEffectView.RemoveFromSuperview()))
+                        |> ignore
+                )

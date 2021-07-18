@@ -11,7 +11,7 @@ module Common =
     let loadingView = new LoadingView()
 
     type UIViewController with
-    
+   
         member vc.AddRightNavigationItem systemItem =
             vc.NavigationItem.RightBarButtonItem <- new UIBarButtonItem(systemItem = systemItem)
             vc.NavigationItem.RightBarButtonItem.Clicked

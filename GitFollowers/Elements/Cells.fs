@@ -1,6 +1,7 @@
 namespace GitFollowers.Elements
 
 open System
+open CoreFoundation
 open GitFollowers
 open GitFollowers.DTOs
 open GitFollowers.Entities
@@ -61,6 +62,7 @@ type ExchangeCell(handle: IntPtr) as self =
     do
         self.AddSubviewsX(overallContainer)
         overallContainer.ConstraintToParent self.ContentView
+        self.ContentView.BlurViewIfPossible()
         
         firstCurrencyContainer.TranslatesAutoresizingMaskIntoConstraints <- false
         overallContainer.AddArrangedSubview firstCurrencyContainer

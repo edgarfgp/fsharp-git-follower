@@ -2,8 +2,11 @@ namespace GitFollowers
 
 [<RequireQualifiedAccess>]
 module Option =
-    let ofString (str: string) =
+    let ofNullableString (str: string) =
         Option.ofObj str
+
+    let fromNullableString(str: string option) =
+        if str.IsSome then str.Value else null
 
     let ofOption error =
         function

@@ -6,8 +6,8 @@ open CoreGraphics
 open GitFollowers
 open GitFollowers.Controllers
 open GitFollowers.Elements
-open GitFollowers.DTOs
 open FSharp.Control.Reactive
+open GitFollowers.Persistence
 open UIKit
 open Xamarin.Essentials
 
@@ -18,13 +18,15 @@ type ExchangeListView() as self =
     let messageLabel = new FGBodyLabel()
     let headerContainerView = new UIStackView()
     let headerView = new UIView()
-    let exchangeArray = ResizeArray<Selection>()
-    let mutable exchangeObservable : IObservable<unit> = null
-    let mutable didRequestObservable : IObservable<unit> = null
-    let mutable exchangeSubscription : IDisposable = null
-    let mutable loadCountriesSubscription : IDisposable = null
-    let mutable didRequestExchangeSubscription : IDisposable = null
     let disposables = new CompositeDisposable()
+
+    let controller =
+        ExchangesController(ExchangeRepository())
+
+    let observableTimer =
+        Observable.interval (TimeSpan.FromSeconds 1.)
+
+    let mutable observableTimerSubscription: IDisposable = null
 
     let collectionView =
         lazy (new UICollectionView(self.View.Frame, new UICollectionViewFlowLayout()))
@@ -40,31 +42,22 @@ type ExchangeListView() as self =
     let dataSource =
         { new UICollectionViewDataSource() with
 
-            override this.GetItemsCount(_, _) = nint exchangeArray.Count
+            override this.GetItemsCount(_, _) = nint controller.ExchangesData.Count
 
             override this.GetCell(collectionView: UICollectionView, indexPath) =
                 let cell =
                     collectionView.DequeueReusableCell(ExchangeCell.CellId, indexPath) :?> ExchangeCell
 
-                let exchange = exchangeArray.[int indexPath.Item]
+                let exchange =
+                    controller.ExchangesData.[int indexPath.Item]
+
                 cell.SetUp(exchange)
                 upcast cell }
-
-    let checkConnection (state: ConnectivityChangedEventArgs) =
-        if state.NetworkAccess = NetworkAccess.None
-           || state.NetworkAccess = NetworkAccess.Unknown then
-            self.PresentAlertOnMainThread "No internet" "Check your internet connection."
-            exchangeSubscription.Dispose()
-        else
-            exchangeObservable
-            |> Observable.subscribe (fun _ -> ())
-            |> disposables.Add
 
     let addImagesGestureRecognizer =
         new UITapGestureRecognizer(fun () ->
             if Connectivity.NetworkAccess = NetworkAccess.Local
                || Connectivity.NetworkAccess = NetworkAccess.Internet then
-                loadCountriesSubscription.Dispose()
 
                 self.NavigationController.PresentModalViewController(
                     new UINavigationController(new CurrencyFirstStepView()),
@@ -88,9 +81,7 @@ type ExchangeListView() as self =
 
         self.View.AddSubviewsX collectionView.Value
         collectionView.Value.TopAnchor.ConstraintEqualTo(headerView.SafeAreaLayoutGuide.BottomAnchor).Active <- true
-
         collectionView.Value.LeadingAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.LeadingAnchor, nfloat 16.).Active <- true
-
         collectionView.Value.TrailingAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.TrailingAnchor, nfloat -16.).Active <- true
         collectionView.Value.BottomAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.BottomAnchor, nfloat -16.).Active <- true
         headerView.TopAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.TopAnchor, nfloat 16.).Active <- true
@@ -116,88 +107,114 @@ type ExchangeListView() as self =
         collectionView.Value.DataSource <- dataSource
         collectionView.Value.Delegate <- overViewDelegate
 
-        mainThread { self.ShowLoadingView() }
-
-        didRequestObservable <-
-            ExchangesController.requestExchangesSubject
-            |> Observable.flatmapAsync
-                (fun selection ->
-                    async {
-                        let! result = ExchangesController.getExchangeFor selection
-
-                        match result with
-                        | Some exchange ->
-                            exchangeArray
-                            |> ExchangesController.updateExchangeData selection exchange
-
-                            mainThread { collectionView.Value.ReloadData() }
-                        | None ->
-                            self.PresentAlertOnMainThread
-                                "Info"
-                                $"Exchange not available for {selection.first.name}. Please select a different pair"
-                    })
-
-        didRequestExchangeSubscription <-
-            didRequestObservable
-            |> Observable.subscribeWithCallbacks
-                (fun _ -> mainThread { self.ShowLoadingView() })
-                (fun error -> printfn $"{error.Message}")
-                (fun _ -> mainThread { self.DismissLoadingView() })
-
-        ExchangesController.connectionChecker
-        |> Observable.subscribe checkConnection
+        controller.ConnectionChecker
+        |> Observable.subscribe
+            (fun state ->
+                if state = InternetConnectionEvent.NotConnected then
+                    self.PresentAlertOnMainThread "No internet" "Check your internet connection."
+                    observableTimerSubscription.Dispose()
+                else
+                    observableTimerSubscription <-
+                        observableTimer
+                        |> Observable.subscribe
+                            (fun _ ->
+                                controller.FetchExchangeForCurrencies
+                                |> Observable.subscribe
+                                    (fun state ->
+                                        match state with
+                                        | ExchangesUpdate.Updated ->
+                                            mainThread {
+                                                self.DismissLoadingView()
+                                                collectionView.Value.ReloadData()
+                                            }
+                                        | ExchangesUpdate.NotUpdated -> ())
+                                |> disposables.Add))
         |> disposables.Add
 
-        loadCountriesSubscription <-
-            ExchangesController.loadCountriesInfo
-            |> Observable.subscribe ExchangesController.saveCurrenciesToRepository
 
-        exchangeObservable <-
-            Observable.interval (TimeSpan.FromSeconds 1.)
-            |> Observable.flatmapAsync
-                (fun _ ->
-                    async {
-                        let! exchanges = ExchangesController.loadExchangesFromRepo
+        controller.LoadCountriesInfo
+        |> disposables.Add
+        
 
-                        exchanges
-                        |> Seq.iter
-                            (fun selection ->
-                                async {
-                                    let! result = ExchangesController.getExchangeFor selection
+        (*controller.HandleRequestExchangeUpdate
+        |> Observable.subscribe
+            (fun _ ->
+                mainThread {
+                    self.DismissLoadingView()
+                    collectionView.Value.ReloadData()
+                })
+        |> disposables.Add*)
 
-                                    match result with
-                                    | Some exchange ->
-                                        exchangeArray
-                                        |> ExchangesController.updateExchangeData selection exchange
+        async {
+            mainThread { self.ShowLoadingView() }
 
-                                        mainThread {
-                                            self.DismissLoadingView()
-                                            collectionView.Value.ReloadData()
-                                        }
-                                    | None -> printfn $"No exchange found for ======> {selection}"
-                                }
-                                |> Async.Start)
+            let! state =
+                controller.LoadExchanges.AsTask()
+                |> Async.AwaitTask
 
-                    })
-
-        if ExchangesController.isConnected then
-            exchangeSubscription <-
-                exchangeObservable
-                |> Observable.subscribe (fun _ -> ())
-
-        else
-            self.PresentAlertOnMainThread "No internet" "Check your internet connection."
-
-            async {
-                let! exchanges = ExchangesController.loadExchangesFromRepo
-                exchanges |> exchangeArray.AddRange
-
+            match state with
+            | ExchangesState.Loaded ->
                 mainThread {
                     self.DismissLoadingView()
                     collectionView.Value.ReloadData()
                 }
-            }
-            |> Async.Start
+            | ExchangesState.NotLoaded -> self.PresentAlertOnMainThread "Exchanges" "Error loading exchanges."
+        }
+        |> Async.Start
+
+        if controller.IsConnected then
+            observableTimerSubscription <-
+                observableTimer
+                |> Observable.subscribe
+                    (fun _ ->
+                        controller.FetchExchangeForCurrencies
+                        |> Observable.subscribe
+                            (fun state ->
+                                if state = ExchangesUpdate.Updated then
+                                    mainThread {
+                                        self.DismissLoadingView()
+                                        collectionView.Value.ReloadData()
+                                    })
+                        |> disposables.Add)
+    //        controller.DidRequestExchangesSubject
+//        |> disposables.Add
+//        |> Observable.subscribe(fun _ ->
+//            if controller.IsConnected then
+//                    Observable.interval (TimeSpan.FromSeconds 1.)
+//                    |> Observable.flatmap
+//                        (fun _ ->
+//                            controller.FetchExchangeForCurrencies
+//                            Observable.Return(Unit))
+//                    |> Observable.subscribe (fun _ -> ())
+//                    |> disposables.Add
+//
+//                    mainThread {
+//                        self.DismissLoadingView()
+//                        collectionView.Value.ReloadData()
+//                    }
+//                else
+//                    self.PresentAlertOnMainThread "No internet" "Check your internet connection.")
+
+    (*controller.HandleLoadExchanges
+        |> Observable.subscribe
+            (fun _ ->
+                if controller.IsConnected then
+                    Observable.interval (TimeSpan.FromSeconds 1.)
+                    |> Observable.flatmap
+                        (fun _ ->
+                            controller.FetchExchangeForCurrencies
+                            Observable.Return(Unit))
+                    |> Observable.subscribe (fun _ -> ())
+                    |> disposables.Add
+
+                    mainThread {
+                        self.DismissLoadingView()
+                        collectionView.Value.ReloadData()
+                    }
+                else
+                    self.PresentAlertOnMainThread "No internet" "Check your internet connection.")
+
+        |> disposables.Add*)
 
 
     override self.Dispose _ = disposables.Dispose()

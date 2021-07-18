@@ -26,7 +26,10 @@ module DTOs =
     type Exchange = { first: float; second: float }
 
     [<JsonFSharpConverter>]
-    type Country = { currencies: Currency array }
+    type Country = {
+        flag: string
+        currencies: Currency array
+    }
 
     and Currency =
         { code: string option
@@ -48,7 +51,6 @@ module DTOs =
     type Selection =
         { first: CurrencyData
           second: CurrencyData }
-
 module Entities =
 
     open DTOs

@@ -1,18 +1,17 @@
 namespace GitFollowers.Services
 
-open System
 open FSharp.Control.Reactive
 open FSharp.Control.Tasks
 open GitFollowers
 open GitFollowers.DTOs
 
-type ExchangesResult =
-    | NetworkError
-    | InternalError
-    | WrongPairCurrency
-    | DeserializationError of exn
+type ExchangesError =
+    | BadRequest
+    | Non200Response
+    | ParseError of string
 
 module ExchangeService =
+
     let private getCountryInfoFor (currency: string) =
         let urlString =
             $"{URlConstants.countriesBaseUrl}%s{currency}"
@@ -20,39 +19,34 @@ module ExchangeService =
         vtask {
             let! response = fetch urlString
 
-            match response.StatusCode with
-            | 200 ->
-                return
+            return
+                match response.StatusCode with
+                | 200 ->
                     response.Body
                     |> Json.deserialize<Country array>
-                    |> Result.mapError DeserializationError
-            | 500 -> return Error InternalError
-            | error ->
-                Console.WriteLine error
-                return Error NetworkError
+                    |> Result.mapError ParseError
+                | _ -> Error Non200Response
         }
 
-    let getSupportedCountriesInfo =
-        Countries.currencies
-        |> Observable.toObservable
-        |> Observable.flatmapAsync
-            (fun currency ->
-                async {
-                    let! countryInfo =
-                        (getCountryInfoFor currency).AsTask()
-                        |> Async.AwaitTask
+    let getSupportedCountriesInfo currency =
+        vtask {
+            let! countryInfo =
+                (getCountryInfoFor currency).AsTask()
+                |> Async.AwaitTask
 
-                    match countryInfo with
-                    | Ok response ->
-                        let currencies =
-                            response
-                            |> Array.map (fun c -> c.currencies)
-                            |> Array.tryHead
+            match countryInfo with
+            | Ok response ->
+                let currencies =
+                    response
+                    |> Seq.map (fun c -> c.currencies)
+                    |> Seq.tryHead
+                    |> Option.get
 
-                        return Some currencies
-                    | Error _ -> return None
-                })
-        |> Observable.choose id
+                return Some currencies
+            | Error error ->
+                printfn $"{error}"
+                return None
+        }
 
     let getExchangeFor (first: string) (second: string) =
         let urlString =
@@ -61,13 +55,12 @@ module ExchangeService =
         vtask {
             let! response = fetch urlString
 
-            match response.StatusCode with
-            | 200 ->
-                return
+            return
+                match response.StatusCode with
+                | 200 ->
                     response.Body
                     |> Json.parseExchange
-                    |> Result.mapError DeserializationError
-            | 500 -> return Error InternalError
-            | 400 -> return Error WrongPairCurrency
-            | _ -> return Error NetworkError
+                    |> Result.mapError ParseError
+                | 400 -> Error BadRequest
+                | _ -> Error Non200Response
         }

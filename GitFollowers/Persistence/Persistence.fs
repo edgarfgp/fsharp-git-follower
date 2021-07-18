@@ -8,98 +8,84 @@ type AddActionResult =
     | Added
     | AlreadyAdded
     | FirstTimeAdded
+    | NotAdded
 
 type RemoveActionResult =
-    | RemovedOk
-    | RemovingError
+    | Removed
+    | NotRemoved
 
 type FavoritesUserDefaults() =
-    let favoritesKey = "favorites"
     let defaults = NSUserDefaults.StandardUserDefaults
     static let instance = FavoritesUserDefaults()
-    
-    let rec removeItem predicate list =
-        match list with
-        | h::t when predicate h -> t
-        | h::t -> h::removeItem predicate t
-        | _ -> []
 
-    member _.Remove(favorite : Follower) =
+    member _.Remove(favorite: Follower) =
         let storedFavorites =
-            defaults.StringForKey(favoritesKey)
-            |> Option.ofString
+            defaults.StringForKey(Persistent.favoritesKey)
+            |> Option.ofNullableString
 
         match storedFavorites with
-        | Some favoritesString ->
-            let favorites = Json.deserialize<Follower array> favoritesString
-            match favorites with
-            | Ok favorites ->
-                let updatedFavorites = favorites |> Array.except(seq { favorite })
-                match updatedFavorites with
-                | favorites when favorites.Length >= 0 ->
-                    let encodedFavorites = Json.serialize updatedFavorites
+        | Some favorites ->
+            let result =
+                Json.deserialize<Follower array> favorites
 
-                    match encodedFavorites with
-                    | Ok result ->
-                        defaults.SetString(result, favoritesKey)
-                        RemovedOk
-                    | _ -> RemovingError
-                | _ -> RemovingError
-            | _ -> RemovingError
+            let updatedFavorites =
+                result
+                |> Result.get
+                |> Seq.except (seq { favorite })
+                |> Seq.distinctBy (fun f -> f.login)
+                |> Seq.toArray
 
-        | None -> RemovingError
-        
+            let encodedFavorites = Json.serialize updatedFavorites
+            defaults.SetString(favorites, Persistent.favoritesKey)
+            Removed
+        | None -> failwithf $"{favorite} is not stored."
+
     member _.Save(favorite: Follower) =
         let storedFavorites =
-            defaults.StringForKey(favoritesKey)
-            |> Option.ofString
+            defaults.StringForKey(Persistent.favoritesKey)
+            |> Option.ofNullableString
 
         match storedFavorites with
         | Some favoritesString ->
             let decodedFavorites =
                 Json.deserialize<Follower array> favoritesString
 
-            match decodedFavorites with
-            | Ok favorites ->
-                let favoriteLookup =
-                    favorites
-                    |> Array.tryFind (fun f -> f.login = favorite.login)
-                    |> Option.isSome
+            let favoriteLookup =
+                decodedFavorites
+                |> Result.get
+                |> Seq.tryFind (fun f -> f.login = favorite.login)
+                
 
-                if favoriteLookup then
-                    AlreadyAdded
-                else
-                    let favoritesToSave = [| favorite |]
-                    let result = favorites |> Array.append favoritesToSave
-                    let encodedFavorites = Json.serialize result
+            if favoriteLookup.IsSome then
+                AlreadyAdded
+            else
+                let encodedFavorites =
+                    decodedFavorites
+                    |> Result.get
+                    |> Seq.append [| favorite |]
+                    |> Json.serialize
+                    |> Result.get
 
-                    match encodedFavorites with
-                    | Ok favoriteString ->
-                        defaults.SetString(favoriteString, favoritesKey)
-                        Added
-                    | _ -> failwith "Error while encoding favorites"
-            | _ -> failwith "Error while decoding favorites"
+                defaults.SetString(encodedFavorites, Persistent.favoritesKey)
+                Added
         | None ->
-            let favoritesToSave = [] |> List.append [ favorite ]
-            let encodedFavorites = Json.serialize favoritesToSave
+            let favoritesToSave = ResizeArray()
+            favoritesToSave.Add favorite
+            let encodedFavorites =
+                Json.serialize favoritesToSave
+                |> Result.get
 
-            match encodedFavorites with
-            | Ok favoriteString ->
-                defaults.SetString(favoriteString, favoritesKey)
-                FirstTimeAdded
-            | _ -> failwith "Error while encoding favorites"
-            
+            defaults.SetString(encodedFavorites, Persistent.favoritesKey)
+            FirstTimeAdded
+
     member _.GetAll =
         let storedFavorites =
-            defaults.StringForKey(favoritesKey) |> Option.ofString
+            defaults.StringForKey(Persistent.favoritesKey)
+            |> Option.ofNullableString
 
         match storedFavorites with
-        | Some favoritesResult ->
-            let result =
-                Json.deserialize<Follower array> favoritesResult
-            match result with
-            | Ok favorites -> Some favorites
-            | _ -> None
-        | None -> None
+        | Some favorites ->
+            Json.deserialize<Follower array> favorites |> Result.get
+        | None -> Array.empty
 
     static member Instance = instance

@@ -33,7 +33,7 @@ type FavoriteListView() as self =
                         persistence.Remove favoriteToDelete
 
                     match favoriteStatus with
-                    | RemovedOk ->
+                    | Removed ->
                         favoritesData.Remove(favoriteToDelete) |> ignore
 
                         if favoritesData.Count = 0 then
@@ -44,7 +44,7 @@ type FavoriteListView() as self =
 
                         self.TableView.ReloadData()
 
-                    | _ -> self.PresentAlertOnMainThread "Favorites" "Unable to delete"
+                    | NotRemoved -> self.PresentAlertOnMainThread "Favorites" "Unable to delete"
 
                 | _ -> failwith "Unrecognized UITableViewCellEditingStyle"
 
@@ -72,17 +72,15 @@ type FavoriteListView() as self =
     override self.ViewWillAppear _ =
         base.ViewWillAppear(true)
 
-        match persistence.GetAll with
-        | Some result ->
-            if result.Length = 0 then
+        let result = persistence.GetAll
+        if result.Length = 0 then
                 self.ShowEmptyView("No Favorites")
-            else
-                for x in favoritesData.ToArray() do
-                    favoritesData.Remove(x) |> ignore
+        else
+            for x in favoritesData.ToArray() do
+                favoritesData.Remove(x) |> ignore
 
-                favoritesData.AddRange result
-                mainThread {
-                    self.DismissEmptyView()
-                    self.TableView.ReloadData()
-                }
-        | None -> self.ShowEmptyView("No Favorites")
+            favoritesData.AddRange result
+            mainThread {
+                self.DismissEmptyView()
+                self.TableView.ReloadData()
+            }

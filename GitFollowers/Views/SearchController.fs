@@ -3,7 +3,8 @@ namespace GitFollowers.Views
 open System
 open System.Reactive.Disposables
 open GitFollowers
-open GitFollowers.Services
+open GitFollowers.Controllers
+open GitFollowers.DTOs
 open GitFollowers.Elements
 open UIKit
 
@@ -24,22 +25,18 @@ type SearchView() as self =
         self.ShowLoadingView()
 
         async {
-            let! userResult =
-                GitHubService.getUserInfo(userName).AsTask()
-                |> Async.AwaitTask
-
-            match userResult with
-            | Ok user ->
+            let! result = SearchController.getUserInfo(userName).AsTask() |> Async.AwaitTask
+            match result with
+            | UserReceivedEvent.Ok user ->
                 mainThread {
                     self.DismissLoadingView()
 
-                    let followerListVC =
-                        new FollowerListView(user.login)
+                    let followerListVC = new FollowerListView(user.login)
 
                     self.NavigationController.PushViewController(followerListVC, animated = true)
                     userNameTextField.ResignFirstResponder() |> ignore
                 }
-            | Error _ ->
+            | UserReceivedEvent.NotFound _ ->
                 mainThread {
                     self.DismissLoadingView()
                     self.PresentAlertOnMainThread "Error" $"{userName} was not found."
@@ -47,16 +44,12 @@ type SearchView() as self =
         }
         |> Async.Start
 
-    let sanitizeUsername (text: string) =
-        text
-        |> String.filter Char.IsLetterOrDigit
-        |> String.filter (fun char -> (Char.IsWhiteSpace(char) |> not))
-        |> String.IsNullOrWhiteSpace
-        |> not
+
 
     let textFieldDidChange () =
         let isValid =
-            userNameTextField.Text |> sanitizeUsername
+            userNameTextField.Text
+            |> SearchController.sanitizeUsername
 
         if isValid then
             actionButton.Enabled <- true
@@ -75,11 +68,19 @@ type SearchView() as self =
         |> Observable.subscribe (fun _ -> handleNavigation ())
         |> disposables.Add
 
-        NSLayoutConstraint.ActivateConstraints
-            [| actionButton.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
-               actionButton.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, constant = nfloat -50.0)
-               actionButton.BottomAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.BottomAnchor, constant = nfloat -50.0)
-               actionButton.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |]
+        NSLayoutConstraint.ActivateConstraints [| actionButton.LeadingAnchor.ConstraintEqualTo(
+                                                      self.View.LeadingAnchor,
+                                                      constant = nfloat 50.
+                                                  )
+                                                  actionButton.TrailingAnchor.ConstraintEqualTo(
+                                                      self.View.TrailingAnchor,
+                                                      constant = nfloat -50.0
+                                                  )
+                                                  actionButton.BottomAnchor.ConstraintEqualTo(
+                                                      self.View.SafeAreaLayoutGuide.BottomAnchor,
+                                                      constant = nfloat -50.0
+                                                  )
+                                                  actionButton.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |]
 
     let configureUserNameTextField () =
         self.View.AddSubview(userNameTextField)
@@ -95,11 +96,21 @@ type SearchView() as self =
         |> Observable.subscribe (fun _ -> textFieldDidChange ())
         |> disposables.Add
 
-        NSLayoutConstraint.ActivateConstraints
-            [| userNameTextField.TopAnchor.ConstraintEqualTo(logoImageView.BottomAnchor, constant = nfloat 50.)
-               userNameTextField.LeadingAnchor.ConstraintEqualTo(self.View.LeadingAnchor, constant = nfloat 50.)
-               userNameTextField.TrailingAnchor.ConstraintEqualTo(self.View.TrailingAnchor, constant = nfloat -50.0)
-               userNameTextField.HeightAnchor.ConstraintEqualTo(constant = nfloat 50.) |]
+        NSLayoutConstraint.ActivateConstraints [| userNameTextField.TopAnchor.ConstraintEqualTo(
+                                                      logoImageView.BottomAnchor,
+                                                      constant = nfloat 50.
+                                                  )
+                                                  userNameTextField.LeadingAnchor.ConstraintEqualTo(
+                                                      self.View.LeadingAnchor,
+                                                      constant = nfloat 50.
+                                                  )
+                                                  userNameTextField.TrailingAnchor.ConstraintEqualTo(
+                                                      self.View.TrailingAnchor,
+                                                      constant = nfloat -50.0
+                                                  )
+                                                  userNameTextField.HeightAnchor.ConstraintEqualTo(
+                                                      constant = nfloat 50.
+                                                  ) |]
 
     let configureLogoImageView () =
         logoImageView.TranslatesAutoresizingMaskIntoConstraints <- false
@@ -107,11 +118,13 @@ type SearchView() as self =
         logoImageView.Image <- UIImage.FromBundle(ImageNames.ghLogo)
         self.View.AddSubview(logoImageView)
 
-        NSLayoutConstraint.ActivateConstraints
-            [| logoImageView.TopAnchor.ConstraintEqualTo(self.View.SafeAreaLayoutGuide.TopAnchor, constant = nfloat 80.)
-               logoImageView.CenterXAnchor.ConstraintEqualTo(self.View.CenterXAnchor)
-               logoImageView.HeightAnchor.ConstraintEqualTo(constant = nfloat 200.)
-               logoImageView.WidthAnchor.ConstraintEqualTo(constant = nfloat 200.) |]
+        NSLayoutConstraint.ActivateConstraints [| logoImageView.TopAnchor.ConstraintEqualTo(
+                                                      self.View.SafeAreaLayoutGuide.TopAnchor,
+                                                      constant = nfloat 80.
+                                                  )
+                                                  logoImageView.CenterXAnchor.ConstraintEqualTo(self.View.CenterXAnchor)
+                                                  logoImageView.HeightAnchor.ConstraintEqualTo(constant = nfloat 200.)
+                                                  logoImageView.WidthAnchor.ConstraintEqualTo(constant = nfloat 200.) |]
 
     override _.ViewDidLoad() =
         base.ViewDidLoad()

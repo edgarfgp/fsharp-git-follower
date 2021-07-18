@@ -125,8 +125,10 @@
         <InterfaceDefinition Include="LaunchScreen.storyboard" />
         <None Include="Info.plist" />
         <None Include="Entitlements.plist" />
-        <Compile Include="Contants.fs" />
         <Compile Include="Option.fs" />
+        <Compile Include="Result.fs" />
+        <Compile Include="Contants.fs" />
+        <Compile Include="Crypto.fs" />
         <Compile Include="Domain.fs" />
         <Compile Include="Json.fs" />
         <Compile Include="Network.fs" />
@@ -143,7 +145,10 @@
         <Compile Include="Elements\ViewControllers.fs" />
         <Compile Include="Elements\Cells.fs" />
         <Compile Include="Elements\Common.fs" />
+        <Compile Include="Controllers\Events.fs" />
         <Compile Include="Controllers\ExchangesController.fs" />
+        <Compile Include="Controllers\FollowerListController.fs" />
+        <Compile Include="Controllers\SearchController.fs" />
         <Compile Include="Views\CurrencySecondStepView.fs" />
         <Compile Include="Views\CurrencyFirstStepView.fs" />
         <Compile Include="Views\ExchangeDetailView.fs" />
